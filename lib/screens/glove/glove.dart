@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:async';
 
@@ -144,43 +145,39 @@ class FindDevicesScreen extends StatelessWidget {
 
 class DeviceScreen extends StatelessWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
-
   final BluetoothDevice device;
+  List<int> _getAck() {
+    int ack = 1;
+    print("sending ack -> $ack");
+    return [1, 97, 99, 107];
 
-  List<int> _getRandomBytes() {
-    final math = Random();
-    return [
-      math.nextInt(255),
-      math.nextInt(255),
-      math.nextInt(255),
-      math.nextInt(255)
-    ];
   }
 
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
     return services
         .map(
-          (s) => ServiceTile(
-        service: s,
-        characteristicTiles: s.characteristics
+          (bleService) => ServiceTile(
+        service: bleService,
+        characteristicTiles: bleService.characteristics
             .map(
-              (c) => CharacteristicTile(
-            characteristic: c,
-            onReadPressed: () => c.read(),
+              (characteristic) => CharacteristicTile(
+            characteristic: characteristic,
+            onReadPressed: () => characteristic.read().then((value) => print("READING.... "+new String.fromCharCodes(value))),
             onWritePressed: () async {
-              await c.write(_getRandomBytes(), withoutResponse: true);
-              await c.read();
+              await characteristic.write(utf8.encode("1ack"));
+              //await characteristic.write(_getAck(), withoutResponse: true);
+              await characteristic.read();
             },
             onNotificationPressed: () async {
-              await c.setNotifyValue(!c.isNotifying);
-              await c.read();
+              await characteristic.setNotifyValue(!characteristic.isNotifying);
+              await characteristic.read();
             },
-            descriptorTiles: c.descriptors
+            descriptorTiles: characteristic.descriptors
                 .map(
-                  (d) => DescriptorTile(
-                descriptor: d,
-                onReadPressed: () => d.read(),
-                onWritePressed: () => d.write(_getRandomBytes()),
+                  (descriptor) => DescriptorTile(
+                descriptor: descriptor,
+                onReadPressed: () => descriptor.read(),
+                onWritePressed: () => descriptor.write(_getAck()),
               ),
             )
                 .toList(),

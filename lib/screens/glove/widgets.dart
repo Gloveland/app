@@ -183,7 +183,7 @@ class CharacteristicTile extends StatelessWidget {
                         color: Theme.of(context).textTheme.caption?.color))
               ],
             ),
-            subtitle: Text(value.toString()),
+            subtitle: Text(new String.fromCharCodes(value!)),
             contentPadding: EdgeInsets.all(0.0),
           ),
           trailing: Row(
