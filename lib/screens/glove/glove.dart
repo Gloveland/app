@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -22,7 +21,6 @@ class GlovePage extends StatelessWidget {
         });
   }
 }
-
 
 class BluetoothOffScreen extends StatelessWidget {
   const BluetoothOffScreen({Key? key, this.state}) : super(key: key);
@@ -143,14 +141,25 @@ class FindDevicesScreen extends StatelessWidget {
   }
 }
 
-class DeviceScreen extends StatelessWidget {
+class DeviceScreen extends StatefulWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
   final BluetoothDevice device;
-  List<int> _getAck() {
-    int ack = 1;
-    print("sending ack -> $ack");
-    return [1, 97, 99, 107];
+  @override
+  _DeviceScreenState createState() => _DeviceScreenState(this.device);
+}
 
+class _DeviceScreenState extends State<DeviceScreen> {
+  _DeviceScreenState(this.device);
+  BluetoothDevice device;
+  int _ack = 0;
+
+  List<int> _getAck() {
+    setState(() {
+        _ack += 1;
+    });
+    print("sending ack -> ${_ack}ack");
+    return utf8.encode("${_ack}ack");
+    //return [_ack, 97, 99, 107];
   }
 
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
@@ -164,8 +173,8 @@ class DeviceScreen extends StatelessWidget {
             characteristic: characteristic,
             onReadPressed: () => characteristic.read().then((value) => print("READING.... "+new String.fromCharCodes(value))),
             onWritePressed: () async {
-              await characteristic.write(utf8.encode("1ack"));
-              //await characteristic.write(_getAck(), withoutResponse: true);
+              //await characteristic.write(utf8.encode("1ack"));
+              await characteristic.write(_getAck(), withoutResponse: true);
               await characteristic.read();
             },
             onNotificationPressed: () async {
@@ -292,4 +301,7 @@ class DeviceScreen extends StatelessWidget {
       ),
     );
   }
+
+
 }
+
