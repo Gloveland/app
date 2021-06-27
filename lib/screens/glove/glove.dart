@@ -159,7 +159,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
     });
     print("sending ack -> ${_ack}ack");
     return utf8.encode("${_ack}ack");
-    //return [_ack, 97, 99, 107];
   }
 
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
@@ -171,10 +170,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
             .map(
               (characteristic) => CharacteristicTile(
             characteristic: characteristic,
-            onReadPressed: () => characteristic.read().then((value) => print("READING.... "+new String.fromCharCodes(value))),
+            onReadPressed: () async {
+              await characteristic.read().then((value) => print("READING.... "+new String.fromCharCodes(value)));
+              await characteristic.write(_getAck());
+            },
             onWritePressed: () async {
-              //await characteristic.write(utf8.encode("1ack"));
-              await characteristic.write(_getAck(), withoutResponse: true);
+              await characteristic.write(utf8.encode("on write characteristic"), withoutResponse: true);
               await characteristic.read();
             },
             onNotificationPressed: () async {
@@ -186,7 +187,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   (descriptor) => DescriptorTile(
                 descriptor: descriptor,
                 onReadPressed: () => descriptor.read(),
-                onWritePressed: () => descriptor.write(_getAck()),
+                onWritePressed: () => descriptor.write(utf8.encode("on write descriptor")),
               ),
             )
                 .toList(),
