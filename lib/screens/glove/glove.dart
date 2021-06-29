@@ -153,12 +153,26 @@ class _DeviceScreenState extends State<DeviceScreen> {
   BluetoothDevice device;
   int _ack = 0;
 
-  List<int> _getAck() {
+  VoidCallback? connectCallBack() {
+    device.connect();
     setState(() {
-        _ack += 1;
+      _ack = 0;
     });
-    print("sending ack -> ${_ack}ack");
-    return utf8.encode("${_ack}ack");
+  }
+
+  VoidCallback? disconnectCallBack() {
+    device.disconnect();
+  }
+
+   _sendAcknowledge(String valueRead, BluetoothCharacteristic characteristic) async {
+    print("READING.... $valueRead");
+    if(!valueRead.contains("ack")){
+      setState(() {
+        _ack = (_ack + 1) > 9? 1: (_ack + 1);
+      });
+    }
+    print("SENDING.... ${_ack}ack");
+    await characteristic.write(utf8.encode("${_ack}ack"));
   }
 
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
@@ -171,8 +185,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               (characteristic) => CharacteristicTile(
             characteristic: characteristic,
             onReadPressed: () async {
-              await characteristic.read().then((value) => print("READING.... "+new String.fromCharCodes(value)));
-              await characteristic.write(_getAck());
+              await characteristic.read().then((value) => _sendAcknowledge(new String.fromCharCodes(value), characteristic));
             },
             onWritePressed: () async {
               await characteristic.write(utf8.encode("on write characteristic"), withoutResponse: true);
