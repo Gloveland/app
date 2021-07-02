@@ -1,5 +1,6 @@
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
+import 'package:lsa_gloves/screens/files/files.dart';
 import 'dart:developer';
 
 import 'package:lsa_gloves/screens/glove/glove.dart';
@@ -128,11 +129,20 @@ class _MyHomePageState extends State<MyHomePage> {
             FloatingActionButton(
               onPressed: () => {
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => GlovePage()
+                    builder: (context) => GloveConnectionPage()
                 ))
               },
               tooltip: 'Guante',
               child: Icon(Icons.bluetooth),
+            ),
+            FloatingActionButton(
+              onPressed: () => {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => FileManagerPage()
+                ))
+              },
+              tooltip: 'Archivos',
+              child: Icon(Icons.file_copy_sharp),
             ),
           ],
         ),

@@ -4,9 +4,10 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/screens/files/storage.dart';
 import 'package:lsa_gloves/screens/glove/widgets.dart';
 
-class GlovePage extends StatelessWidget {
+class GloveConnectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<BluetoothState>(
@@ -55,6 +56,8 @@ class BluetoothOffScreen extends StatelessWidget {
 }
 
 class FindDevicesScreen extends StatelessWidget {
+  get gloveStorage => GloveEventsStorage();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,7 +90,7 @@ class FindDevicesScreen extends StatelessWidget {
                           onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute(
                                   builder: (context) =>
-                                      DeviceScreen(device: d))),
+                                      DeviceScreen(device: d,  storage: gloveStorage))),
                         );
                       }
                       return Text(snapshot.data.toString());
@@ -108,7 +111,7 @@ class FindDevicesScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
                       r.device.connect();
-                      return DeviceScreen(device: r.device);
+                      return DeviceScreen(device: r.device,  storage: gloveStorage);
                     })),
                   ),
                 )
@@ -142,8 +145,9 @@ class FindDevicesScreen extends StatelessWidget {
 }
 
 class DeviceScreen extends StatefulWidget {
-  const DeviceScreen({Key? key, required this.device}) : super(key: key);
+  const DeviceScreen({Key? key, required this.device, required this.storage}) : super(key: key);
   final BluetoothDevice device;
+  final GloveEventsStorage storage;
   @override
   _DeviceScreenState createState() => _DeviceScreenState(this.device);
 }
@@ -154,6 +158,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   int _ack = 0;
 
   VoidCallback? connectCallBack() {
+    widget.storage.writeSensorMeasurementRow(" connectCallBack ");
     device.connect();
     setState(() {
       _ack = 0;
@@ -166,6 +171,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   _readGloveMovements(BluetoothCharacteristic characteristic)  async {
     while(true){
+      widget.storage.writeSensorMeasurementRow(" desde readGloveMovements ");
       String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
       print("READING.... $valueRead");
       if(!valueRead.contains("ack")){
@@ -232,11 +238,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
               String text;
               switch (snapshot.data) {
                 case BluetoothDeviceState.connected:
-                  onPressed = () => device.disconnect();
+                  onPressed = () => disconnectCallBack; //device.disconnect();
                   text = 'DISCONNECT';
                   break;
                 case BluetoothDeviceState.disconnected:
-                  onPressed = () => device.connect();
+                  onPressed = () => connectCallBack; //device.connect();
                   text = 'CONNECT';
                   break;
                 default:
