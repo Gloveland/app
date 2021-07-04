@@ -143,9 +143,8 @@ class FindDevicesScreen extends StatelessWidget {
 }
 
 class DeviceScreen extends StatefulWidget {
-  const DeviceScreen({Key? key, required this.device, required this.storage}) : super(key: key);
+  const DeviceScreen({Key? key, required this.device}) : super(key: key);
   final BluetoothDevice device;
-  final GloveEventsStorage storage;
   @override
   _DeviceScreenState createState() => _DeviceScreenState(this.device);
 }
@@ -167,8 +166,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   _readGloveMovements(BluetoothCharacteristic characteristic)  async {
-    var f = await new GloveEventsStorage().createFile("HOLA");
-    var mf = new MeasurementsFile(f, DateTime.now());
+    var d= DateTime.now();
+    var f = await new GloveEventsStorage().createFile("$d.txt");
+    var mf = new MeasurementsFile(f, d);
 
     while(true){
       String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
