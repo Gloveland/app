@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/screens/files/storage.dart';
-import 'package:lsa_gloves/screens/glove/widgets.dart';
+import 'package:lsa_gloves/screens/connection/widgets.dart';
 
 class GloveConnectionPage extends StatelessWidget {
   @override
@@ -56,7 +56,6 @@ class BluetoothOffScreen extends StatelessWidget {
 }
 
 class FindDevicesScreen extends StatelessWidget {
-  get gloveStorage => GloveEventsStorage();
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +89,7 @@ class FindDevicesScreen extends StatelessWidget {
                           onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute(
                                   builder: (context) =>
-                                      DeviceScreen(device: d,  storage: gloveStorage))),
+                                      DeviceScreen(device: d))),
                         );
                       }
                       return Text(snapshot.data.toString());
@@ -111,7 +110,7 @@ class FindDevicesScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
                       r.device.connect();
-                      return DeviceScreen(device: r.device,  storage: gloveStorage);
+                      return DeviceScreen(device: r.device);
                     })),
                   ),
                 )
@@ -135,8 +134,7 @@ class FindDevicesScreen extends StatelessWidget {
         } else {
           return FloatingActionButton(
               child: Icon(Icons.search),
-              onPressed: () => FlutterBlue.instance
-                  .startScan(timeout: Duration(seconds: 4)));
+              onPressed: () => FlutterBlue.instance.startScan(timeout: Duration(seconds: 4)));
         }
       },
     ),
@@ -158,7 +156,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
   int _ack = 0;
 
   VoidCallback? connectCallBack() {
-    widget.storage.writeSensorMeasurementRow(" connectCallBack ");
     device.connect();
     setState(() {
       _ack = 0;
@@ -170,8 +167,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   _readGloveMovements(BluetoothCharacteristic characteristic)  async {
+    var f = await new GloveEventsStorage().createFile("HOLA");
+    var mf = new MeasurementsFile(f, DateTime.now());
+
     while(true){
-      widget.storage.writeSensorMeasurementRow(" desde readGloveMovements ");
       String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
       print("READING.... $valueRead");
       if(!valueRead.contains("ack")){
@@ -183,6 +182,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
       await characteristic.write(utf8.encode("${_ack}ack"));
       if(valueRead.contains("end")){
         return;
+      }
+      if(!valueRead.contains("start")){
+        mf.writeSensorMeasurementRow(valueRead);
       }
     }
   }

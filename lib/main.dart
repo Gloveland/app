@@ -1,9 +1,10 @@
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
-import 'package:lsa_gloves/screens/files/files.dart';
+import 'package:lsa_gloves/screens/files/file_content.dart';
+import 'package:lsa_gloves/screens/files/file_list.dart';
 import 'dart:developer';
 
-import 'package:lsa_gloves/screens/glove/glove.dart';
+import 'package:lsa_gloves/screens/connection/connection.dart';
 
 
 void main() {
@@ -15,6 +16,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      routes: {
+        FileContentPage.routeName: (context) => FileContentPage(),
+      },
       title: 'Lengua de señas Argentina',
       theme: ThemeData(
         // This is the theme of your application.
@@ -124,6 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
             FloatingActionButton(
               onPressed: () => _playSound(),
               tooltip: 'Reproducir',
+              heroTag: 'Reproducir',
               child: Icon(Icons.play_arrow),
             ),
             FloatingActionButton(
@@ -132,6 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     builder: (context) => GloveConnectionPage()
                 ))
               },
+              heroTag: 'Guante',
               tooltip: 'Guante',
               child: Icon(Icons.bluetooth),
             ),
@@ -141,6 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     builder: (context) => FileManagerPage()
                 ))
               },
+              heroTag: "Archivos",
               tooltip: 'Archivos',
               child: Icon(Icons.file_copy_sharp),
             ),
