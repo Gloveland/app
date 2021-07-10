@@ -29,11 +29,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   _readGloveMovements(BluetoothCharacteristic characteristic)  async {
-    var d= DateTime.now();
-    var f = await new GloveEventsStorage().createFile("$d");
-    var mf = new MeasurementsFile(f, d);
-
-    while(true){
+    var word = 'HOLA';
+    var deviceId = "ac:87:a3:0a:2d:1b";
+    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
+    while(true) {
       String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
       print("READING.... $valueRead");
       if(!valueRead.contains("ack")){
@@ -44,10 +43,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
       print("SENDING.... ${_ack}ack");
       await characteristic.write(utf8.encode("${_ack}ack"));
       if(valueRead.contains("end")){
+        measurementFile.save();
         return;
       }
       if(!valueRead.contains("start")){
-        mf.writeSensorMeasurementRow(valueRead);
+        measurementFile.add(valueRead);
       }
     }
   }

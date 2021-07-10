@@ -8,7 +8,7 @@ class FileContentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final file = ModalRoute.of(context)!.settings.arguments as MeasurementsFile;
+    final file = ModalRoute.of(context)!.settings.arguments as DeviceMeasurementsFile;
 
     return Scaffold(
         appBar: AppBar(
@@ -21,7 +21,7 @@ class FileContentPage extends StatelessWidget {
 }
 /// This is the stateful widget that the main application instantiates.
 class FileContentWidget extends StatefulWidget {
-  final MeasurementsFile mFile;
+  final DeviceMeasurementsFile mFile;
   const FileContentWidget({Key? key, required this.mFile}) : super(key: key);
 
   @override
@@ -30,8 +30,8 @@ class FileContentWidget extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _FileContentWidget extends State<FileContentWidget> {
-  final MeasurementsFile measurementsFile;
-  _FileContentWidget(this.measurementsFile);
+  final DeviceMeasurementsFile mFile;
+  _FileContentWidget(this.mFile);
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class _FileContentWidget extends State<FileContentWidget> {
       style: Theme.of(context).textTheme.bodyText1!,
       textAlign: TextAlign.center,
       child: FutureBuilder<String>(
-        future: measurementsFile.readSensorMeasurements(), // a previously-obtained Future<String> or null
+        future: mFile.readJsonContent().then((value) => value.toJson().toString()), // a previously-obtained Future<String> or null
         builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
           List<Widget> children;
           if (snapshot.hasData) {

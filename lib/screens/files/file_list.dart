@@ -17,7 +17,7 @@ class FileManagerPage extends StatelessWidget {
       body: SingleChildScrollView(
           child: Column(
             children: <Widget>[
-              StreamBuilder<List<MeasurementsFile>>(
+              StreamBuilder<List<DeviceMeasurementsFile>>(
                 stream: GloveEventsStorage().getListOfFiles().asStream(),
                 initialData: [],
                 builder: (c, snapshot) => Column(
@@ -29,17 +29,11 @@ class FileManagerPage extends StatelessWidget {
                         ListTile(
                           leading: IconButton( icon:  Icon(Icons.folder_open_sharp),
                             onPressed: () async {
-                            String measurements = await f.readSensorMeasurements();
-                            print(measurements);
-                            Navigator.pushNamed(
-                              context,
-                              FileContentPage.routeName,
-                              arguments: f,
-                            );
-                           /* Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => FileContentPage()
-                            ));
-                            */
+                              Navigator.pushNamed(
+                                context,
+                                FileContentPage.routeName,
+                                arguments: f,
+                              );
                             },
                           ),
                           title: Text(basename(f.path)),
@@ -57,7 +51,9 @@ class FileManagerPage extends StatelessWidget {
                                   Icons.file_upload,
                                   color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
                                 ),
-                                onPressed: (){ /*...*/},
+                                onPressed: (){
+                                  f.upload();
+                                },
                               ),
 
                             ],
