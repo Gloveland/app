@@ -1,10 +1,11 @@
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
+import 'package:lsa_gloves/screens/edgeimpulse/api_client.dart';
 import 'package:lsa_gloves/screens/files/file_content.dart';
 import 'package:lsa_gloves/screens/files/file_list.dart';
 import 'dart:developer';
 
-import 'package:lsa_gloves/screens/connection/connection.dart';
+import 'package:lsa_gloves/screens/connection/find_connection.dart';
 
 
 void main() {
@@ -143,6 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             FloatingActionButton(
               onPressed: () => {
+                uploadFile(),
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => FileManagerPage()
                 ))

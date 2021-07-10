@@ -45,7 +45,7 @@ class GloveEventsStorage {
 
   Future<File> createFile(String name) async {
     final path = await _localPath;
-    return File('$path/$name.txt');
+    return File('$path/$name.csv');
   }
 }
 
