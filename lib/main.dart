@@ -1,5 +1,6 @@
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
+import 'package:lsa_gloves/screens/connection/find_connection.dart';
 import 'package:lsa_gloves/screens/files/file_content.dart';
 import 'package:lsa_gloves/screens/files/file_list.dart';
 import 'dart:developer';
@@ -69,26 +70,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-
-  _prueba()  async {
-    var word = 'Hola';
-    var deviceId = "ac:87:a3:0a:2d:1b";
-    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    List li=["start","1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0", "1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1", "end"];
-    for (var i=0; i<li.length; i++) {
-      String valueRead =li[i];
-      print("READING.... $valueRead");
-      if(valueRead.contains("end")){
-        measurementFile.save();
-        return;
-      }
-      if(!valueRead.contains("start")){
-        var jsonList = "[$valueRead]";
-        measurementFile.add(jsonList);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -151,14 +132,11 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Icon(Icons.play_arrow),
             ),
             FloatingActionButton(
-              onPressed: () async { await _prueba(); },
-              /*
               onPressed: () =>{
                  Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => GloveConnectionPage()
                 ))
               },
-              */
               heroTag: 'Guante',
               tooltip: 'Guante',
               child: Icon(Icons.bluetooth),

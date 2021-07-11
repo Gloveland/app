@@ -47,7 +47,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
         return;
       }
       if(!valueRead.contains("start")){
-        measurementFile.add(valueRead);
+        var jsonList = "[$valueRead]";
+        measurementFile.add(jsonList);
       }
     }
   }
