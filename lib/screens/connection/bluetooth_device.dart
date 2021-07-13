@@ -39,16 +39,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
         setState(() {
           _ack = (_ack + 1) > 9? 1: (_ack + 1);
         });
+        if(!valueRead.contains("start") && !valueRead.contains("end")){
+          var jsonList = "[$valueRead]";
+          measurementFile.add(jsonList);
+        }
       }
       print("SENDING.... ${_ack}ack");
       await characteristic.write(utf8.encode("${_ack}ack"));
-      if(valueRead.contains("end")){
+      if(valueRead.contains("end")) {
         measurementFile.save();
         return;
-      }
-      if(!valueRead.contains("start")){
-        var jsonList = "[$valueRead]";
-        measurementFile.add(jsonList);
       }
     }
   }
