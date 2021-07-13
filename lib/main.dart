@@ -1,6 +1,7 @@
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
-import 'package:lsa_gloves/screens/connection/find_connection.dart';
+import 'package:lsa_gloves/screens/connection/ble/find_connection.dart';
+import 'package:lsa_gloves/screens/connection/wifi/socket.dart';
 import 'package:lsa_gloves/screens/files/file_content.dart';
 import 'package:lsa_gloves/screens/files/file_list.dart';
 import 'dart:developer';
@@ -132,9 +133,16 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Icon(Icons.play_arrow),
             ),
             FloatingActionButton(
+              /*
               onPressed: () =>{
                  Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => GloveConnectionPage()
+                ))
+              },
+              */
+              onPressed: () =>{
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => WifiPage()
                 ))
               },
               heroTag: 'Guante',
