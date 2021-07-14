@@ -70,9 +70,9 @@ void connect() async {
         (Uint8List data) {
       final serverResponse = String.fromCharCodes(data);
       print('Server: $serverResponse');
-      List<String> list = serverResponse.split('\n');
+      List<String> list = serverResponse.split('\n').where((s) => !s.isEmpty).toList();
       print('list : $list');
-      for(int i = 0; i < list.length; i++){
+      for(int i = 0; i < list.length ; i++){
         String jsonString = list[i];
         try{
           var pkg = DeviceInfo.fromJson(jsonDecode(jsonString));
