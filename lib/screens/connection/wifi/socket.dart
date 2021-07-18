@@ -44,47 +44,15 @@ class MovementRecorderWidget extends StatefulWidget {
 
 /// This is the private State class that goes with MyStatefulWidget.
 class _MovementRecorderWidget extends State<MovementRecorderWidget> {
-  _MovementRecorderWidget(this.clientSocket, this._isRecording);
-  Socket clientSocket;
   bool _isRecording;
+  final Socket clientSocket;
+  final Stream<Uint8List> _clientSocketBroadcast;
+  
+  _MovementRecorderWidget(this.clientSocket, this._isRecording)
+      : _clientSocketBroadcast = clientSocket.asBroadcastStream();
 
   StreamController<String> _streamController =  new StreamController.broadcast();
   List<String> items = ["start"];
-
-  @override
-  void initState(){
-    super.initState();
-    /*
-    Stream<Uint8List> _socketSuscription = clientSocket.asBroadcastStream(
-      onListen: (subscription) {
-        subscription.onData((data) {
-          print("cancel socket suscription");
-        });
-        subscription.onDone(() {
-          print('Server left.....');
-          subscription.cancel();
-          clientSocket.destroy();
-        });
-        subscription.onError((error) {
-          print('connection errror: $error');
-          subscription.cancel();
-          clientSocket.destroy();
-        });
-      },
-      onCancel: (subscription) {
-        print("cancel socket suscription");
-      },
-    );
-     */
-  }
-
-
-  @override
-  Future<void> dispose() async {
-    super.dispose();
-    _streamController.close();
-    await clientSocket.close();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +74,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     _streamController =  new StreamController.broadcast();
     _streamController.stream.listen((p) => setState(() => items.add(p)));
     print('load');
-    load(_streamController);
+    loadReceivedMessagesFromConnection(_streamController);
 
   }
   VoidCallback? stopRecording() {
@@ -152,20 +120,23 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     }
   }
 
+  loadReceivedMessagesFromConnection(StreamController<String> sc) async {
+    var socketSubscription = _clientSocketBroadcast.listen(null);
 
-  load(StreamController<String> sc) async {
-    //cant susbribe again
-    var socketSubscription = clientSocket.listen(null);
     socketSubscription.onError((error) {
-      print(error);
+      print('socket subscription error: $error');
       socketSubscription.cancel();
       clientSocket.destroy();
+      //TODO Reload WifiPage ?
     });
+
     socketSubscription.onDone(() {
       print('Server left.....');
       socketSubscription.cancel();
       clientSocket.destroy();
+      //TODO Reload WifiPage ?
     });
+
     socketSubscription.onData((Uint8List data) {// handle data from the server
       final serverResponse = String.fromCharCodes(data);
       List<String> list = serverResponse.split('\n')
@@ -191,26 +162,13 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
         }
       }
     });
-
-    /*
-    final subscription = getStreamData().listen(null);
-    subscription.onData((event) {
-      if(sc.isClosed){
-        print("stream controller is close");
-        subscription.cancel();
-        this.items = ["start"];
-        return;
-      }
-      sc.add(event);
-    });
-     */
   }
 
-  Stream<String> getStreamData() async* {
-    while (true) {
-      await Future.delayed(Duration(seconds: 1));
-      yield "1.3, 34.7, 56.778, 45.67, 8.767";
-    }
+  @override
+  Future<void> dispose() async {
+    super.dispose();
+    _streamController.close();
+    await clientSocket.close();
   }
 
 }
