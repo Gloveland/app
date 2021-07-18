@@ -1,4 +1,4 @@
-
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,133 +8,248 @@ import 'package:flutter/material.dart';
 
 
 class WifiPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Socket>(
+        future: Socket.connect('192.168.1.9', 8080, timeout: Duration(seconds: 5)),
+        builder: (context, socket) {
+          if (socket.hasData) {
+            return MovementRecorderWidget(clientSocket: socket.requireData);
+          } else {
+            return Scaffold(
+                appBar: AppBar(title: Text("Connectting....")),
+                body: Center(child: new Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      Container(
+                        margin: const EdgeInsets.only(top: 20.0),
+                        child: new Text('conectando...'),
+                      )
+                    ])));
+          }
+        });
+  }
+}
+
+/// This is the stateful widget that the main application instantiates.
+class MovementRecorderWidget extends StatefulWidget {
+  final Socket clientSocket;
+  const MovementRecorderWidget({Key? key, required this.clientSocket}) : super(key: key);
+
+  @override
+  State<MovementRecorderWidget> createState() => _MovementRecorderWidget(this.clientSocket, false);
+}
+
+/// This is the private State class that goes with MyStatefulWidget.
+class _MovementRecorderWidget extends State<MovementRecorderWidget> {
+  _MovementRecorderWidget(this.clientSocket, this._isRecording);
+  Socket clientSocket;
+  bool _isRecording;
+
+  StreamController<String> _streamController =  new StreamController.broadcast();
+  List<String> items = ["start"];
+
+  @override
+  void initState(){
+    super.initState();
+    /*
+    Stream<Uint8List> _socketSuscription = clientSocket.asBroadcastStream(
+      onListen: (subscription) {
+        subscription.onData((data) {
+          print("cancel socket suscription");
+        });
+        subscription.onDone(() {
+          print('Server left.....');
+          subscription.cancel();
+          clientSocket.destroy();
+        });
+        subscription.onError((error) {
+          print('connection errror: $error');
+          subscription.cancel();
+          clientSocket.destroy();
+        });
+      },
+      onCancel: (subscription) {
+        print("cancel socket suscription");
+      },
+    );
+     */
+  }
+
+
+  @override
+  Future<void> dispose() async {
+    super.dispose();
+    _streamController.close();
+    await clientSocket.close();
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Socket"),
-        ),
-        body: Center(
-            child: FloatingActionButton(
-    onPressed: () => connect(),
-    heroTag: "Wifi",
-    tooltip: 'Wifi',
-    child: Icon(Icons.wifi))));
+      appBar: AppBar(
+        title: Text('Movement recording'),
+      ),
+      body: _getRecordingLogList(),
+      floatingActionButton: _getRecordingButton()
+    );
   }
-}
 
-enum Type { deviceInfo, movement }
-
-
-class Package {
-  int type;
-
-  Package(this.type);
-
-  Package.fromJson(Map<String, dynamic> json)
-      : type = json['type'];
-
-  Map<String, dynamic> toJson() => {
-    'type': type,
-  };
-
-}
-
-class DeviceInfo extends Package {
-  final String id;
-  final double battery;
-  DeviceInfo(this.id, this.battery): super(0);
-
-  DeviceInfo.fromJson(Map<String, dynamic> json)
-      : id = json['id'], battery = json['battery'], super.fromJson(json);
-
-  Map<String, dynamic> toJson() {
-    var result = super.toJson();
-    result.addAll({
-      'id': id,
-      'battery': battery,
+  VoidCallback? startRecording() {
+    print('startRecording');
+    setState(() {
+      _isRecording = true;
     });
-    return result;
+    print('streamController');
+    _streamController =  new StreamController.broadcast();
+    _streamController.stream.listen((p) => setState(() => items.add(p)));
+    print('load');
+    load(_streamController);
+
   }
+  VoidCallback? stopRecording() {
+    print('stopRecording');
+    _streamController.close();
+    setState(() {
+      _isRecording = false;
+    });
+
+  }
+
+  Widget _getRecordingLogList() {
+    return Center(
+        child: ListView.builder(
+            itemBuilder: (BuildContext context, int index) => _getListElement(index),
+            itemCount: items.length
+        ));
+  }
+
+  Widget _getListElement(int index) {
+    if (index >= items.length) {
+      return Container();
+    }
+    return Container(
+      child: Text(items[index]),
+    );
+  }
+
+  Widget _getRecordingButton() {
+    if (_isRecording) {
+      return FloatingActionButton(
+        child: Icon(Icons.stop),
+        onPressed: () => stopRecording(),
+        backgroundColor: Colors.red,
+      );
+    } else {
+      return FloatingActionButton(
+          onPressed: () => startRecording(),
+          heroTag: "startRecording",
+          tooltip: 'startRecording',
+          child: Icon(Icons.circle)
+      );
+    }
+  }
+
+
+  load(StreamController<String> sc) async {
+    //cant susbribe again
+    var socketSubscription = clientSocket.listen(null);
+    socketSubscription.onError((error) {
+      print(error);
+      socketSubscription.cancel();
+      clientSocket.destroy();
+    });
+    socketSubscription.onDone(() {
+      print('Server left.....');
+      socketSubscription.cancel();
+      clientSocket.destroy();
+    });
+    socketSubscription.onData((Uint8List data) {// handle data from the server
+      final serverResponse = String.fromCharCodes(data);
+      List<String> list = serverResponse.split('\n')
+          .where((s) => s.isNotEmpty)
+          .toList();
+      print('server : $list');
+      for (int i = 0; i < list.length; i++) {
+        if(sc.isClosed) {
+          print("stream controller is close");
+          socketSubscription.cancel();
+          this.items = ["start"];
+          return;
+        } else {
+          try{
+            String jsonString = list[i];
+            var pkg = Movement.fromJson(jsonDecode(jsonString));
+            print('map to: ${pkg}');
+            print('-> ${pkg.toJson().toString()}');
+            sc.add(pkg.toJson().toString());
+          }catch(e){
+            print('cant parse : jsonString');
+          }
+        }
+      }
+    });
+
+    /*
+    final subscription = getStreamData().listen(null);
+    subscription.onData((event) {
+      if(sc.isClosed){
+        print("stream controller is close");
+        subscription.cancel();
+        this.items = ["start"];
+        return;
+      }
+      sc.add(event);
+    });
+     */
+  }
+
+  Stream<String> getStreamData() async* {
+    while (true) {
+      await Future.delayed(Duration(seconds: 1));
+      yield "1.3, 34.7, 56.778, 45.67, 8.767";
+    }
+  }
+
 }
 
-class Movement extends Package{
+class Movement {
+  final String deviceId;
+  final int eventNum;
   final double acc;
   final double gyro;
-  Movement(this.acc, this.gyro): super(1);
+  Movement(this.deviceId, this.eventNum, this.acc, this.gyro);
 
   Movement.fromJson(Map<String, dynamic> json)
-      : acc = json['acc'], gyro = json['gyro'], super.fromJson(json);
+      : deviceId = json['device_id'], eventNum = json['event_num'],
+        acc = json['acc'], gyro = json['gyro'];
 
-  Map<String, dynamic> toJson(){
-    var result = super.toJson();
-    result.addAll({
-      'acc': acc,
-      'gyro': gyro,
-    });
-    return result;
-  }
+  Map<String, dynamic> toJson() => {
+    'device_id': deviceId,
+    'event_num': eventNum,
+    'acc': acc,
+    'gyro': gyro,
+  };
 }
 
 
 void connect() async {
-  // CONNECTION RESET BY PEER
-  /*
-  print('Request info...');
-  Socket skt = await Socket.connect('192.168.1.9', 8080, timeout: Duration(seconds: 5));
-  print('Connected to: ${skt.remoteAddress.address}:${skt.remotePort}');
-  skt.write('1');
-  final data  = await skt.first;
-  final serverResponse = String.fromCharCodes(data);
-  print('Server: $serverResponse');
-  await skt.close();
-  skt.destroy();
-
-  print('Request movement reads...');
-  Socket socket = await Socket.connect('192.168.1.9', 8080, timeout: Duration(seconds: 5));
-  print('Connected to: ${socket.remoteAddress.address}:${socket.remotePort}');
-  socket.write('2');
-  final data2  = await socket.first;
-  final response = String.fromCharCodes(data2);
-  print('Server: $response');
-  await socket.close();
-  skt.destroy();
-  */
-
   // listen for responses from the server
   print('Request info...');
   Socket socket = await Socket.connect('192.168.1.9', 8080, timeout: Duration(seconds: 5));
-  socket.write('2');
-  socket.write('1');
-  socket.listen( // handle data from the server
-        (Uint8List data) {
+
+  var suscription = socket.listen((Uint8List data) { // handle data from the server
       final serverResponse = String.fromCharCodes(data);
       print('Server: $serverResponse');
       List<String> list = serverResponse.split('\n').where((s) => s.isNotEmpty).toList();
       print('list : $list');
       for(int i = 0; i < list.length ; i++){
         String jsonString = list[i];
-        var pkg = Package.fromJson(jsonDecode(jsonString));
+        var pkg = Movement.fromJson(jsonDecode(jsonString));
         print('map to: ${pkg}');
         print('-> ${pkg.toJson().toString()}');
-        switch (Type.values[pkg.type]) {
-          case Type.deviceInfo:{
-            var pkg = DeviceInfo.fromJson(jsonDecode(jsonString));
-            print('map to: ${pkg}');
-            print('-> ${pkg.toJson().toString()}');
-          }
-          break;
-          case Type.movement: {
-            var pkg = Movement.fromJson(jsonDecode(jsonString));
-            print('map to: ${pkg}');
-            print('-> ${pkg.toJson().toString()}');
-          }
-          break;
-          default:
-            print('unknown package type');
-        }
       }
     },
     // handle errors
@@ -149,5 +264,6 @@ void connect() async {
       socket.destroy();
     },
   );
-
+  suscription.cancel();
 }
+
