@@ -133,21 +133,25 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Icon(Icons.play_arrow),
             ),
             FloatingActionButton(
-              /*
               onPressed: () =>{
                  Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => GloveConnectionPage()
                 ))
               },
-              */
+
+              heroTag: 'Ble',
+              tooltip: 'Ble',
+              child: Icon(Icons.bluetooth),
+            ),
+            FloatingActionButton(
               onPressed: () =>{
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => WifiPage()
                 ))
               },
-              heroTag: 'Guante',
-              tooltip: 'Guante',
-              child: Icon(Icons.bluetooth),
+              heroTag: 'Wifi',
+              tooltip: 'Wifi',
+              child: Icon(Icons.wifi),
             ),
             FloatingActionButton(
               onPressed: () => {
