@@ -97,7 +97,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('Desea guardar los movimientos medidos?'),
+        title: const Text('Guardar los movimientos?'),
         content: TextField(
           onChanged: (value) {
             setState(() {
@@ -106,7 +106,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
 
           },
           controller: _fileNameFieldController,
-          decoration: InputDecoration(hintText: "Nombre"),
+          decoration: InputDecoration(hintText: "Nombre del archivo"),
         ),
         actions: <Widget>[
           TextButton(
@@ -195,7 +195,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
             print('map to -> ${pkg.toJson().toString()}');
             sc.add(pkg);
           }catch(e){
-            print('cant parse : jsonString');
+            print('cant parse : ${list[i]}');
           }
         }
       }

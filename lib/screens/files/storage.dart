@@ -137,7 +137,6 @@ class DeviceMeasurementsFile {
         "${date.minute.toString()}:" +
         "${date.second.toString()}";
   }
-
 }
 
 class SensorMeasurements {
@@ -147,14 +146,22 @@ class SensorMeasurements {
 
   SensorMeasurements(this.deviceId, this.word, this.values);
 
-  bool add(Movement measurement) {
-    if(measurement.deviceId != this.deviceId){
-      print("wrong deviceId $measurement.deviceId");
+  bool add(Movement mov) {
+    if(mov.deviceId != this.deviceId){
+      print("wrong deviceId $mov.deviceId");
       return false;
     }
     List<double> measurementList = [];
-    measurementList.add(measurement.acc);
-    measurementList.add(measurement.gyro);
+    var thump = mov.hand.thump;
+    measurementList.add(thump.acc.x);
+    measurementList.add(thump.acc.y);
+    measurementList.add(thump.acc.z);
+    measurementList.add(thump.gyro.x);
+    measurementList.add(thump.gyro.y);
+    measurementList.add(thump.gyro.z);
+    measurementList.add(thump.inclination.yaw);
+    measurementList.add(thump.inclination.pitch);
+    measurementList.add(thump.inclination.roll);
     this.values.add(measurementList);
     return true;
   }
