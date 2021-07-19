@@ -5,8 +5,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lsa_gloves/model/movement.dart';
+import 'package:lsa_gloves/screens/files/storage.dart';
+import 'package:lsa_gloves/widgets/Dialog.dart';
 
 
+/// Show a connection spinning or a page to record movements
 class WifiPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -47,12 +51,16 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
   bool _isRecording;
   final Socket clientSocket;
   final Stream<Uint8List> _clientSocketBroadcast;
+  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
+  TextEditingController _fileNameFieldController = TextEditingController();
+  String fileNameUserInputValue;
+  
   
   _MovementRecorderWidget(this.clientSocket, this._isRecording)
-      : _clientSocketBroadcast = clientSocket.asBroadcastStream();
+      : fileNameUserInputValue = '', _clientSocketBroadcast = clientSocket.asBroadcastStream();
 
-  StreamController<String> _streamController =  new StreamController.broadcast();
-  List<String> items = ["start"];
+  StreamController<Movement> _streamController =  new StreamController.broadcast();
+  List<Movement> items = [];
 
   @override
   Widget build(BuildContext context) {
@@ -72,19 +80,51 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     });
     print('streamController');
     _streamController =  new StreamController.broadcast();
-    _streamController.stream.listen((p) => setState(() => items.add(p)));
-    print('load');
-    loadReceivedMessagesFromConnection(_streamController);
-
+    _streamController.stream.listen((p) => {
+      setState(() => items.add(p))
+    });
+    print('load msg from connection into item list');
+    receivedMessagesFromConnection(_streamController);
   }
+
+
   VoidCallback? stopRecording() {
     print('stopRecording');
     _streamController.close();
     setState(() {
       _isRecording = false;
     });
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Desea guardar los movimientos medidos?'),
+        content: TextField(
+          onChanged: (value) {
+            setState(() {
+              fileNameUserInputValue = value;
+            });
 
+          },
+          controller: _fileNameFieldController,
+          decoration: InputDecoration(hintText: "Nombre"),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Descartar'),
+            child: const Text('Descartar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, 'Guardar');
+              saveMessagesInFile(fileNameUserInputValue, this.items);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
   }
+
 
   Widget _getRecordingLogList() {
     return Center(
@@ -99,7 +139,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
       return Container();
     }
     return Container(
-      child: Text(items[index]),
+      child: Text(items[index].toJson().toString()),
     );
   }
 
@@ -120,7 +160,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     }
   }
 
-  loadReceivedMessagesFromConnection(StreamController<String> sc) async {
+  receivedMessagesFromConnection(StreamController<Movement> sc) async {
     var socketSubscription = _clientSocketBroadcast.listen(null);
 
     socketSubscription.onError((error) {
@@ -147,21 +187,38 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
         if(sc.isClosed) {
           print("stream controller is close");
           socketSubscription.cancel();
-          this.items = ["start"];
           return;
         } else {
           try{
             String jsonString = list[i];
             var pkg = Movement.fromJson(jsonDecode(jsonString));
-            print('map to: ${pkg}');
-            print('-> ${pkg.toJson().toString()}');
-            sc.add(pkg.toJson().toString());
+            print('map to -> ${pkg.toJson().toString()}');
+            sc.add(pkg);
           }catch(e){
             print('cant parse : jsonString');
           }
         }
       }
     });
+  }
+
+  saveMessagesInFile(String fileName, List<Movement> movements) async {
+    if(movements.isEmpty){
+      return;
+    }
+    //open pop up loading
+    Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
+    var word = fileName;
+    var deviceId = movements.first.deviceId;
+    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
+    for (int i = 0; i < movements.length; i++) {
+      print('saving in file -> ${movements[i].toJson().toString()}');
+      measurementFile.add(movements[i]);
+    }
+    await measurementFile.save();
+    this.items = [];
+    //close pop up loading
+    Navigator.of(_keyLoader.currentContext!,rootNavigator: true).pop();
   }
 
   @override
@@ -173,55 +230,5 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
 
 }
 
-class Movement {
-  final String deviceId;
-  final int eventNum;
-  final double acc;
-  final double gyro;
-  Movement(this.deviceId, this.eventNum, this.acc, this.gyro);
 
-  Movement.fromJson(Map<String, dynamic> json)
-      : deviceId = json['device_id'], eventNum = json['event_num'],
-        acc = json['acc'], gyro = json['gyro'];
-
-  Map<String, dynamic> toJson() => {
-    'device_id': deviceId,
-    'event_num': eventNum,
-    'acc': acc,
-    'gyro': gyro,
-  };
-}
-
-
-void connect() async {
-  // listen for responses from the server
-  print('Request info...');
-  Socket socket = await Socket.connect('192.168.1.9', 8080, timeout: Duration(seconds: 5));
-
-  var suscription = socket.listen((Uint8List data) { // handle data from the server
-      final serverResponse = String.fromCharCodes(data);
-      print('Server: $serverResponse');
-      List<String> list = serverResponse.split('\n').where((s) => s.isNotEmpty).toList();
-      print('list : $list');
-      for(int i = 0; i < list.length ; i++){
-        String jsonString = list[i];
-        var pkg = Movement.fromJson(jsonDecode(jsonString));
-        print('map to: ${pkg}');
-        print('-> ${pkg.toJson().toString()}');
-      }
-    },
-    // handle errors
-    onError: (error) {
-      print(error);
-      socket.destroy();
-    },
-
-    // handle server ending connection
-    onDone: () {
-      print('Server left.....');
-      socket.destroy();
-    },
-  );
-  suscription.cancel();
-}
 

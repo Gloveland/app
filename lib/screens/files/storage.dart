@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:lsa_gloves/model/movement.dart';
 import 'package:lsa_gloves/screens/edgeimpulse/api_client.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -75,26 +76,27 @@ class DeviceMeasurementsFile {
     return DeviceMeasurementsFile._(file, creationDate, json);
   }
 
-  Future<void> add(String measurementLine) async {
+  Future<bool> add(Movement measurement) async {
     if(this.fileContent == null){
       this.fileContent = await readJsonContent();
     }
-    this.fileContent!.add(measurementLine);
+    return this.fileContent!.add(measurement);
   }
 
   factory DeviceMeasurementsFile.fromFileSystem(file, lastModificationDate){
     return DeviceMeasurementsFile._(file, lastModificationDate, null);
   }
 
-  void save() {
+  Future<bool> save() async {
     try {
       //TODO proteger concunrrencia, mutex??
       String json = jsonEncode(this.fileContent);
       print("saving $json");
-      this.file.writeAsString(json);
+      await this.file.writeAsString(json);
+      return true;
     } catch (e) {
       print("error saving content to file"+ e.toString());
-      return;
+      return false;
     }
   }
 
@@ -145,10 +147,16 @@ class SensorMeasurements {
 
   SensorMeasurements(this.deviceId, this.word, this.values);
 
-  void add(String measurementStr) {
-    var list = json.decode(measurementStr);
-    List<double> measurementList = list.cast<double>();
+  bool add(Movement measurement) {
+    if(measurement.deviceId != this.deviceId){
+      print("wrong deviceId $measurement.deviceId");
+      return false;
+    }
+    List<double> measurementList = [];
+    measurementList.add(measurement.acc);
+    measurementList.add(measurement.gyro);
     this.values.add(measurementList);
+    return true;
   }
 
   factory SensorMeasurements.fromJson(dynamic json) {
