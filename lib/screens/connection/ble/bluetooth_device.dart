@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/screens/files/storage.dart';
-import 'package:lsa_gloves/screens/connection/bluetooth_widgets.dart';
+import 'package:lsa_gloves/screens/connection/ble/bluetooth_widgets.dart';
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
@@ -32,24 +32,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
     var word = 'HOLA';
     var deviceId = "ac:87:a3:0a:2d:1b";
     var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    while(true) {
+    for(int i = 0; i < 100; i++) {
       String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
       print("READING.... $valueRead");
-      if(!valueRead.contains("ack")){
-        setState(() {
-          _ack = (_ack + 1) > 9? 1: (_ack + 1);
-        });
-      }
-      print("SENDING.... ${_ack}ack");
-      await characteristic.write(utf8.encode("${_ack}ack"));
-      if(valueRead.contains("end")){
-        measurementFile.save();
-        return;
-      }
-      if(!valueRead.contains("start")){
-        var jsonList = "[$valueRead]";
-        measurementFile.add(jsonList);
-      }
     }
   }
 

@@ -54,7 +54,6 @@ class BluetoothOffScreen extends StatelessWidget {
 }
 
 class FindDevicesScreen extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,8 +71,7 @@ class FindDevicesScreen extends StatelessWidget {
                   .asyncMap((_) => FlutterBlue.instance.connectedDevices),
               initialData: [],
               builder: (c, snapshot) => Column(
-                children: snapshot.data!
-                    .map((d) => ListTile(
+                children: snapshot.data!.map((d) => ListTile(
                   title: Text(d.name),
                   subtitle: Text(d.id.toString()),
                   trailing: StreamBuilder<BluetoothDeviceState>(

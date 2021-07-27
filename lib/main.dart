@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
-import 'package:lsa_gloves/screens/connection/find_connection.dart';
+import 'package:lsa_gloves/screens/connection/ble/find_connection.dart';
+import 'package:lsa_gloves/screens/connection/wifi/socket.dart';
 import 'package:lsa_gloves/screens/files/file_content.dart';
 import 'package:lsa_gloves/screens/files/file_list.dart';
 import 'dart:developer';
 import 'package:lsa_gloves/screens/files/storage.dart';
+
+import 'model/movement.dart';
 
 
 void main() {
@@ -137,9 +142,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     builder: (context) => GloveConnectionPage()
                 ))
               },
-              heroTag: 'Guante',
-              tooltip: 'Guante',
+
+              heroTag: 'Ble',
+              tooltip: 'Ble',
               child: Icon(Icons.bluetooth),
+            ),
+            FloatingActionButton(
+              onPressed: () =>{
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => WifiPage()
+                ))
+              },
+              heroTag: 'Wifi',
+              tooltip: 'Wifi',
+              child: Icon(Icons.wifi),
             ),
             FloatingActionButton(
               onPressed: () => {
