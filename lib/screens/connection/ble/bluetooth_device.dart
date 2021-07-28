@@ -8,12 +8,14 @@ import 'package:lsa_gloves/screens/connection/ble/bluetooth_widgets.dart';
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
   final BluetoothDevice device;
+
   @override
   _DeviceScreenState createState() => _DeviceScreenState(this.device);
 }
 
 class _DeviceScreenState extends State<DeviceScreen> {
   _DeviceScreenState(this.device);
+
   BluetoothDevice device;
   int _ack = 0;
 
@@ -28,12 +30,14 @@ class _DeviceScreenState extends State<DeviceScreen> {
     device.disconnect();
   }
 
-  _readGloveMovements(BluetoothCharacteristic characteristic)  async {
+  _readGloveMovements(BluetoothCharacteristic characteristic) async {
     var word = 'HOLA';
     var deviceId = "ac:87:a3:0a:2d:1b";
     var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    for(int i = 0; i < 100; i++) {
-      String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
+    for (int i = 0; i < 100; i++) {
+      String valueRead = await characteristic
+          .read()
+          .then((value) => new String.fromCharCodes(value));
       print("READING.... $valueRead");
     }
   }
@@ -42,37 +46,59 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return services
         .map(
           (bleService) => ServiceTile(
-        service: bleService,
-        characteristicTiles: bleService.characteristics
-            .map(
-              (characteristic) => CharacteristicTile(
-            characteristic: characteristic,
-            onReadPressed: () async {
-              await _readGloveMovements(characteristic);
-            },
-            onWritePressed: () async {
-              await characteristic.write(utf8.encode("on write characteristic"), withoutResponse: true);
-              await characteristic.read();
-            },
-            onNotificationPressed: () async {
-              await characteristic.setNotifyValue(!characteristic.isNotifying);
-              await characteristic.read();
-            },
-            descriptorTiles: characteristic.descriptors
+            service: bleService,
+            characteristicTiles: bleService.characteristics
                 .map(
-                  (descriptor) => DescriptorTile(
-                descriptor: descriptor,
-                onReadPressed: () => descriptor.read(),
-                onWritePressed: () => descriptor.write(utf8.encode("on write descriptor")),
-              ),
-            )
+                  (characteristic) => CharacteristicTile(
+                    characteristic: characteristic,
+                    onReadPressed: () async {
+                      await _readGloveMovements(characteristic);
+                    },
+                    onWritePressed: () async {
+                      await showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                                title: Text("What do you want to do?"),
+                                content: Text(
+                                    "Do you want to start or to stop the measurements collection?"),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () => writeToCharacteristic(
+                                          characteristic, "start"),
+                                      child: const Text("Start")),
+                                  TextButton(
+                                      onPressed: () => writeToCharacteristic(
+                                          characteristic, "stop"),
+                                      child: const Text("Stop"))
+                                ],
+                              ));
+                    },
+                    onNotificationPressed: () async {
+                      await characteristic
+                          .setNotifyValue(!characteristic.isNotifying);
+                      await characteristic.read();
+                    },
+                    descriptorTiles: characteristic.descriptors
+                        .map(
+                          (descriptor) => DescriptorTile(
+                            descriptor: descriptor,
+                            onReadPressed: () => descriptor.read(),
+                            onWritePressed: () => descriptor
+                                .write(utf8.encode("on write descriptor")),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                )
                 .toList(),
           ),
         )
-            .toList(),
-      ),
-    )
         .toList();
+  }
+
+  Future<void> writeToCharacteristic(
+      BluetoothCharacteristic characteristic, String message) async {
+    await characteristic.write(utf8.encode(message), withoutResponse: true);
   }
 
   @override
@@ -178,7 +204,4 @@ class _DeviceScreenState extends State<DeviceScreen> {
       ),
     );
   }
-
-
 }
-
