@@ -1,7 +1,7 @@
+
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/screens/files/file_content.dart';
 import 'package:lsa_gloves/widgets/data_collection_page.dart';
-import 'package:lsa_gloves/widgets/navigation_drawer.dart';
 
 void main() {
   runApp(MyApp());

@@ -12,8 +12,10 @@ class DataCollectionPage extends StatefulWidget {
 }
 
 class _DataCollectionPageState extends State<DataCollectionPage> {
-  String selectedCategory = "Números";
-  String selectedGesture = "0";
+  static final List<String> categories = getCategoryList();
+  late String selectedCategory = categories[0];
+  late List<String> gestures = getGestureList(selectedCategory);
+  late String selectedGesture = gestures[0];
 
   @override
   Widget build(BuildContext context) {
@@ -36,19 +38,14 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
               ),
             ),
             SizedBox(height: 8),
-            DropdownButton(
-                isExpanded: true,
-                value: selectedCategory,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedCategory = newValue!;
-                  });
-                },
-                items: <String>["Números"]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                      value: value, child: Text(value));
-                }).toList()),
+            buildDropdownButton(categories, selectedCategory,
+                (String? newValue) {
+              setState(() {
+                selectedCategory = newValue!;
+                gestures = getGestureList(selectedCategory);
+                selectedGesture = gestures[0];
+              });
+            }),
             SizedBox(height: 24),
             Container(
               width: double.infinity,
@@ -58,29 +55,11 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
               ),
             ),
             SizedBox(height: 8),
-            DropdownButton(
-                isExpanded: true,
-                value: selectedGesture,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedGesture = newValue!;
-                  });
-                },
-                items: <String>[
-                  "0",
-                  "1",
-                  "2",
-                  "3",
-                  "4",
-                  "5",
-                  "6",
-                  "7",
-                  "8",
-                  "9"
-                ].map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                      value: value, child: Text(value));
-                }).toList()),
+            buildDropdownButton(gestures, selectedGesture, (String? newValue) {
+              setState(() {
+                this.selectedGesture = newValue!;
+              });
+            }),
             SizedBox(height: 24),
             Container(
               width: double.infinity,
@@ -105,7 +84,7 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
               children: <Widget>[
                 CircularPercentIndicator(
                     radius: 250,
-                    lineWidth:16,
+                    lineWidth: 16,
                     percent: 0.2,
                     animation: true,
                     circularStrokeCap: CircularStrokeCap.round,
@@ -132,5 +111,33 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
         ),
       )),
     );
+  }
+
+  DropdownButton<String> buildDropdownButton(List<String> values,
+      String selectedValue, Function(String?)? onSelected) {
+    return DropdownButton(
+        isExpanded: true,
+        value: selectedValue,
+        onChanged: onSelected,
+        items: values.map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(value: value, child: Text(value));
+        }).toList());
+  }
+
+  static List<String> getCategoryList() {
+    return <String>["Números", "Letras", "Saludo"];
+  }
+
+  static List<String> getGestureList(String category) {
+    if (category == "Números") {
+      return <String>["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    }
+    if (category == "Letras") {
+      return <String>["a", "b", "c"];
+    }
+    if (category == "Saludo") {
+      return <String>["Hola", "¿Cómo estás?", "Adiós"];
+    }
+    return [];
   }
 }
