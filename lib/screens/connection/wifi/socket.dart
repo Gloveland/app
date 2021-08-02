@@ -10,12 +10,15 @@ import 'package:lsa_gloves/screens/files/storage.dart';
 import 'package:lsa_gloves/widgets/Dialog.dart';
 
 
+const String IP = '192.168.1.9'; //10.0.1.70';
+
+
 /// Show a connection spinning or a page to record movements
 class WifiPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Socket>(
-        future: Socket.connect('192.168.1.9', 8080, timeout: Duration(seconds: 5)),
+        future: Socket.connect(IP, 8080, timeout: Duration(seconds: 5)),
         builder: (context, socket) {
           if (socket.hasData) {
             return MovementRecorderWidget(clientSocket: socket.requireData);
@@ -53,14 +56,22 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
   final Stream<Uint8List> _clientSocketBroadcast;
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   TextEditingController _fileNameFieldController = TextEditingController();
-  String fileNameUserInputValue;
-  
-  
-  _MovementRecorderWidget(this.clientSocket, this._isRecording)
-      : fileNameUserInputValue = '', _clientSocketBroadcast = clientSocket.asBroadcastStream();
+  String _fileNameUserInputValue;
+  StreamController<Movement> _streamController;
+  List<Movement> _items;
 
-  StreamController<Movement> _streamController =  new StreamController.broadcast();
-  List<Movement> items = [];
+
+  _MovementRecorderWidget(this.clientSocket, this._isRecording):
+        _fileNameUserInputValue = '',
+        _clientSocketBroadcast = clientSocket.asBroadcastStream(),
+        _streamController =  new StreamController.broadcast(),
+        _items = [] {
+    _streamController.close();
+    this.receivedMessagesFromConnection();
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -81,10 +92,10 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     print('streamController');
     _streamController =  new StreamController.broadcast();
     _streamController.stream.listen((p) => {
-      setState(() => items.add(p))
+      setState(() => _items.add(p))
     });
     print('load msg from connection into item list');
-    receivedMessagesFromConnection(_streamController);
+
   }
 
 
@@ -94,35 +105,43 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     setState(() {
       _isRecording = false;
     });
-    showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Guardar los movimientos?'),
-        content: TextField(
-          onChanged: (value) {
-            setState(() {
-              fileNameUserInputValue = value;
-            });
+    if(_items.isNotEmpty) {
+      showDialog<String>(
+        context: context,
+        builder: (BuildContext context) =>
+            AlertDialog(
+              title: const Text('Guardar los movimientos?'),
+              content: TextField(
+                onChanged: (value) {
+                  setState(() {
+                    _fileNameUserInputValue = value;
+                  });
+                },
+                controller: _fileNameFieldController,
+                decoration: InputDecoration(hintText: "Nombre del archivo"),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'Descartar');
+                    setState(() {
+                      this._items = [];
+                    });
+                    },
+                  child: const Text('Descartar'),
 
-          },
-          controller: _fileNameFieldController,
-          decoration: InputDecoration(hintText: "Nombre del archivo"),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'Descartar'),
-            child: const Text('Descartar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, 'Guardar');
-              saveMessagesInFile(fileNameUserInputValue, this.items);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'Guardar');
+                    saveMessagesInFile(_fileNameUserInputValue, this._items);
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            ),
+      );
+    }
   }
 
 
@@ -130,16 +149,16 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     return Center(
         child: ListView.builder(
             itemBuilder: (BuildContext context, int index) => _getListElement(index),
-            itemCount: items.length
+            itemCount: _items.length
         ));
   }
 
   Widget _getListElement(int index) {
-    if (index >= items.length) {
+    if (index >= _items.length) {
       return Container();
     }
     return Container(
-      child: Text(items[index].toJson().toString()),
+      child: Text(_items[index].toJson().toString()),
     );
   }
 
@@ -160,7 +179,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     }
   }
 
-  receivedMessagesFromConnection(StreamController<Movement> sc) async {
+   receivedMessagesFromConnection() async {
     var socketSubscription = _clientSocketBroadcast.listen(null);
 
     socketSubscription.onError((error) {
@@ -184,18 +203,17 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
           .toList();
       print('server : $list');
       for (int i = 0; i < list.length; i++) {
-        if(sc.isClosed) {
-          print("stream controller is close");
-          socketSubscription.cancel();
-          return;
+        if(this._streamController.isClosed) {
+          print("skip: stream controller is close");
         } else {
           try{
             String jsonString = list[i];
             var pkg = Movement.fromJson(jsonDecode(jsonString));
             print('map to -> ${pkg.toJson().toString()}');
-            sc.add(pkg);
+            this._streamController.add(pkg);
           }catch(e){
             print('cant parse : ${list[i]}');
+            print('error : ${e.toString()}');
           }
         }
       }
@@ -216,7 +234,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
       measurementFile.add(movements[i]);
     }
     await measurementFile.save();
-    this.items = [];
+    this._items = [];
     //close pop up loading
     Navigator.of(_keyLoader.currentContext!,rootNavigator: true).pop();
   }
