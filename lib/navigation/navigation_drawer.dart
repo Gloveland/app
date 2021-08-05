@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:lsa_gloves/screens/connection/ble/find_connection.dart';
-import 'package:lsa_gloves/screens/connection/wifi/socket.dart';
-import 'package:lsa_gloves/screens/files/file_list.dart';
+import 'package:lsa_gloves/pages/devices_connection_page.dart';
+import 'package:lsa_gloves/connection/wifi/socket.dart';
+import 'package:lsa_gloves/pages/file_manager_page.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);

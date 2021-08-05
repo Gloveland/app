@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lsa_gloves/screens/files/storage.dart';
+import 'package:lsa_gloves/datacollection/storage.dart';
 import 'package:path/path.dart';
 
 class FileContentPage extends StatelessWidget {

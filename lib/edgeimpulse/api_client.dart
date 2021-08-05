@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async' show Future;
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:lsa_gloves/screens/files/storage.dart';
+import 'package:lsa_gloves/datacollection/storage.dart';
 
 void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async {
 

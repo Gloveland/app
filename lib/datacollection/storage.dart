@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:lsa_gloves/model/movement.dart';
-import 'package:lsa_gloves/screens/edgeimpulse/api_client.dart';
+import 'package:lsa_gloves/edgeimpulse/api_client.dart';
 import 'package:path_provider/path_provider.dart';
 
 class GloveEventsStorage {
@@ -29,7 +29,7 @@ class GloveEventsStorage {
         .asyncMap((f) async => DeviceMeasurementsFile.fromFileSystem(f as File, await f.lastModified()))
         .listen((measurementsFile) => fileList.add(measurementsFile),
         onDone:  () => completer.complete(fileList),
-        onError: (error) => print("error getting files: "+ error),
+        onError: (error) => print("error getting datacollection: "+ error),
     );
     return completer.future;
   }

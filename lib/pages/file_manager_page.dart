@@ -2,10 +2,10 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:lsa_gloves/screens/files/file_content.dart';
+import 'package:lsa_gloves/datacollection/file_content.dart';
 import 'package:path/path.dart';
 import 'package:flutter/material.dart';
-import 'package:lsa_gloves/screens/files/storage.dart';
+import 'package:lsa_gloves/datacollection/storage.dart';
 
 
 class OldFileManagerPage extends StatelessWidget {
