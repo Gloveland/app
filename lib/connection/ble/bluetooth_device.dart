@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:lsa_gloves/screens/files/storage.dart';
-import 'package:lsa_gloves/screens/connection/ble/bluetooth_widgets.dart';
+import 'package:lsa_gloves/datacollection/storage.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_widgets.dart';
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);

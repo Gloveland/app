@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/model/movement.dart';
-import 'package:lsa_gloves/screens/files/storage.dart';
+import 'package:lsa_gloves/datacollection/storage.dart';
 import 'package:lsa_gloves/widgets/Dialog.dart';
 
 const String IP = '192.168.1.9'; //10.0.1.70';
