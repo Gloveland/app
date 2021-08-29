@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ class DataCollectionPage extends StatefulWidget {
 }
 
 class _DataCollectionPageState extends State<DataCollectionPage> {
+  static const String TAG = "DataCollectionPageState";
   static final List<String> categories = getCategoryList();
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
@@ -129,12 +131,12 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
           onPressed: () {
             if (devicesSnapshot.data!.isNotEmpty) {
               if (!_recordingStarted) {
-                sendCommandToConnectedDevices(devicesSnapshot, "stop");
+                _sendCommandToConnectedDevices(devicesSnapshot, "stop");
                 setState(() {
                   _buttonIcon = Icons.fiber_manual_record;
                 });
               } else {
-                sendCommandToConnectedDevices(devicesSnapshot, "start");
+                _sendCommandToConnectedDevices(devicesSnapshot, "start");
                 setState(() {
                   _buttonIcon = Icons.stop;
                 });
@@ -157,30 +159,70 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
         ));
   }
 
-  void sendCommandToConnectedDevices(
+  /// Sends the commands specified as a parameter to the connected devices
+  /// through the measurements characteristic.
+  ///
+  /// This method is expected to be used to start and stop the measurement
+  /// readings from the glove.
+  ///
+  /// @param devicesSnapshot: snapshot of the devices currently connected via
+  ///   bluetooth.
+  void _sendCommandToConnectedDevices(
       AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot,
       String command) async {
-    devicesSnapshot.data?.forEach((element) async {
-      List<BluetoothService> services = await element.discoverServices();
-      services.where((service) {
-        print("Service uuid : " + service.uuid.toString());
-        return service.uuid.toString() ==
-            BluetoothSpecification.MEASUREMENTS_SERVICE_UUID;
-      }).forEach((element) async {
-        BluetoothCharacteristic measurementsCharacteristic =
-            element.characteristics.where((characteristic) {
-          print("Characteristic uuid: " + characteristic.uuid.toString());
-          return characteristic.uuid.toString() ==
-              BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID;
-        }).first;
-        try {
-          await measurementsCharacteristic.write(utf8.encode(command),
-              withoutResponse: true);
-        } catch (err) {
-          print("Characteristic write failed: " + err.toString());
-        }
-      });
+    List<BluetoothCharacteristic> characteristics =
+        await _getMeasurementCharacteristics(devicesSnapshot);
+    characteristics.forEach((characteristic) async {
+      try {
+        await characteristic.write(utf8.encode(command), withoutResponse: true);
+      } catch (err) {
+        developer.log("Characteristic write failed: " + err.toString(),
+            name: TAG);
+      }
     });
+  }
+
+  /// Retrieves the measurement characteristics of all the connected devices.
+  ///
+  /// By retrieving all the measurement characteristics of the connected devices
+  /// (expected to be one characteristic each) we can then broadcast a command
+  /// to all of them.
+  ///
+  /// @param devicesSnapshot: snapshot of the devices currently connected via
+  ///   bluetooth.
+  Future<List<BluetoothCharacteristic>> _getMeasurementCharacteristics(
+      AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot) async {
+    List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
+    for (var device in devicesSnapshot.data!) {
+      BluetoothService service = await _getMeasurementService(device);
+      BluetoothCharacteristic measurementCharacteristic =
+          _getMeasurementCharacteristic(service);
+      characteristics.add(measurementCharacteristic);
+    }
+    developer.log("Measurement characteristics: $characteristics", name: TAG);
+    return characteristics;
+  }
+
+  /// Retrieves the measurement characteristic from the {@code bluetoothService}
+  /// specified.
+  BluetoothCharacteristic _getMeasurementCharacteristic(
+      BluetoothService bluetoothService) {
+    return bluetoothService.characteristics
+        .where((characteristic) =>
+            characteristic.uuid.toString() ==
+            BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID)
+        .first;
+  }
+
+  /// Retrieves the measurement service from the specified device.
+  Future<BluetoothService> _getMeasurementService(
+      BluetoothDevice bluetoothDevice) async {
+    List<BluetoothService> services = await bluetoothDevice.discoverServices();
+    return services.where((service) {
+      developer.log("Service uuid: ${service.uuid.toString()}", name: TAG);
+      return service.uuid.toString() ==
+          BluetoothSpecification.MEASUREMENTS_SERVICE_UUID;
+    }).first;
   }
 
   DropdownButton<String> buildDropdownButton(List<String> values,
