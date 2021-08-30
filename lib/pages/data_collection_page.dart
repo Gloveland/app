@@ -128,12 +128,12 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
           onPressed: () {
             if (devicesSnapshot.data!.isNotEmpty) {
               if (!_recordingStarted) {
-                BluetoothBackend.sendCommandToConnectedDevices(devicesSnapshot, "stop");
+                BluetoothBackend.sendCommandToConnectedDevices("stop");
                 setState(() {
                   _buttonIcon = Icons.fiber_manual_record;
                 });
               } else {
-                BluetoothBackend.sendCommandToConnectedDevices(devicesSnapshot, "start");
+                BluetoothBackend.sendCommandToConnectedDevices("start");
                 setState(() {
                   _buttonIcon = Icons.stop;
                 });

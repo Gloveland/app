@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -21,14 +20,10 @@ class BluetoothBackend {
   ///
   /// This method is expected to be used to start and stop the measurement
   /// readings from the glove.
-  ///
-  /// @param devicesSnapshot: snapshot of the devices currently connected via
-  ///   bluetooth.
-  static void sendCommandToConnectedDevices(
-      AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot,
-      String command) async {
+  static void sendCommandToConnectedDevices(String command) async {
+    List<BluetoothDevice> connectedDevices = await getConnectedDevices();
     List<BluetoothCharacteristic> characteristics =
-    await BluetoothBackend.getMeasurementCharacteristics(devicesSnapshot);
+        await BluetoothBackend.getMeasurementCharacteristics(connectedDevices);
     characteristics.forEach((characteristic) async {
       try {
         await characteristic.write(utf8.encode(command), withoutResponse: true);
@@ -44,16 +39,13 @@ class BluetoothBackend {
   /// By retrieving all the measurement characteristics of the connected devices
   /// (expected to be one characteristic each) we can then broadcast a command
   /// to all of them.
-  ///
-  /// @param devicesSnapshot: snapshot of the devices currently connected via
-  ///   bluetooth.
   static Future<List<BluetoothCharacteristic>> getMeasurementCharacteristics(
-      AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot) async {
+      List<BluetoothDevice> devicesSnapshot) async {
     List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
-    for (var device in devicesSnapshot.data!) {
+    for (var device in devicesSnapshot) {
       BluetoothService service = await getMeasurementService(device);
       BluetoothCharacteristic measurementCharacteristic =
-      getMeasurementCharacteristic(service);
+          getMeasurementCharacteristic(service);
       characteristics.add(measurementCharacteristic);
     }
     developer.log("Measurement characteristics: $characteristics", name: TAG);
@@ -66,8 +58,8 @@ class BluetoothBackend {
       BluetoothService bluetoothService) {
     return bluetoothService.characteristics
         .where((characteristic) =>
-    characteristic.uuid.toString() ==
-        BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID)
+            characteristic.uuid.toString() ==
+            BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID)
         .first;
   }
 
