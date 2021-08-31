@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:ffi';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -29,13 +32,24 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   _readGloveMovements(BluetoothCharacteristic characteristic)  async {
-    var word = 'HOLA';
-    var deviceId = "ac:87:a3:0a:2d:1b";
-    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    for(int i = 0; i < 100; i++) {
-      String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
-      print("READING.... $valueRead");
+    for(int i = 0; i < 5; i++) {
+      var valueRead = await characteristic.read();
+      String stringRead = String.fromCharCodes(valueRead);
+      print("READING.... $stringRead");
+
+      Uint8List bytesRead =  new Uint8List.fromList(valueRead);
+      List<double> floatList = bytesRead.buffer.asFloat32List();
+      print("READING.... $floatList");
     }
+  }
+  List<int> _getRandomBytes() {
+    final math = Random();
+    return [
+      math.nextInt(255),
+      math.nextInt(255),
+      math.nextInt(255),
+      math.nextInt(255)
+    ];
   }
 
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
@@ -47,17 +61,15 @@ class _DeviceScreenState extends State<DeviceScreen> {
             .map(
               (characteristic) => CharacteristicTile(
             characteristic: characteristic,
-            onReadPressed: () async {
-              await _readGloveMovements(characteristic);
-            },
-            onWritePressed: () async {
-              await characteristic.write(utf8.encode("on write characteristic"), withoutResponse: true);
-              await characteristic.read();
-            },
-            onNotificationPressed: () async {
-              await characteristic.setNotifyValue(!characteristic.isNotifying);
-              await characteristic.read();
-            },
+                onReadPressed: () => characteristic.read(),
+                onWritePressed: () async {
+                  await characteristic.write(_getRandomBytes(), withoutResponse: true);
+                  await characteristic.read();
+                },
+                onNotificationPressed: () async {
+                  await characteristic.setNotifyValue(!characteristic.isNotifying);
+                  await characteristic.read();
+                },
             descriptorTiles: characteristic.descriptors
                 .map(
                   (descriptor) => DescriptorTile(

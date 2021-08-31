@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
@@ -43,6 +45,13 @@ class CharacteristicTile extends StatelessWidget {
   final VoidCallback? onWritePressed;
   final VoidCallback? onNotificationPressed;
 
+  _getFloats(List<int> valueRead){
+    Uint8List bytesRead =  new Uint8List.fromList(valueRead);
+    List<double> floatList = bytesRead.buffer.asFloat32List();
+    print("READING.... $floatList");
+    return floatList;
+  }
+
   const CharacteristicTile(
       {Key? key,
         required this.characteristic,
@@ -72,7 +81,7 @@ class CharacteristicTile extends StatelessWidget {
                         color: Theme.of(context).textTheme.caption?.color))
               ],
             ),
-            subtitle: Text(new String.fromCharCodes(value!)),
+            subtitle: Text(_getFloats(value!).toString()),//Text(new String.fromCharCodes(value!)),
             contentPadding: EdgeInsets.all(0.0),
           ),
           trailing: Row(

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import '../connection/ble/bluetooth_device.dart';
 
 class GloveConnectionPage extends StatelessWidget {
@@ -72,28 +71,27 @@ class FindDevicesScreen extends StatelessWidget {
                     .asyncMap((_) => FlutterBlue.instance.connectedDevices),
                 initialData: [],
                 builder: (c, snapshot) => Column(
-                  children: snapshot.data!
-                      .map((d) => ListTile(
-                            title: Text(d.name),
-                            subtitle: Text(d.id.toString()),
-                            trailing: StreamBuilder<BluetoothDeviceState>(
-                              stream: d.state,
-                              initialData: BluetoothDeviceState.disconnected,
-                              builder: (c, snapshot) {
-                                if (snapshot.data ==
-                                    BluetoothDeviceState.connected) {
-                                  return RaisedButton(
-                                    child: Text('OPEN'),
-                                    onPressed: () => Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                DeviceScreen(device: d))),
-                                  );
-                                }
-                                return Text(snapshot.data.toString());
-                              },
-                            ),
-                          ))
+                  children: snapshot.data!.map((d) => ListTile(
+                    title: Text(d.name),
+                    subtitle: Text(d.id.toString()),
+                    trailing: StreamBuilder<BluetoothDeviceState>(
+                      stream: d.state,
+                      initialData: BluetoothDeviceState.disconnected,
+                      builder: (c, snapshot) {
+                        if (snapshot.data ==
+                            BluetoothDeviceState.connected) {
+                          return RaisedButton(
+                            child: Text('OPEN'),
+                            onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        DeviceScreen(device: d))),
+                          );
+                        }
+                        return Text(snapshot.data.toString());
+                      },
+                    ),
+                  ))
                       .toList(),
                 ),
               ),
@@ -101,17 +99,17 @@ class FindDevicesScreen extends StatelessWidget {
                 stream: FlutterBlue.instance.scanResults,
                 initialData: [],
                 builder: (c, snapshot) => Column(
-                  children: filterGloveDevices(snapshot)
+                  children: snapshot.data!
                       .map(
                         (r) => ScanResultTile(
-                          result: r,
-                          onTap: () => Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (context) {
-                            r.device.connect();
-                            return DeviceScreen(device: r.device);
-                          })),
-                        ),
-                      )
+                      result: r,
+                      onTap: () => Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (context) {
+                        r.device.connect();
+                        return DeviceScreen(device: r.device);
+                      })),
+                    ),
+                  )
                       .toList(),
                 ),
               ),
@@ -132,20 +130,11 @@ class FindDevicesScreen extends StatelessWidget {
           } else {
             return FloatingActionButton(
                 child: Icon(Icons.search),
-                onPressed: () => FlutterBlue.instance
-                    .startScan(timeout: Duration(seconds: 4)));
+                onPressed: () => FlutterBlue.instance.startScan(timeout: Duration(seconds: 4)));
           }
         },
       ),
     );
-  }
-
-  List<ScanResult> filterGloveDevices(
-      AsyncSnapshot<List<ScanResult>> snapshot) {
-    return snapshot.data!
-        .where((element) =>
-            element.device.name == BluetoothSpecification.deviceName)
-        .toList();
   }
 }
 
@@ -260,3 +249,4 @@ class ScanResultTile extends StatelessWidget {
     );
   }
 }
+
