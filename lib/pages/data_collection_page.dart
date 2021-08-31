@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
+import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
 import '../navigation/navigation_drawer.dart';
@@ -19,6 +20,12 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
+  late MeasurementsCollector _measurementsCollector;
+
+  @override
+  void initState() {
+    _measurementsCollector = MeasurementsCollector();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,13 +134,15 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
           ),
           onPressed: () {
             if (devicesSnapshot.data!.isNotEmpty) {
-              if (!_recordingStarted) {
+              if (_recordingStarted) {
                 BluetoothBackend.sendCommandToConnectedDevices("stop");
+                _measurementsCollector.stopReadings();
                 setState(() {
                   _buttonIcon = Icons.fiber_manual_record;
                 });
               } else {
                 BluetoothBackend.sendCommandToConnectedDevices("start");
+                _measurementsCollector.readMeasurements();
                 setState(() {
                   _buttonIcon = Icons.stop;
                 });
