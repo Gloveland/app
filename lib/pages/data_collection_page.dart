@@ -1,9 +1,9 @@
-import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
+import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
 import '../navigation/navigation_drawer.dart';
@@ -20,6 +20,12 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
+  late MeasurementsCollector _measurementsCollector;
+
+  @override
+  void initState() {
+    _measurementsCollector = MeasurementsCollector();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +39,7 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
         padding: EdgeInsets.all(16.0),
         child: StreamBuilder<List<BluetoothDevice>>(
             stream: Stream.periodic(Duration(seconds: 2))
-                .asyncMap((_) => FlutterBlue.instance.connectedDevices),
+                .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
             initialData: [],
             builder: (c, devicesSnapshot) => Column(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -128,13 +134,15 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
           ),
           onPressed: () {
             if (devicesSnapshot.data!.isNotEmpty) {
-              if (!_recordingStarted) {
-                sendCommandToConnectedDevices(devicesSnapshot, "stop");
+              if (_recordingStarted) {
+                BluetoothBackend.sendCommandToConnectedDevices("stop");
+                _measurementsCollector.stopReadings();
                 setState(() {
                   _buttonIcon = Icons.fiber_manual_record;
                 });
               } else {
-                sendCommandToConnectedDevices(devicesSnapshot, "start");
+                BluetoothBackend.sendCommandToConnectedDevices("start");
+                _measurementsCollector.readMeasurements();
                 setState(() {
                   _buttonIcon = Icons.stop;
                 });
@@ -155,32 +163,6 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
             }
           },
         ));
-  }
-
-  void sendCommandToConnectedDevices(
-      AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot,
-      String command) async {
-    devicesSnapshot.data?.forEach((element) async {
-      List<BluetoothService> services = await element.discoverServices();
-      services.where((service) {
-        print("Service uuid : " + service.uuid.toString());
-        return service.uuid.toString() ==
-            BluetoothSpecification.MEASUREMENTS_SERVICE_UUID;
-      }).forEach((element) async {
-        BluetoothCharacteristic measurementsCharacteristic =
-            element.characteristics.where((characteristic) {
-          print("Characteristic uuid: " + characteristic.uuid.toString());
-          return characteristic.uuid.toString() ==
-              BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID;
-        }).first;
-        try {
-          await measurementsCharacteristic.write(utf8.encode(command),
-              withoutResponse: true);
-        } catch (err) {
-          print("Characteristic write failed: " + err.toString());
-        }
-      });
-    });
   }
 
   DropdownButton<String> buildDropdownButton(List<String> values,
