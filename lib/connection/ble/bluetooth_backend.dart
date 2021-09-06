@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'dart:developer' as developer;
 
@@ -42,10 +43,12 @@ class BluetoothBackend {
       List<BluetoothDevice> devicesSnapshot) async {
     List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
     for (var device in devicesSnapshot) {
-      BluetoothService service = await getMeasurementService(device);
-      BluetoothCharacteristic measurementCharacteristic =
-          getMeasurementCharacteristic(service);
-      characteristics.add(measurementCharacteristic);
+      BluetoothService? service = await getMeasurementService(device);
+      if (service != null) {
+        BluetoothCharacteristic measurementCharacteristic =
+        getMeasurementCharacteristic(service);
+        characteristics.add(measurementCharacteristic);
+      }
     }
     developer.log("Measurement characteristics: $characteristics", name: TAG);
     return characteristics;
@@ -63,13 +66,13 @@ class BluetoothBackend {
   }
 
   /// Retrieves the measurement service from the specified device.
-  static Future<BluetoothService> getMeasurementService(
+  static Future<BluetoothService?> getMeasurementService(
       BluetoothDevice bluetoothDevice) async {
     List<BluetoothService> services = await bluetoothDevice.discoverServices();
-    return services.where((service) {
+    return services.firstWhereOrNull((service) {
       developer.log("Service uuid: ${service.uuid.toString()}", name: TAG);
       return service.uuid.toString() ==
           BluetoothSpecification.MEASUREMENTS_SERVICE_UUID;
-    }).first;
+    });
   }
 }
