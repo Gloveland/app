@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
@@ -5,6 +7,9 @@ import 'package:flutter_blue/flutter_blue.dart';
 class ServiceTile extends StatelessWidget {
   final BluetoothService service;
   final List<CharacteristicTile> characteristicTiles;
+
+
+
 
   const ServiceTile(
       {Key? key, required this.service, required this.characteristicTiles})
@@ -52,6 +57,13 @@ class CharacteristicTile extends StatelessWidget {
         this.onNotificationPressed})
       : super(key: key);
 
+  _readGloveMeasurements(List<int> valueRead){
+    Uint8List bytesRead =  new Uint8List.fromList(valueRead);
+    List<double> floatList = bytesRead.buffer.asFloat32List();
+    print("READING.... $floatList");
+    return floatList;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<int>>(
@@ -72,7 +84,7 @@ class CharacteristicTile extends StatelessWidget {
                         color: Theme.of(context).textTheme.caption?.color))
               ],
             ),
-            subtitle: Text(new String.fromCharCodes(value!)),
+            subtitle: Text(_readGloveMeasurements(value!).toString()),
             contentPadding: EdgeInsets.all(0.0),
           ),
           trailing: Row(
