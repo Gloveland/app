@@ -17,6 +17,27 @@ samples, guidance on mobile development, and a full API reference.
 
 esta rama funciona con este codigo de arduino
 
+/*
+    Video: https://www.youtube.com/watch?v=oCMOYS71NIU
+    Based on Neil Kolban example for IDF: https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/tests/BLE%20Tests/SampleNotify.cpp
+    Ported to Arduino ESP32 by Evandro Copercini
+
+   Create a BLE server that, once we receive a connection, will send periodic notifications.
+   The service advertises itself as: 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
+   Has a characteristic of: 6E400002-B5A3-F393-E0A9-E50E24DCCA9E - used for receiving data with "WRITE"
+   Has a characteristic of: 6E400003-B5A3-F393-E0A9-E50E24DCCA9E - used to send data with  "NOTIFY"
+
+   The design of creating the BLE server is:
+   1. Create a BLE Server
+   2. Create a BLE Service
+   3. Create a BLE Characteristic on the Service
+   4. Create a BLE Descriptor on the characteristic
+   5. Start the service.
+   6. Start advertising.
+
+   In this example rxValue is the data received (only accessible inside that function).
+   And txValue is the data to be sent, in this example just a byte incremented every second.
+*/
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
@@ -27,8 +48,11 @@ BLECharacteristic * pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 float m[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-uint8_t glove_measurement_buffer[sizeof(float)*45];
+char glove_measurement_buffer[256];
 uint8_t data[13] = "Hola soy jaz";
+int counter = 0;
+int num = 0;
+int data_size;
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -107,26 +131,31 @@ void setup() {
 
 void loop() {
 
+
     if (deviceConnected) {
 
-        Serial.print("sending message: [");
+        data_size =  toString(glove_measurement_buffer, 'P');
+        pTxCharacteristic->setValue(glove_measurement_buffer);
+        pTxCharacteristic->notify();
 
-        uint8_t * pinky_buffer = glove_measurement_buffer;
-        toByteArray(pinky_buffer, 0);
+        data_size =  toString(glove_measurement_buffer, 'R');
+        pTxCharacteristic->setValue(glove_measurement_buffer);
+        pTxCharacteristic->notify();
 
-        uint8_t * ring_buffer = glove_measurement_buffer + 9*(sizeof(float));
-        toByteArray(ring_buffer, 1);
+        data_size =  toString(glove_measurement_buffer, 'M');
+        pTxCharacteristic->setValue(glove_measurement_buffer);
+        pTxCharacteristic->notify();
 
-        uint8_t * middle_buffer = glove_measurement_buffer + 18*(sizeof(float));
-        toByteArray(middle_buffer, 2);
+        data_size =  toString(glove_measurement_buffer, 'I');
+        pTxCharacteristic->setValue(glove_measurement_buffer);
+        pTxCharacteristic->notify();
 
-        uint8_t * index_buffer = glove_measurement_buffer + 27*(sizeof(float));
-        toByteArray(index_buffer, 3);
+        data_size = toString(glove_measurement_buffer, 'T');
+        pTxCharacteristic->setValue(glove_measurement_buffer);
+        pTxCharacteristic->notify();
 
-        uint8_t * thumb_buffer = glove_measurement_buffer + 36*(sizeof(float));
-        toByteArray(thumb_buffer, 4);
-
-        pTxCharacteristic->setValue(glove_measurement_buffer, 45*sizeof(float));
+        char delimiter[] = "/n";
+        pTxCharacteristic->setValue(delimiter);
         pTxCharacteristic->notify();
 
         delay(1000);
@@ -147,41 +176,29 @@ void loop() {
 }
 
 
-void toByteArray(uint8_t buffer[], int num){
-    memcpy(buffer, &m[0], sizeof(float));
+int toString(char buffer[],char finger){
     m[0] = num;
-    Serial.print(m[0]);Serial.print(",");
-
-    memcpy(buffer + 1*sizeof(float), &m[1], sizeof(float));
     m[1] = num + 0.1;
-    Serial.print(m[1]);Serial.print(",");
-
-    memcpy(buffer + 2*sizeof(float), &m[2], sizeof(float));
     m[2] = num + 0.2;
-    Serial.print(m[2]);Serial.print(",");
-
-    memcpy(buffer + 3*sizeof(float), &m[3], sizeof(float));
     m[3] = num + 0.3;
-    Serial.print(m[3]);Serial.print(",");
-
-    memcpy(buffer + 4*sizeof(float), &m[4], sizeof(float));
     m[4] = num + 0.4;
-    Serial.print(m[4]);Serial.print(",");
-
-    memcpy(buffer + 5*sizeof(float), &m[5], sizeof(float));
     m[5] = num + 0.5;
-    Serial.print(m[5]);Serial.print(",");
-
-    memcpy(buffer + 6*sizeof(float), &m[6], sizeof(float));
     m[6] = num + 0.6;
-    Serial.print(m[6]);Serial.print(",");
-
-    memcpy(buffer + 7*sizeof(float), &m[7], sizeof(float));
     m[7] = num + 0.7;
-    Serial.print(m[7]);Serial.print(",");
+    m[8] = -num + 0.8;
+    num = num + 1;
 
-    memcpy(buffer + 8*sizeof(float), &m[8], sizeof(float));
-    m[8] = num + 0.8;
-    Serial.print(m[8]);Serial.println("]");
-
+    /*
+    const int buffer_size = 1 + snprintf(NULL, 0, "%c,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+    finger,m[0], m[1], m[2],m[3], m[3], m[5],m[6],m[7],m[8]);
+    Serial.print("  buffer_size: ");Serial.print(buffer_size);
+    assert(buffer_size > 0);
+    char buf[buffer_size];
+    */
+    int size_written =  sprintf(buffer, "%d,%c,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f",
+    counter, finger,m[0], m[1], m[2],m[3], m[3], m[5],m[6],m[7],m[8]);
+    counter++;
+    assert(size_written < 256);
+    Serial.print("  size_written: ");Serial.print(size_written);
+    Serial.println("  sending value via bluetooth: "+ String(buffer));
 }
