@@ -58,10 +58,8 @@ class CharacteristicTile extends StatelessWidget {
       : super(key: key);
 
   _readGloveMeasurements(List<int> valueRead){
-    Uint8List bytesRead =  new Uint8List.fromList(valueRead);
-    List<double> floatList = bytesRead.buffer.asFloat32List();
-    print("READING.... $floatList");
-    return floatList;
+    String stringRead =  new String.fromCharCodes(valueRead);
+    print("READING.... $stringRead");
   }
 
   @override

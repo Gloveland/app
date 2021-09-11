@@ -19,11 +19,11 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
-  late MeasurementsCollector _measurementsCollector;
+  //late MeasurementsCollector _measurementsCollector;
 
   @override
   void initState() {
-    _measurementsCollector = MeasurementsCollector();
+    //_measurementsCollector = MeasurementsCollector();
   }
 
   @override
@@ -132,7 +132,7 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
             size: 64,
           ),
           onPressed: () {
-            if (devicesSnapshot.data!.isNotEmpty) {
+            /*if (devicesSnapshot.data!.isNotEmpty) {
               if (_recordingStarted) {
                 //BluetoothBackend.sendCommandToConnectedDevices("stop");
                 _measurementsCollector.stopReadings();
@@ -159,7 +159,10 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text("¡Los guantes no están conectados!"),
                   duration: Duration(seconds: 2)));
-            }
+            }*/
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text("bla bla"),
+                duration: Duration(seconds: 2)));
           },
         ));
   }

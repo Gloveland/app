@@ -15,28 +15,15 @@ class DeviceScreen extends StatefulWidget {
 class _DeviceScreenState extends State<DeviceScreen> {
   _DeviceScreenState(this.device);
   BluetoothDevice device;
-  int _ack = 0;
 
   VoidCallback? connectCallBack() {
     device.connect();
-    setState(() {
-      _ack = 0;
-    });
   }
 
   VoidCallback? disconnectCallBack() {
     device.disconnect();
   }
 
-  _readGloveMovements(BluetoothCharacteristic characteristic)  async {
-    var word = 'HOLA';
-    var deviceId = "ac:87:a3:0a:2d:1b";
-    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    for(int i = 0; i < 100; i++) {
-      String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
-      print("READING.... $valueRead");
-    }
-  }
 
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
     return services
@@ -48,7 +35,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               (characteristic) => CharacteristicTile(
             characteristic: characteristic,
             onReadPressed: () async {
-              await _readGloveMovements(characteristic);
+              await characteristic.read();
             },
             onWritePressed: () async {
               await characteristic.write(utf8.encode("on write characteristic"), withoutResponse: true);

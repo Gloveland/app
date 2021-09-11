@@ -1,3 +1,4 @@
+/*
 
 import 'package:flutter_blue/flutter_blue.dart';
 
@@ -15,3 +16,4 @@ class BluetoothSpecification {
   static const String MEASUREMENTS_CHARACTERISTIC_UUID = "47e62e53-e278-494d-a3f8-ac00973ae0af";
 
 }
+*/
