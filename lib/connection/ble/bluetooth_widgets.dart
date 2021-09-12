@@ -1,15 +1,12 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
-
 class ServiceTile extends StatelessWidget {
   final BluetoothService service;
   final List<CharacteristicTile> characteristicTiles;
-
-
-
 
   const ServiceTile(
       {Key? key, required this.service, required this.characteristicTiles})
@@ -24,7 +21,7 @@ class ServiceTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text('Service'),
-            Text('0x${service.uuid.toString().toUpperCase().substring(4, 8)}',
+            Text('${service.uuid.toString()}',
                 style: Theme.of(context).textTheme.body1?.copyWith(
                     color: Theme.of(context).textTheme.caption?.color))
           ],
@@ -34,8 +31,7 @@ class ServiceTile extends StatelessWidget {
     } else {
       return ListTile(
         title: Text('Service'),
-        subtitle:
-        Text('0x${service.uuid.toString().toUpperCase().substring(4, 8)}'),
+        subtitle: Text('${service.uuid.toString()}'),
       );
     }
   }
@@ -43,22 +39,18 @@ class ServiceTile extends StatelessWidget {
 
 class CharacteristicTile extends StatelessWidget {
   final BluetoothCharacteristic characteristic;
-  final List<DescriptorTile> descriptorTiles;
-  final VoidCallback? onReadPressed;
-  final VoidCallback? onWritePressed;
-  final VoidCallback? onNotificationPressed;
+  late final List<DescriptorTile> descriptorTiles;
 
-  const CharacteristicTile(
-      {Key? key,
-        required this.characteristic,
-        required this.descriptorTiles,
-        this.onReadPressed,
-        this.onWritePressed,
-        this.onNotificationPressed})
-      : super(key: key);
+  CharacteristicTile({Key? key, required this.characteristic}) : super(key: key) {
+    this.descriptorTiles = characteristic.descriptors.map(
+          (descriptor) => DescriptorTile(
+        descriptor: descriptor
+      ),
+    ).toList();
+  }
 
-  _readGloveMeasurements(List<int> valueRead){
-    String stringRead =  new String.fromCharCodes(valueRead);
+  _readGloveMeasurements(List<int> valueRead) {
+    String stringRead = new String.fromCharCodes(valueRead);
     print("READING.... $stringRead");
   }
 
@@ -76,8 +68,7 @@ class CharacteristicTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text('Characteristic'),
-                Text(
-                    '0x${characteristic.uuid.toString().toUpperCase().substring(4, 8)}',
+                Text('${characteristic.uuid.toString()}',
                     style: Theme.of(context).textTheme.body1?.copyWith(
                         color: Theme.of(context).textTheme.caption?.color))
               ],
@@ -93,12 +84,19 @@ class CharacteristicTile extends StatelessWidget {
                   Icons.file_download,
                   color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
                 ),
-                onPressed: onReadPressed,
+                onPressed: () async {
+                  await characteristic.read();
+                },
               ),
               IconButton(
                 icon: Icon(Icons.file_upload,
                     color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
-                onPressed: onWritePressed,
+                onPressed: () async {
+                  await characteristic.write(
+                      utf8.encode("on write characteristic"),
+                      withoutResponse: true);
+                  await characteristic.read();
+                },
               ),
               IconButton(
                 icon: Icon(
@@ -106,7 +104,11 @@ class CharacteristicTile extends StatelessWidget {
                         ? Icons.sync_disabled
                         : Icons.sync,
                     color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
-                onPressed: onNotificationPressed,
+                onPressed: () async {
+                  await characteristic
+                      .setNotifyValue(!characteristic.isNotifying);
+                  await characteristic.read();
+                },
               )
             ],
           ),
@@ -119,14 +121,10 @@ class CharacteristicTile extends StatelessWidget {
 
 class DescriptorTile extends StatelessWidget {
   final BluetoothDescriptor descriptor;
-  final VoidCallback? onReadPressed;
-  final VoidCallback? onWritePressed;
 
   const DescriptorTile(
       {Key? key,
-        required this.descriptor,
-        this.onReadPressed,
-        this.onWritePressed})
+      required this.descriptor})
       : super(key: key);
 
   @override
@@ -157,14 +155,14 @@ class DescriptorTile extends StatelessWidget {
               Icons.file_download,
               color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
             ),
-            onPressed: onReadPressed,
+            onPressed: () => descriptor.read(),
           ),
           IconButton(
             icon: Icon(
               Icons.file_upload,
               color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
             ),
-            onPressed: onWritePressed,
+            onPressed: () => descriptor.write(utf8.encode("on write descriptor"))
           )
         ],
       ),

@@ -105,7 +105,12 @@ class FindDevicesScreen extends StatelessWidget {
                       result: r,
                       onTap: () => Navigator.of(context)
                           .push(MaterialPageRoute(builder: (context) {
-                        r.device.connect();
+                        r.device.connect()
+                            .then((value) => r.device.requestMtu(512))
+                            .then((value) => r.device.discoverServices())
+                            .catchError((error) {
+                              print("error connecting ${error}");
+                            });
                         return DeviceScreen(device: r.device);
                       })),
                     ),
