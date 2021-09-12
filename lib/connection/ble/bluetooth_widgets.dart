@@ -40,14 +40,16 @@ class ServiceTile extends StatelessWidget {
 
 class CharacteristicTile extends StatelessWidget {
   final BluetoothCharacteristic characteristic;
+  final String deviceId;
   late final List<DescriptorTile> descriptorTiles;
+
   StreamController<Movement> _streamController;
   List<Movement> _items;
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
 
 
 
-  CharacteristicTile({Key? key, required this.characteristic}) :
+  CharacteristicTile({Key? key, required this.deviceId, required this.characteristic}) :
         _streamController = new StreamController.broadcast(),
         _items = [],
         super(key: key){
@@ -78,7 +80,7 @@ class CharacteristicTile extends StatelessWidget {
     var eventNum = int.parse(fingerMeasurements.removeAt(0));
     try {
       print('trying to parse');
-      var pkg = Movement.fromFingerMeasurementsList(eventNum, "deviceid", fingerMeasurements);
+      var pkg = Movement.fromFingerMeasurementsList(eventNum, this.deviceId, fingerMeasurements);
       print('map to -> ${pkg.toJson().toString()}');
       this._streamController.add(pkg);
     } catch (e) {

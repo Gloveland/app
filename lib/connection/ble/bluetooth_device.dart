@@ -17,7 +17,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   BluetoothDevice device;
 
 
-  List<Widget> _buildServiceTiles(List<BluetoothService> services) {
+  List<Widget> _buildServiceTiles(String deviceId, List<BluetoothService> services) {
     return services
         .map(
           (bleService) => ServiceTile(
@@ -25,7 +25,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
             characteristicTiles: bleService.characteristics
                 .map(
                   (characteristic) => CharacteristicTile(
+                    deviceId: deviceId,
                     characteristic: characteristic,
+
                   ),
                 )
                 .toList(),
@@ -132,7 +134,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               initialData: [],
               builder: (c, snapshot) {
                 return Column(
-                  children: _buildServiceTiles(snapshot.data!),
+                  children: _buildServiceTiles('${device.id}', snapshot.data!),
                 );
               },
             ),
