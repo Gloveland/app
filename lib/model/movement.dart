@@ -14,6 +14,22 @@ class Movement {
     'event_num': eventNum,
     'hand': hand.toJson(),
   };
+
+  static fromFingerMeasurementsList(int eventNum, String deviceId, List<String> fingerMeasurements) {
+    Map<String, Finger> measurementsMap = new Map();
+
+    for (final item in fingerMeasurements) {
+      var measurementList = item.substring(1).split(',').where((s) => s.isNotEmpty).map((value) => double.parse(value)).toList();
+      if(measurementList.length < 9){
+        throw new Exception("Error: not enough finger measurements!!");
+      }
+      var fingerLetter = item.substring(0, 1);
+      measurementsMap[fingerLetter] = Finger.fromList(measurementList);
+    }
+    Finger thump = measurementsMap["T"] ?? (throw new Exception("Thump measurements not found"));
+    Hand hand = new Hand(thump);
+    return new Movement(deviceId, eventNum, hand);
+  }
 }
 
 
@@ -53,6 +69,11 @@ class Finger {
     'gyro': gyro.toJson(),
     'inclination': inclination.toJson(),
   };
+
+  Finger.fromList(List<double> m):
+        acc = Acceleration(m[0],m[1], m[2]),
+        gyro = Gyro(m[3],m[4], m[5]),
+        inclination = Inclination(m[6],m[7], m[8]);
 
 }
 class Acceleration {

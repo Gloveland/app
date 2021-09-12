@@ -1,13 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/datacollection/storage.dart';
+import 'package:lsa_gloves/model/movement.dart';
 
 class ServiceTile extends StatelessWidget {
   final BluetoothService service;
   final List<CharacteristicTile> characteristicTiles;
-
   const ServiceTile(
       {Key? key, required this.service, required this.characteristicTiles})
       : super(key: key);
@@ -40,8 +41,16 @@ class ServiceTile extends StatelessWidget {
 class CharacteristicTile extends StatelessWidget {
   final BluetoothCharacteristic characteristic;
   late final List<DescriptorTile> descriptorTiles;
+  StreamController<Movement> _streamController;
+  List<Movement> _items;
+  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
 
-  CharacteristicTile({Key? key, required this.characteristic}) : super(key: key) {
+
+
+  CharacteristicTile({Key? key, required this.characteristic}) :
+        _streamController = new StreamController.broadcast(),
+        _items = [],
+        super(key: key){
     this.descriptorTiles = characteristic.descriptors.map(
           (descriptor) => DescriptorTile(
         descriptor: descriptor
@@ -52,6 +61,30 @@ class CharacteristicTile extends StatelessWidget {
   _readGloveMeasurements(List<int> valueRead) {
     String stringRead = new String.fromCharCodes(valueRead);
     print("READING.... $stringRead");
+    if(stringRead.isEmpty){
+      return;
+    }
+    if (this._streamController.isClosed) {
+      print("skip: stream controller is close");
+      return;
+    }
+    var lastCharacter = stringRead.substring(stringRead.length - 1);
+    List<String> fingerMeasurements = stringRead.substring(0, stringRead.length - 1).split('\n').where((s) => s.isNotEmpty).toList();
+    if(fingerMeasurements.length < 6 ||lastCharacter != ";"){
+      print("last character is not the expected delimiter ';'"
+          "have you change the MTU correctly ");
+      return;
+    }
+    var eventNum = int.parse(fingerMeasurements.removeAt(0));
+    try {
+      print('trying to parse');
+      var pkg = Movement.fromFingerMeasurementsList(eventNum, "deviceid", fingerMeasurements);
+      print('map to -> ${pkg.toJson().toString()}');
+      this._streamController.add(pkg);
+    } catch (e) {
+      print('cant parse : $stringRead  error : ${e.toString()}');
+    }
+
   }
 
   @override
@@ -117,6 +150,26 @@ class CharacteristicTile extends StatelessWidget {
       },
     );
   }
+
+  saveMessagesInFile(String fileName, List<Movement> movements) async {
+    if (movements.isEmpty) {
+      return;
+    }
+    //open pop up loading
+   // Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
+    var word = fileName;
+    var deviceId = movements.first.deviceId;
+    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
+    for (int i = 0; i < movements.length; i++) {
+      print('saving in file -> ${movements[i].toJson().toString()}');
+      measurementFile.add(movements[i]);
+    }
+    await measurementFile.save();
+    this._items = [];
+    //close pop up loading
+    Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
+  }
+
 }
 
 class DescriptorTile extends StatelessWidget {
