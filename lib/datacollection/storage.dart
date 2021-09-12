@@ -152,16 +152,25 @@ class SensorMeasurements {
       return false;
     }
     List<double> measurementList = [];
-    var thump = mov.hand.thump;
-    measurementList.add(thump.acc.x);
-    measurementList.add(thump.acc.y);
-    measurementList.add(thump.acc.z);
-    measurementList.add(thump.gyro.x);
-    measurementList.add(thump.gyro.y);
-    measurementList.add(thump.gyro.z);
-    measurementList.add(thump.inclination.yaw);
-    measurementList.add(thump.inclination.pitch);
-    measurementList.add(thump.inclination.roll);
+    addFingerMovements(measurementList, mov.hand.pinky);
+    addFingerMovements(measurementList, mov.hand.ring);
+    addFingerMovements(measurementList, mov.hand.middle);
+    addFingerMovements(measurementList, mov.hand.index);
+    addFingerMovements(measurementList, mov.hand.thump);
+    this.values.add(measurementList);
+    return true;
+  }
+
+  bool addFingerMovements(measurementList, Finger finger){
+    measurementList.add(finger.acc.x);
+    measurementList.add(finger.acc.y);
+    measurementList.add(finger.acc.z);
+    measurementList.add(finger.gyro.x);
+    measurementList.add(finger.gyro.y);
+    measurementList.add(finger.gyro.z);
+    measurementList.add(finger.inclination.roll);
+    measurementList.add(finger.inclination.pitch);
+    measurementList.add(finger.inclination.yaw);
     this.values.add(measurementList);
     return true;
   }
