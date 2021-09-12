@@ -26,8 +26,12 @@ class Movement {
       var fingerLetter = item.substring(0, 1);
       measurementsMap[fingerLetter] = Finger.fromList(measurementList);
     }
-    Finger thump = measurementsMap["T"] ?? (throw new Exception("Thump measurements not found"));
-    Hand hand = new Hand(thump);
+    Finger pinky = measurementsMap['P'] ?? (throw new Exception("Pinky measurements not found"));
+    Finger ring = measurementsMap['R'] ?? (throw new Exception("Ring measurements not found"));
+    Finger middle = measurementsMap['M'] ?? (throw new Exception("Middle measurements not found"));
+    Finger index = measurementsMap['I'] ?? (throw new Exception("Index measurements not found"));
+    Finger thump = measurementsMap['T'] ?? (throw new Exception("Thump measurements not found"));
+    Hand hand = new Hand(pinky, ring, middle, index, thump);
     return new Movement(deviceId, eventNum, hand);
   }
 }
@@ -35,19 +39,26 @@ class Movement {
 
 class Hand {
   final Finger thump;
-  /*
   final Finger index;
   final Finger middle;
   final Finger ring;
   final Finger pinky;
-   */
 
-  Hand(this.thump);
+
+  Hand(this.pinky, this.ring, this.middle, this.index, this.thump);
 
   Hand.fromJson(Map<String, dynamic> json)
-      : thump = Finger.fromJson(json['thumb'] as Map<String, dynamic>);
+      : pinky = Finger.fromJson(json['pinky'] as Map<String, dynamic>),
+        ring = Finger.fromJson(json['ring'] as Map<String, dynamic>),
+        middle = Finger.fromJson(json['middle'] as Map<String, dynamic>),
+        index = Finger.fromJson(json['index'] as Map<String, dynamic>),
+        thump = Finger.fromJson(json['thumb'] as Map<String, dynamic>);
 
   Map<String, dynamic> toJson() => {
+    'pinky' : pinky.toJson(),
+    'ring': ring.toJson(),
+    'middle' : middle.toJson(),
+    'index' : index.toJson(),
     'thump': thump.toJson(),
   };
 
