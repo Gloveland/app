@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
 import 'package:lsa_gloves/model/movement.dart';
+import 'package:lsa_gloves/widgets/Dialog.dart';
 
 class ServiceTile extends StatelessWidget {
   final BluetoothService service;
@@ -37,7 +38,7 @@ class ServiceTile extends StatelessWidget {
 }
 
 
-/// This is the stateful widget that the main application instantiates.
+/// This is the stateful widget of my characteristic.
 class CharacteristicTile extends StatefulWidget {
   final BluetoothCharacteristic characteristic;
   final String deviceId;
@@ -50,7 +51,7 @@ class CharacteristicTile extends StatefulWidget {
       _BLEMovementRecorderWidget(this.deviceId, this.characteristic, false);
 }
 
-/// This is the private State class that goes with MyStatefulWidget.
+/// This is the private State class of the data collection widget.
 class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
   bool _isRecording;
   final BluetoothCharacteristic characteristic;
@@ -95,11 +96,9 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
                           ? Icons.sync_disabled
                           : Icons.sync,
                       color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
-                  onPressed: () async {
-                    await characteristic.setNotifyValue(!characteristic.isNotifying);
-                    await characteristic.read();
-                  },
-                )
+                  onPressed: () => null,
+                ),
+                _getRecordingButton(),
               ],
             )
         );
@@ -107,10 +106,21 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
     );
   }
 
+  Widget _getRecordingButton() {
+    if (_isRecording) {
+      return IconButton(
+        icon: Icon(Icons.stop, color: Colors.red),
+        onPressed: () => stopRecording(),
+      );
+    } else {
+      return IconButton(
+        icon: Icon(Icons.circle,  color: Theme.of(context).primaryColor),
+        onPressed: () => startRecording(),
+      );
+    }
+  }
 
-  /*
-
-  VoidCallback? startRecording() {
+  Future<VoidCallback?> startRecording() async {
     print('startRecording');
     setState(() {
       _isRecording = true;
@@ -119,9 +129,11 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
     _streamController = new StreamController.broadcast();
     _streamController.stream.listen((p) => {setState(() => _items.add(p))});
     print('load msg from connection into item list');
+    await characteristic.setNotifyValue(true);
+    await characteristic.read();
   }
 
-  VoidCallback? stopRecording() {
+  Future<VoidCallback?> stopRecording() async {
     print('stopRecording');
     _streamController.close();
     setState(() {
@@ -130,8 +142,8 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
     if (_items.isNotEmpty) {
       saveMessagesInFile("PALABRA", this._items);
     }
+    await characteristic.setNotifyValue(false);
   }
-   */
 
 
   readGloveMeasurementsFromBle(List<int> valueRead) {
@@ -168,7 +180,7 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
       return;
     }
     //open pop up loading
-    //Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
+    Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
     var deviceId = movements.first.deviceId;
     var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
     for (int i = 0; i < movements.length; i++) {
@@ -179,5 +191,11 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
     this._items = [];
     //close pop up loading
     Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
+  }
+
+  @override
+  Future<void> dispose() async {
+    super.dispose();
+    _streamController.close();
   }
 }
