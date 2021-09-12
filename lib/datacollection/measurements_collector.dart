@@ -16,7 +16,7 @@ class MeasurementsCollector {
     List<BluetoothDevice> devices =
         await BluetoothBackend.getConnectedDevices();
     List<BluetoothCharacteristic> characteristics =
-        await BluetoothBackend.getMeasurementCharacteristics(devices);
+        await BluetoothBackend.getDevicesDataCollectionCharacteristics(devices);
 
     // TODO(https://git.io/JEyV4): Process data from more than one device.
     BluetoothCharacteristic characteristic = characteristics.first;
