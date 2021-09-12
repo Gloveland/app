@@ -1,24 +1,25 @@
-import 'package:flutter_blue/flutter_blue.dart';
 
 /// Class containing the specifications for the communication via BLE such as
 /// the service and characteristic UUIDs.
 class BluetoothSpecification {
-
   /// Identifier of the glove.
   static const String deviceName = "RightHandSmartGlove";
 
   /// Service for reading measurements or retrieving interpretations from the gloves.
-  static const String LSA_GLOVE_SERVICE_UUID = "7056f14b-02df-4dd8-86fd-0261c7b15c86";
+  static const String LSA_GLOVE_SERVICE_UUID =
+      "7056f14b-02df-4dd8-86fd-0261c7b15c86";
 
   /// Characteristic for sending control commands to the gloves.
-  static const String CONTROLLER_CHARACTERISTIC_UUID = "30b7db16-4567-42c5-acc4-2b0270c1e14d";
+  static const String CONTROLLER_CHARACTERISTIC_UUID =
+      "30b7db16-4567-42c5-acc4-2b0270c1e14d";
 
   /// Characteristic for reading measurements from the gloves.
-  static const String DATA_COLLECTION_CHARACTERISTIC_UUID = "47e62e53-e278-494d-a3f8-ac00973ae0af";
+  static const String DATA_COLLECTION_CHARACTERISTIC_UUID =
+      "47e62e53-e278-494d-a3f8-ac00973ae0af";
 
   /// Characteristic for receiving interpretations from the gloves.
-  static const String INTERPRETATION_CHARACTERISTIC_UUID = "079b8e74-101b-11ec-82a8-0242ac130003";
-
+  static const String INTERPRETATION_CHARACTERISTIC_UUID =
+      "079b8e74-101b-11ec-82a8-0242ac130003";
 
   /// Commands expected by the gloves.
 
