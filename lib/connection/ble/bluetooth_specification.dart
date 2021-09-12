@@ -1,6 +1,4 @@
 
-import 'package:flutter_blue/flutter_blue.dart';
-
 /// Class containing the specifications for the communication via BLE such as
 /// the service and characteristic UUIDs.
 class BluetoothSpecification {

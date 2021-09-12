@@ -43,10 +43,10 @@ class BluetoothBackend {
       List<BluetoothDevice> devicesSnapshot) async {
     List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
     for (var device in devicesSnapshot) {
-      BluetoothService? service = await getMeasurementService(device);
+      BluetoothService? service = await _getLsaGlovesService(device);
       if (service != null) {
         BluetoothCharacteristic measurementCharacteristic =
-        getMeasurementCharacteristic(service);
+        _getMeasurementCharacteristic(service);
         characteristics.add(measurementCharacteristic);
       }
     }
@@ -54,19 +54,44 @@ class BluetoothBackend {
     return characteristics;
   }
 
-  /// Retrieves the measurement characteristic from the {@code bluetoothService}
-  /// specified.
-  static BluetoothCharacteristic getMeasurementCharacteristic(
-      BluetoothService bluetoothService) {
-    return bluetoothService.characteristics
-        .where((characteristic) =>
-            characteristic.uuid.toString() ==
-            BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID)
-        .first;
+  /// Retrieves the interpretation characteristics of all the connected devices.
+  static Future<List<BluetoothCharacteristic>> getInterpretationCharacteristics() async {
+    List<BluetoothDevice> connectedDevices = await getConnectedDevices();
+    List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
+    for (var device in connectedDevices) {
+      BluetoothService? service = await _getLsaGlovesService(device);
+      if (service != null) {
+        BluetoothCharacteristic interpretationCharacteristic =
+        _getInterpretationCharacteristic(service);
+        characteristics.add(interpretationCharacteristic);
+      }
+    }
+    developer.log("Interpretation characteristics: $characteristics", name: TAG);
+    return characteristics;
   }
 
-  /// Retrieves the measurement service from the specified device.
-  static Future<BluetoothService?> getMeasurementService(
+  /// Retrieves the measurement characteristic from the {@code bluetoothService}
+  /// specified.
+  static BluetoothCharacteristic _getMeasurementCharacteristic(
+      BluetoothService bluetoothService) {
+    return bluetoothService.characteristics
+        .firstWhere((characteristic) =>
+            characteristic.uuid.toString() ==
+            BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID);
+  }
+
+  /// Retrieves the measurement characteristic from the {@code bluetoothService}
+  /// specified.
+  static BluetoothCharacteristic _getInterpretationCharacteristic(
+      BluetoothService bluetoothService) {
+    return bluetoothService.characteristics
+        .firstWhere((characteristic) =>
+    characteristic.uuid.toString() ==
+        BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID);
+  }
+
+  /// Retrieves the LSA Gloves service from the specified device.
+  static Future<BluetoothService?> _getLsaGlovesService(
       BluetoothDevice bluetoothDevice) async {
     List<BluetoothService> services = await bluetoothDevice.discoverServices();
     return services.firstWhereOrNull((service) {

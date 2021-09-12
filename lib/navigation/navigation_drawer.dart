@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:lsa_gloves/pages/devices_connection_page.dart';
 import 'package:lsa_gloves/connection/wifi/socket.dart';
 import 'package:lsa_gloves/pages/file_manager_page.dart';
+import 'package:lsa_gloves/pages/interpretation_page.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);
@@ -40,6 +41,13 @@ class NavDrawer extends StatelessWidget {
             Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => FileManagerPage(), maintainState: false));
           }),
+      ListTile(
+          leading: Icon(Icons.translate),
+          title: const Text("Interpretación"),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => InterpretationPage(), maintainState: false));
+          })
     ]));
   }
 }

@@ -9,7 +9,7 @@ import 'package:lsa_gloves/model/movement.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
 import 'package:lsa_gloves/widgets/Dialog.dart';
 
-const String IP = '192.168.1.9'; //10.0.1.70';
+const String IP = '192.168.0.127'; //10.0.1.70';
 
 /// Show a connection spinning or a page to record movements
 class WifiPage extends StatelessWidget {
