@@ -31,8 +31,6 @@ dependencies:
   assets_audio_player: ^3.0.3+1
   #bluetooth
   flutter_blue: ^0.8.0
-  flutter_reactive_ble: ^4.0.0
-  #percent indicator
   percent_indicator: ^3.0.1
   simple_timer: 2.0.0
 
