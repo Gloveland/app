@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_widgets.dart';
 
 class DeviceScreen extends StatefulWidget {
@@ -19,20 +20,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   List<Widget> _buildServiceTiles(String deviceId, List<BluetoothService> services) {
     return services
+        .where((bleService) => bleService.uuid.toString().toLowerCase() == BluetoothSpecification.LSA_GLOVE_SERVICE_UUID.toLowerCase())
         .map(
           (bleService) => ServiceTile(
             service: bleService,
             deviceId: deviceId,
             characteristics: bleService.characteristics,
-            characteristicTiles: bleService.characteristics
-                .map(
-                  (characteristic) => CharacteristicTile(
-                    deviceId: deviceId,
-                    characteristic: characteristic,
-
-                  ),
-                )
-                .toList(),
           ),
         )
         .toList();

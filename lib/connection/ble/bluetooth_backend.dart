@@ -15,6 +15,18 @@ class BluetoothBackend {
     return FlutterBlue.instance.connectedDevices;
   }
 
+  static void sendStartDataCollectionCommand() async {
+    sendCommandToConnectedDevices(BluetoothSpecification.START_DATA_COLLECTION);
+  }
+
+  static void sendStartInterpretationCommand() async {
+    sendCommandToConnectedDevices(BluetoothSpecification.START_INTERPRETATIONS);
+  }
+
+  static void sendStopCommand() async {
+    sendCommandToConnectedDevices(BluetoothSpecification.STOP_ONGOING_TASK);
+  }
+
   /// Sends the commands specified as a parameter to the connected devices
   /// through the measurements characteristic.
   ///
@@ -23,7 +35,7 @@ class BluetoothBackend {
   static void sendCommandToConnectedDevices(String command) async {
     List<BluetoothDevice> connectedDevices = await getConnectedDevices();
     List<BluetoothCharacteristic> characteristics =
-        await BluetoothBackend.getMeasurementCharacteristics(connectedDevices);
+        await getDevicesControllerCharacteristics(connectedDevices);
     characteristics.forEach((characteristic) async {
       try {
         await characteristic.write(utf8.encode(command), withoutResponse: true);
@@ -34,45 +46,99 @@ class BluetoothBackend {
     });
   }
 
-  /// Retrieves the measurement characteristics of all the connected devices.
-  ///
-  /// By retrieving all the measurement characteristics of the connected devices
-  /// (expected to be one characteristic each) we can then broadcast a command
-  /// to all of them.
-  static Future<List<BluetoothCharacteristic>> getMeasurementCharacteristics(
-      List<BluetoothDevice> devicesSnapshot) async {
-    List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
-    for (var device in devicesSnapshot) {
-      BluetoothService? service = await getMeasurementService(device);
-      if (service != null) {
-        BluetoothCharacteristic measurementCharacteristic =
-        getMeasurementCharacteristic(service);
-        characteristics.add(measurementCharacteristic);
-      }
-    }
-    developer.log("Measurement characteristics: $characteristics", name: TAG);
-    return characteristics;
-  }
-
-  /// Retrieves the measurement characteristic from the {@code bluetoothService}
-  /// specified.
-  static BluetoothCharacteristic getMeasurementCharacteristic(
-      BluetoothService bluetoothService) {
-    return bluetoothService.characteristics
-        .where((characteristic) =>
-            characteristic.uuid.toString() ==
-            BluetoothSpecification.MEASUREMENTS_CHARACTERISTIC_UUID)
-        .first;
-  }
-
-  /// Retrieves the measurement service from the specified device.
-  static Future<BluetoothService?> getMeasurementService(
+  /// Retrieves the LSA glove service from the specified device.
+  static Future<BluetoothService?> getLsaGlovesService(
       BluetoothDevice bluetoothDevice) async {
     List<BluetoothService> services = await bluetoothDevice.discoverServices();
     return services.firstWhereOrNull((service) {
       developer.log("Service uuid: ${service.uuid.toString()}", name: TAG);
       return service.uuid.toString() ==
-          BluetoothSpecification.MEASUREMENTS_SERVICE_UUID;
+          BluetoothSpecification.LSA_GLOVE_SERVICE_UUID;
     });
+  }
+
+  /// Retrieves the data collection characteristics of all the connected
+  /// devices.
+  static Future<List<BluetoothCharacteristic>>
+      getDevicesDataCollectionCharacteristics(
+          List<BluetoothDevice> devicesSnapshot) async {
+    List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
+    for (var device in devicesSnapshot) {
+      BluetoothService? service = await getLsaGlovesService(device);
+      if (service != null) {
+        BluetoothCharacteristic dataCollectionCharacteristic =
+            getDataCollectionCharacteristic(service);
+        characteristics.add(dataCollectionCharacteristic);
+      }
+    }
+    developer.log("Data collection characteristics: $characteristics",
+        name: TAG);
+    return characteristics;
+  }
+
+  /// Retrieves the data collection characteristic from the
+  /// {@code bluetoothService} specified.
+  static BluetoothCharacteristic getDataCollectionCharacteristic(
+      BluetoothService bluetoothService) {
+    return bluetoothService.characteristics.firstWhere((characteristic) =>
+        characteristic.uuid.toString() ==
+        BluetoothSpecification.DATA_COLLECTION_CHARACTERISTIC_UUID);
+  }
+
+  /// Retrieves the controller characteristic from the {@code bluetoothService}
+  /// specified.
+  static BluetoothCharacteristic getControllerCharacteristic(
+      BluetoothService bluetoothService) {
+    return bluetoothService.characteristics.firstWhere((characteristic) =>
+        characteristic.uuid.toString() ==
+        BluetoothSpecification.CONTROLLER_CHARACTERISTIC_UUID);
+  }
+
+  /// Retrieves the controller characteristics of all the connected devices.
+  ///
+  /// By retrieving all the controller characteristics of the connected
+  /// devices (expected to be one characteristic each) we can then broadcast a
+  /// command to all of them.
+  static Future<List<BluetoothCharacteristic>>
+      getDevicesControllerCharacteristics(
+          List<BluetoothDevice> devicesSnapshot) async {
+    List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
+    for (var device in devicesSnapshot) {
+      BluetoothService? service = await getLsaGlovesService(device);
+      if (service != null) {
+        BluetoothCharacteristic controllerCharacteristic =
+            getControllerCharacteristic(service);
+        characteristics.add(controllerCharacteristic);
+      }
+    }
+    developer.log("Controller characteristics: $characteristics", name: TAG);
+    return characteristics;
+  }
+
+  /// Retrieves the interpretation characteristic from the {@code bluetoothService}
+  /// specified.
+  static BluetoothCharacteristic getInterpretationCharacteristic(
+      BluetoothService bluetoothService) {
+    return bluetoothService.characteristics.firstWhere((characteristic) =>
+        characteristic.uuid.toString() ==
+        BluetoothSpecification.INTERPRETATION_CHARACTERISTIC_UUID);
+  }
+
+  /// Retrieves the interpretation characteristics of all the connected devices.
+  static Future<List<BluetoothCharacteristic>>
+      getDevicesInterpretationCharacteristics(
+          List<BluetoothDevice> devicesSnapshot) async {
+    List<BluetoothCharacteristic> characteristics = <BluetoothCharacteristic>[];
+    for (var device in devicesSnapshot) {
+      BluetoothService? service = await getLsaGlovesService(device);
+      if (service != null) {
+        BluetoothCharacteristic interpretationCharacteristic =
+            getInterpretationCharacteristic(service);
+        characteristics.add(interpretationCharacteristic);
+      }
+    }
+    developer.log("Interpretation characteristics: $characteristics",
+        name: TAG);
+    return characteristics;
   }
 }

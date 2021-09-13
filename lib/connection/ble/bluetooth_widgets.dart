@@ -9,36 +9,49 @@ import 'package:lsa_gloves/widgets/Dialog.dart';
 class ServiceTile extends StatelessWidget {
   final String deviceId;
   final BluetoothService service;
-  final List<CharacteristicTile> characteristicTiles;
   final List<BluetoothCharacteristic> characteristics;
 
   const ServiceTile(
       {Key? key,
       required this.deviceId,
       required this.service,
-      required this.characteristics,
-      required this.characteristicTiles})
+      required this.characteristics})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     if (characteristics.length < 1) {
       return ListTile(
-        title: Text('Service'),
-        subtitle: Text('${service.uuid.toString()}'),
+        title: Text('Error en el servicio ${service.uuid.toString()}'),
+        subtitle: Text('caracteristica no encontrada'),
         onTap: () => null,
       );
     } else {
-      return ListTile(
-          title: Text('Service'),
-          subtitle: Text('${service.uuid.toString()}'),
-          onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => BleDataCollectionPage(
-                    deviceId: deviceId,
-                    characteristic: characteristics.first),
-                maintainState: false));
-          });
+      return Column(
+        children: [
+          Container(
+              width: double.infinity,
+              child: Card(
+                  child: TextButton(
+                child: const Text('Calibrar'),
+                onPressed: null,
+              ))),
+          Container(
+              width: double.infinity,
+              child: Card(
+                child: TextButton(
+                    child: const Text('Recolectar datos'),
+                    onPressed: () {
+                      print(service.uuid);
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => BleDataCollectionPage(
+                              deviceId: deviceId,
+                              characteristic: characteristics.first),
+                          maintainState: false));
+                    }),
+              ))
+        ],
+      );
     }
   }
 }
