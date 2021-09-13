@@ -1,49 +1,55 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/pages/ble_data_collection_page.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
 import 'package:lsa_gloves/model/movement.dart';
 import 'package:lsa_gloves/widgets/Dialog.dart';
 
 class ServiceTile extends StatelessWidget {
+  final String deviceId;
   final BluetoothService service;
   final List<CharacteristicTile> characteristicTiles;
+  final List<BluetoothCharacteristic> characteristics;
+
   const ServiceTile(
-      {Key? key, required this.service, required this.characteristicTiles})
+      {Key? key,
+      required this.deviceId,
+      required this.service,
+      required this.characteristics,
+      required this.characteristicTiles})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (characteristicTiles.length > 0) {
-      return ExpansionTile(
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('Service'),
-            Text('${service.uuid.toString()}',
-                style: Theme.of(context).textTheme.body1?.copyWith(
-                    color: Theme.of(context).textTheme.caption?.color))
-          ],
-        ),
-        children: characteristicTiles,
-      );
-    } else {
+    if (characteristics.length < 1) {
       return ListTile(
         title: Text('Service'),
         subtitle: Text('${service.uuid.toString()}'),
+        onTap: () => null,
       );
+    } else {
+      return ListTile(
+          title: Text('Service'),
+          subtitle: Text('${service.uuid.toString()}'),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => BleDataCollectionPage(
+                    deviceId: deviceId,
+                    characteristic: characteristics.first),
+                maintainState: false));
+          });
     }
   }
 }
-
 
 /// This is the stateful widget of my characteristic.
 class CharacteristicTile extends StatefulWidget {
   final BluetoothCharacteristic characteristic;
   final String deviceId;
 
-  CharacteristicTile({Key? key, required this.deviceId, required this.characteristic})
+  CharacteristicTile(
+      {Key? key, required this.deviceId, required this.characteristic})
       : super(key: key);
 
   @override
@@ -60,8 +66,9 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
   StreamController<Movement> _streamController;
   List<Movement> _items;
 
-  _BLEMovementRecorderWidget(this.deviceId, this.characteristic, this._isRecording) :
-        _streamController = new StreamController.broadcast(),
+  _BLEMovementRecorderWidget(
+      this.deviceId, this.characteristic, this._isRecording)
+      : _streamController = new StreamController.broadcast(),
         _items = [] {
     _streamController = new StreamController.broadcast();
   }
@@ -95,13 +102,13 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
                       characteristic.isNotifying
                           ? Icons.sync_disabled
                           : Icons.sync,
-                      color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
+                      color:
+                          Theme.of(context).iconTheme.color?.withOpacity(0.5)),
                   onPressed: () => null,
                 ),
                 _getRecordingButton(),
               ],
-            )
-        );
+            ));
       },
     );
   }
@@ -114,7 +121,7 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
       );
     } else {
       return IconButton(
-        icon: Icon(Icons.circle,  color: Theme.of(context).primaryColor),
+        icon: Icon(Icons.circle, color: Theme.of(context).primaryColor),
         onPressed: () => startRecording(),
       );
     }
@@ -145,11 +152,10 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
     await characteristic.setNotifyValue(false);
   }
 
-
   readGloveMeasurementsFromBle(List<int> valueRead) {
     String stringRead = new String.fromCharCodes(valueRead);
     print("READING.... $stringRead");
-    if(stringRead.isEmpty){
+    if (stringRead.isEmpty) {
       return;
     }
     if (this._streamController.isClosed) {
@@ -157,8 +163,12 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
       return;
     }
     var lastCharacter = stringRead.substring(stringRead.length - 1);
-    List<String> fingerMeasurements = stringRead.substring(0, stringRead.length - 1).split('\n').where((s) => s.isNotEmpty).toList();
-    if(fingerMeasurements.length < 6 ||lastCharacter != ";"){
+    List<String> fingerMeasurements = stringRead
+        .substring(0, stringRead.length - 1)
+        .split('\n')
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (fingerMeasurements.length < 6 || lastCharacter != ";") {
       print("last character is not the expected delimiter ';'"
           "have you change the MTU correctly ");
       return;
@@ -166,13 +176,13 @@ class _BLEMovementRecorderWidget extends State<CharacteristicTile> {
     var eventNum = int.parse(fingerMeasurements.removeAt(0));
     try {
       print('trying to parse');
-      var pkg = Movement.fromFingerMeasurementsList(eventNum, this.deviceId, fingerMeasurements);
+      var pkg = Movement.fromFingerMeasurementsList(
+          eventNum, this.deviceId, fingerMeasurements);
       print('map to -> ${pkg.toJson().toString()}');
       this._streamController.add(pkg);
     } catch (e) {
       print('cant parse : $stringRead  error : ${e.toString()}');
     }
-
   }
 
   saveMessagesInFile(String word, List<Movement> movements) async {

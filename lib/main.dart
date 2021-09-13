@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/datacollection/file_content.dart';
-import 'package:lsa_gloves/pages/data_collection_page.dart';
+import 'package:lsa_gloves/pages/home_page.dart';
 
 void main() {
   runApp(MyApp());

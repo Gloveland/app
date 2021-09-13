@@ -22,6 +22,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
         .map(
           (bleService) => ServiceTile(
             service: bleService,
+            deviceId: deviceId,
+            characteristics: bleService.characteristics,
             characteristicTiles: bleService.characteristics
                 .map(
                   (characteristic) => CharacteristicTile(
