@@ -29,14 +29,14 @@ class ServiceTile extends StatelessWidget {
               width: double.infinity,
               child: Card(
                   child: TextButton(
-                child: const Text('Calibrar'),
+                child: Text('Calibrar'),
                 onPressed: null,
               ))),
           Container(
               width: double.infinity,
               child: Card(
                 child: TextButton(
-                    child: const Text('Recolectar datos'),
+                    child: Text('Recolectar datos'),
                     onPressed: () {
                       print(service.uuid);
                       Navigator.of(context).push(MaterialPageRoute(
@@ -45,7 +45,14 @@ class ServiceTile extends StatelessWidget {
                               characteristic: characteristics.first),
                           maintainState: false));
                     }),
-              ))
+              )),
+          Container(
+              width: double.infinity,
+              child: Card(
+                  child: TextButton(
+                child: Text('Traducir'),
+                onPressed: null,
+              ))),
         ],
       );
     }
