@@ -20,7 +20,7 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
       ),
       drawer: NavDrawer(),
       body: Center(
-          child: Text("QUE PONEMOS EN LA HOME??"),
+          child: Text("QUE PONEMOS EN LA HOME ??"),
     ));
   }
 
