@@ -6,8 +6,7 @@ class BluetoothSpecification {
   static const String deviceName = "RightHandSmartGlove";
 
   /// Service for reading measurements or retrieving interpretations from the gloves.
-  static const String LSA_GLOVE_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-      //"7056f14b-02df-4dd8-86fd-0261c7b15c86";
+  static const String LSA_GLOVE_SERVICE_UUID = "7056f14b-02df-4dd8-86fd-0261c7b15c86";
 
   /// Characteristic for sending control commands to the gloves.
   static const String CONTROLLER_CHARACTERISTIC_UUID =
