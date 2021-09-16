@@ -5,9 +5,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
-import 'package:lsa_gloves/model/movement.dart';
+import 'package:lsa_gloves/model/glove_measurement.dart';
 import 'package:lsa_gloves/widgets/Dialog.dart';
 import 'package:simple_timer/simple_timer.dart';
+import 'dart:developer' as developer;
 
 
 class BleDataCollectionPage extends StatefulWidget {
@@ -30,8 +31,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
   final BluetoothCharacteristic characteristic;
   late TimerController _timerController;
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
-  StreamController<Movement> _streamController;
-  List<Movement> _items;
+  StreamController<GloveMeasurement> _streamController;
+  List<GloveMeasurement> _items;
 
 
   _BleDataCollectionState(this.deviceId, this.characteristic, this._isRecording)
@@ -165,15 +166,15 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
   }
 
   Future<VoidCallback?> startRecording() async {
-    print('startRecording');
+    developer.log('startRecording');
     _timerController.start();
     setState(() {
       _isRecording = true;
     });
-    print('streamController');
+    developer.log('streamController');
     _streamController = new StreamController.broadcast();
     _streamController.stream.listen((p) => {setState(() => _items.add(p))});
-    print('load msg from connection into item list');
+    developer.log('load msg from connection into item list');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Capturando movimientos..."),
         duration: Duration(seconds: 2)));
@@ -183,7 +184,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
   }
 
   Future<VoidCallback?> stopRecording() async {
-    print('stopRecording');
+    developer.log('stopRecording');
     _timerController.reset();
     _streamController.close();
     setState(() {
@@ -219,12 +220,12 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
 
   readGloveMeasurementsFromBle(List<int> valueRead) {
     String stringRead = new String.fromCharCodes(valueRead);
-    print("READING.... $stringRead");
+    developer.log("READING.... $stringRead");
     if (stringRead.isEmpty) {
       return;
     }
     if (this._streamController.isClosed) {
-      print("skip: stream controller is close");
+      developer.log("skip: stream controller is close");
       return;
     }
     var lastCharacter = stringRead.substring(stringRead.length - 1);
@@ -234,33 +235,33 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
         .where((s) => s.isNotEmpty)
         .toList();
     if (fingerMeasurements.length < 6 || lastCharacter != ";") {
-      print("last character is not the expected delimiter ';'"
+      developer.log("last character is not the expected delimiter ';'"
           "have you change the MTU correctly ");
       return;
     }
     var eventNum = int.parse(fingerMeasurements.removeAt(0));
     try {
-      print('trying to parse');
-      var pkg = Movement.fromFingerMeasurementsList(
+      developer.log('trying to parse');
+      var pkg = GloveMeasurement.fromFingerMeasurementsList(
           eventNum, this.deviceId, fingerMeasurements);
-      print('map to -> ${pkg.toJson().toString()}');
+      developer.log('map to -> ${pkg.toJson().toString()}');
       this._streamController.add(pkg);
     } catch (e) {
-      print('cant parse : $stringRead  error : ${e.toString()}');
+      developer.log('cant parse : $stringRead  error : ${e.toString()}');
     }
   }
 
-  saveMessagesInFile(String word, List<Movement> movements) async {
-    if (movements.isEmpty) {
+  saveMessagesInFile(String word, List<GloveMeasurement> gloveMeasurements) async {
+    if (gloveMeasurements.isEmpty) {
       return;
     }
     //open pop up loading
     Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
-    var deviceId = movements.first.deviceId;
+    var deviceId = gloveMeasurements.first.deviceId;
     var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    for (int i = 0; i < movements.length; i++) {
-      print('saving in file -> ${movements[i].toJson().toString()}');
-      measurementFile.add(movements[i]);
+    for (int i = 0; i < gloveMeasurements.length; i++) {
+      developer.log('saving in file -> ${gloveMeasurements[i].toJson().toString()}');
+      measurementFile.add(gloveMeasurements[i]);
     }
     await measurementFile.save();
     this._items = [];

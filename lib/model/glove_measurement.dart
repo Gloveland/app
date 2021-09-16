@@ -1,66 +1,60 @@
-class Movement {
+
+class GloveMeasurement {
+  static const int measurementsNumber = 9;
+  static const String pinkyLetter = "P";
+  static const String ringLetter = "R";
+  static const String middleLetter = "M";
+  static const String indexLetter = "I";
+  static const String thumbLetter = "T";
+
   final String deviceId;
   final int eventNum;
-  final Hand hand;
-
-  Movement(this.deviceId, this.eventNum, this.hand);
-
-  Movement.fromJson(Map<String, dynamic> json)
-      : deviceId = json['device_id'], eventNum = json['event_num'],
-        hand = Hand.fromJson(json['hand'] as Map<String, dynamic>);
-
-  Map<String, dynamic> toJson() => {
-    'device_id': deviceId,
-    'event_num': eventNum,
-    'hand': hand.toJson(),
-  };
-
-  static fromFingerMeasurementsList(int eventNum, String deviceId, List<String> fingerMeasurements) {
-    Map<String, Finger> measurementsMap = new Map();
-
-    for (final item in fingerMeasurements) {
-      var measurementList = item.substring(1).split(',').where((s) => s.isNotEmpty).map((value) => double.parse(value)).toList();
-      if(measurementList.length < 9){
-        throw new Exception("Error: not enough finger measurements!!");
-      }
-      var fingerLetter = item.substring(0, 1);
-      measurementsMap[fingerLetter] = Finger.fromList(measurementList);
-    }
-    Finger pinky = measurementsMap['P'] ?? (throw new Exception("Pinky measurements not found"));
-    Finger ring = measurementsMap['R'] ?? (throw new Exception("Ring measurements not found"));
-    Finger middle = measurementsMap['M'] ?? (throw new Exception("Middle measurements not found"));
-    Finger index = measurementsMap['I'] ?? (throw new Exception("Index measurements not found"));
-    Finger thump = measurementsMap['T'] ?? (throw new Exception("Thump measurements not found"));
-    Hand hand = new Hand(pinky, ring, middle, index, thump);
-    return new Movement(deviceId, eventNum, hand);
-  }
-}
-
-
-class Hand {
-  final Finger thump;
+  final Finger thumb;
   final Finger index;
   final Finger middle;
   final Finger ring;
   final Finger pinky;
 
 
-  Hand(this.pinky, this.ring, this.middle, this.index, this.thump);
+  GloveMeasurement(this.deviceId, this.eventNum, this.pinky, this.ring, this.middle, this.index, this.thumb);
 
-  Hand.fromJson(Map<String, dynamic> json)
-      : pinky = Finger.fromJson(json['pinky'] as Map<String, dynamic>),
+  GloveMeasurement.fromJson(Map<String, dynamic> json)
+  :  deviceId = json['device_id'], eventNum = json['event_num'],
+        pinky = Finger.fromJson(json['pinky'] as Map<String, dynamic>),
         ring = Finger.fromJson(json['ring'] as Map<String, dynamic>),
         middle = Finger.fromJson(json['middle'] as Map<String, dynamic>),
         index = Finger.fromJson(json['index'] as Map<String, dynamic>),
-        thump = Finger.fromJson(json['thumb'] as Map<String, dynamic>);
+        thumb = Finger.fromJson(json['thumb'] as Map<String, dynamic>);
 
   Map<String, dynamic> toJson() => {
+    'device_id': deviceId,
+    'event_num': eventNum,
     'pinky' : pinky.toJson(),
     'ring': ring.toJson(),
     'middle' : middle.toJson(),
     'index' : index.toJson(),
-    'thump': thump.toJson(),
+    'thumb': thumb.toJson(),
   };
+
+
+  static fromFingerMeasurementsList(int eventNum, String deviceId, List<String> fingerMeasurements) {
+    Map<String, Finger> measurementsMap = new Map();
+
+    for (final item in fingerMeasurements) {
+      var measurementList = item.substring(1).split(',').where((s) => s.isNotEmpty).map((value) => double.parse(value)).toList();
+      if(measurementList.length < measurementsNumber){
+        throw new Exception("Error: not enough finger measurements!!");
+      }
+      var fingerLetter = item.substring(0, 1);
+      measurementsMap[fingerLetter] = Finger.fromList(measurementList);
+    }
+    Finger? pinky = measurementsMap[pinkyLetter];
+    Finger? ring = measurementsMap[ringLetter];
+    Finger? middle = measurementsMap[middleLetter];
+    Finger? index = measurementsMap[indexLetter];
+    Finger? thumb = measurementsMap[thumbLetter];
+    return new GloveMeasurement(deviceId, eventNum,pinky!, ring!, middle!, index!, thumb!);
+  }
 
 }
 

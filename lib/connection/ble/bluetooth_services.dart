@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/pages/ble_data_collection_page.dart';
+import 'dart:developer' as developer;
 
 class ServiceTile extends StatelessWidget {
   final String deviceId;
@@ -38,7 +39,7 @@ class ServiceTile extends StatelessWidget {
                 child: TextButton(
                     child: Text('Recolectar datos'),
                     onPressed: () {
-                      print(service.uuid);
+                      developer.log("${service.uuid}");
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (context) => BleDataCollectionPage(
                               deviceId: deviceId,

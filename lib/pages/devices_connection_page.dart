@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import '../connection/ble/bluetooth_device.dart';
+import 'dart:developer' as developer;
 
 class GloveConnectionPage extends StatelessWidget {
   @override
@@ -113,7 +114,7 @@ class FindDevicesScreen extends StatelessWidget {
                                 .then((value) => scanResult.device.requestMtu(512))
                                 .then((value) => scanResult.device.discoverServices())
                                 .catchError((error) {
-                              print("error connecting ${error}");
+                              developer.log("error connecting ${error}");
                             });
                             return DeviceScreen(device: scanResult.device);
                           })),
