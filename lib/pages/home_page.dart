@@ -3,14 +3,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../navigation/navigation_drawer.dart';
 
-class DataCollectionPage extends StatefulWidget {
-  const DataCollectionPage({Key? key}) : super(key: key);
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
-  _DataCollectionPageState createState() => _DataCollectionPageState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _DataCollectionPageState extends State<DataCollectionPage> {
+class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
