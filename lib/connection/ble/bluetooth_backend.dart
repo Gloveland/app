@@ -9,6 +9,8 @@ import 'bluetooth_specification.dart';
 /// Wrapper class to handle the communication between the app and the devices.
 class BluetoothBackend {
   static const String TAG = "BluetoothBackend";
+  static const String RightGlove = "Guante derecho";
+  static const String LeftGlove = "Guante izquierdo";
 
   /// Retrieves the connected devices.
   static Future<List<BluetoothDevice>> getConnectedDevices() {
@@ -140,4 +142,17 @@ class BluetoothBackend {
         name: TAG);
     return characteristics;
   }
+
+  /// Retrieve the deviceName in spanish
+  static String getSpanishGloveName(String deviceName){
+    switch(deviceName){
+      case(BluetoothSpecification.deviceName):
+        return RightGlove;
+      default:
+        return deviceName;
+    }
+
+  }
+
+
 }

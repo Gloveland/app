@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import '../connection/ble/bluetooth_device.dart';
@@ -58,7 +59,36 @@ class BluetoothOffScreen extends StatelessWidget {
   }
 }
 
-class FindDevicesScreen extends StatelessWidget {
+class FindDevicesScreen extends StatefulWidget {
+  const FindDevicesScreen({Key? key}) : super(key: key);
+
+  @override
+  _FindDevicesScreen createState() => _FindDevicesScreen(false, false);
+}
+
+class _FindDevicesScreen extends State<FindDevicesScreen> {
+  _FindDevicesScreen(this.rightGloveFound, this.leftGloveFound);
+
+  bool rightGloveFound;
+  bool leftGloveFound;
+
+  void updateState(BluetoothDevice device) {
+    if (BluetoothSpecification.deviceName == device.name) {
+      setState(() {
+        rightGloveFound = true;
+      });
+    }
+  }
+
+  bool shouldRender(ScanResult scanResult) {
+    switch (scanResult.device.name) {
+      case (BluetoothSpecification.deviceName):
+        return !rightGloveFound;
+      default:
+        return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,25 +113,8 @@ class FindDevicesScreen extends StatelessWidget {
                             stream: device.state,
                             initialData: BluetoothDeviceState.disconnected,
                             builder: (c, snapshot) {
-                              if (snapshot.data ==
-                                  BluetoothDeviceState.connected) {
-                                return ConnectionGloveCard(
-                                  iconColor: Theme.of(context).primaryColor,
-                                    device: device,
-                                    onTap: () => Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          device
-                                              .requestMtu(512)
-                                              .catchError((error) {
-                                            developer.log(
-                                                "error connecting ${error}");
-                                          });
-                                          return DeviceScreen(device: device);
-                                        })));
-                              }
                               return ConnectionGloveCard(
-                                iconColor: Colors.black,
+                                  iconColor: Theme.of(context).primaryColor,
                                   device: device,
                                   onTap: () => Navigator.of(context).push(
                                           MaterialPageRoute(builder: (context) {
@@ -128,13 +141,14 @@ class FindDevicesScreen extends StatelessWidget {
                       .where((scanResult) =>
                           scanResult.device.name ==
                           BluetoothSpecification.deviceName)
+                      .where((scanResult) => shouldRender(scanResult))
                       .map((scanResult) => ConnectionGloveCard(
                               iconColor: Colors.grey,
                               device: scanResult.device,
                               onTap: () => {
                                     if (scanResult
-                                        .advertisementData.connectable)
-                                      {
+                                        .advertisementData.connectable){
+                                        updateState(scanResult.device),
                                         Navigator.of(context).push(
                                             MaterialPageRoute(
                                                 builder: (context) {
@@ -184,7 +198,10 @@ class FindDevicesScreen extends StatelessWidget {
 
 class ConnectionGloveCard extends StatelessWidget {
   const ConnectionGloveCard(
-      {Key? key, required this.iconColor, required this.device, required this.onTap})
+      {Key? key,
+      required this.iconColor,
+      required this.device,
+      required this.onTap})
       : super(key: key);
 
   final Color iconColor;
@@ -204,7 +221,7 @@ class ConnectionGloveCard extends StatelessWidget {
                   color: this.iconColor,
                 ))),
                 title: Text(
-                  "Guante derecho",
+                  BluetoothBackend.getSpanishGloveName(device.name),
                   overflow: TextOverflow.ellipsis,
                 ),
                 subtitle: Text(

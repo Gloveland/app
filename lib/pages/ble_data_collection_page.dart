@@ -166,6 +166,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       var dataCollectionCharacteristics =
           await BluetoothBackend.getDevicesDataCollectionCharacteristics(
               this._connectedDevices);
+      // TODO(https://git.io/JEyV4): Process data from more than one device.
       String deviceId = "${this._connectedDevices.first.id}";
       this._measurementsCollector = new MeasurementsCollector(
           deviceId, dataCollectionCharacteristics.first);
