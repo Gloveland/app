@@ -49,4 +49,7 @@ class BluetoothSpecification {
   /// This command will stop either the data collection task or the
   /// interpretations task on the device if one of them is being run
   static const String STOP_ONGOING_TASK = "stop";
+
+  /// MTU to request
+  static int mtu = 512;
 }

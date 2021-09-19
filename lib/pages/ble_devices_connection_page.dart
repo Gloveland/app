@@ -109,27 +109,20 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
                 builder: (context, connectedDevicesSnapshot) => Column(
                   children: connectedDevicesSnapshot.data!
                       .where((d) => d.name == BluetoothSpecification.deviceName)
-                      .map((device) => StreamBuilder<BluetoothDeviceState>(
-                            stream: device.state,
-                            initialData: BluetoothDeviceState.disconnected,
-                            builder: (c, snapshot) {
-                              return ConnectionGloveCard(
-                                  iconColor: Theme.of(context).primaryColor,
-                                  device: device,
-                                  onTap: () => Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) {
-                                        device
-                                            .connect()
-                                            .then((value) =>
-                                                device.requestMtu(512))
-                                            .catchError((error) {
-                                          developer
-                                              .log("error connecting ${error}");
-                                        });
-                                        return DeviceScreen(device: device);
-                                      })));
-                            },
-                          ))
+                      .map((device) => ConnectionGloveCard(
+                          iconColor: Theme.of(context).primaryColor,
+                          device: device,
+                          onTap: () => Navigator.of(context)
+                                  .push(MaterialPageRoute(builder: (context) {
+                                device
+                                    .connect()
+                                    .then((value) => device
+                                        .requestMtu(BluetoothSpecification.mtu))
+                                    .catchError((error) {
+                                  developer.log("error connecting ${error}");
+                                });
+                                return DeviceScreen(device: device);
+                              }))))
                       .toList(),
                 ),
               ),
@@ -147,7 +140,8 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
                               device: scanResult.device,
                               onTap: () => {
                                     if (scanResult
-                                        .advertisementData.connectable){
+                                        .advertisementData.connectable)
+                                      {
                                         updateState(scanResult.device),
                                         Navigator.of(context).push(
                                             MaterialPageRoute(
@@ -155,7 +149,9 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
                                           scanResult.device
                                               .connect()
                                               .then((value) => scanResult.device
-                                                  .requestMtu(512))
+                                                  .requestMtu(
+                                                      BluetoothSpecification
+                                                          .mtu))
                                               .catchError((error) {
                                             developer.log(
                                                 "error connecting ${error}");
@@ -196,39 +192,81 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
   }
 }
 
-class ConnectionGloveCard extends StatelessWidget {
-  const ConnectionGloveCard(
+class ConnectionGloveCard extends StatefulWidget {
+  final Color iconColor;
+  final BluetoothDevice device;
+  final VoidCallback onTap;
+
+  ConnectionGloveCard(
       {Key? key,
       required this.iconColor,
       required this.device,
       required this.onTap})
       : super(key: key);
 
+  @override
+  _ConnectionGloveCard createState() =>
+      new _ConnectionGloveCard(this.iconColor, this.device, this.onTap);
+}
+
+class _ConnectionGloveCard extends State {
   final Color iconColor;
   final BluetoothDevice device;
   final VoidCallback onTap;
+  late bool isConnected;
+
+  _ConnectionGloveCard(this.iconColor, this.device, this.onTap);
+
+  Future<void> toggleSwitch(bool value) async {
+    if (isConnected == false) {
+      setState(() {
+        isConnected = true;
+      });
+      await this.device.connect();
+      await this.device.requestMtu(BluetoothSpecification.mtu);
+
+    } else {
+      setState(() {
+        isConnected = false;
+      });
+      await this.device.disconnect();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-        onTap: onTap,
-        child: Card(
-            child: ListTile(
-                leading: Container(
-                    child: FittedBox(
-                        child: Icon(
-                  Icons.bluetooth,
-                  color: this.iconColor,
-                ))),
-                title: Text(
-                  BluetoothBackend.getSpanishGloveName(device.name),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  this.device.id.toString(),
-                  style: Theme.of(context).textTheme.caption,
-                ),
-                trailing: TextButton(
-                    child: const Text('CONNECT'), onPressed: null))));
+    return StreamBuilder<BluetoothDeviceState>(
+        stream: device.state,
+        initialData: BluetoothDeviceState.disconnected,
+        builder: (c, deviceStatesSnapshot) {
+          this.isConnected =
+              (deviceStatesSnapshot.data == BluetoothDeviceState.connected);
+          return GestureDetector(
+              onTap: onTap,
+              child: Card(
+                  child: ListTile(
+                      leading: Container(
+                          child: FittedBox(
+                              child: Icon(
+                        Icons.bluetooth,
+                        color: this.iconColor,
+                      ))),
+                      title: Text(
+                        BluetoothBackend.getSpanishGloveName(device.name),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        this.device.id.toString(),
+                        style: Theme.of(context).textTheme.caption,
+                      ),
+                      trailing: Switch(
+                        onChanged: toggleSwitch,
+                        value: this.isConnected,
+                        activeColor: Theme.of(context).primaryColor,
+                        activeTrackColor: Colors.lightGreen,
+                        inactiveThumbColor: Colors.black,
+                        inactiveTrackColor: Colors.grey,
+                      ))));
+        });
   }
 }
