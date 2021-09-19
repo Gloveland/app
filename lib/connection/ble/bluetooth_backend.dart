@@ -15,16 +15,16 @@ class BluetoothBackend {
     return FlutterBlue.instance.connectedDevices;
   }
 
-  static void sendStartDataCollectionCommand() async {
-    sendCommandToConnectedDevices(BluetoothSpecification.START_DATA_COLLECTION);
+  static void sendStartDataCollectionCommand(List<BluetoothDevice> connectedDevices) async {
+    sendCommandToConnectedDevices(connectedDevices, BluetoothSpecification.START_DATA_COLLECTION);
   }
 
-  static void sendStartInterpretationCommand() async {
-    sendCommandToConnectedDevices(BluetoothSpecification.START_INTERPRETATIONS);
+  static void sendStartInterpretationCommand(List<BluetoothDevice> connectedDevices) async {
+    sendCommandToConnectedDevices(connectedDevices, BluetoothSpecification.START_INTERPRETATIONS);
   }
 
-  static void sendStopCommand() async {
-    sendCommandToConnectedDevices(BluetoothSpecification.STOP_ONGOING_TASK);
+  static void sendStopCommand(List<BluetoothDevice> connectedDevices) async {
+    sendCommandToConnectedDevices(connectedDevices,BluetoothSpecification.STOP_ONGOING_TASK);
   }
 
   /// Sends the commands specified as a parameter to the connected devices
@@ -32,8 +32,7 @@ class BluetoothBackend {
   ///
   /// This method is expected to be used to start and stop the measurement
   /// readings from the glove.
-  static void sendCommandToConnectedDevices(String command) async {
-    List<BluetoothDevice> connectedDevices = await getConnectedDevices();
+  static void sendCommandToConnectedDevices(List<BluetoothDevice> connectedDevices, String command) async {
     List<BluetoothCharacteristic> characteristics =
         await getDevicesControllerCharacteristics(connectedDevices);
     characteristics.forEach((characteristic) async {

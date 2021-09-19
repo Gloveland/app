@@ -1,47 +1,36 @@
-
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:lsa_gloves/datacollection/storage.dart';
-import 'package:lsa_gloves/model/glove_measurement.dart';
-import 'package:lsa_gloves/widgets/Dialog.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
+import 'package:lsa_gloves/datacollection/measurements_collector.dart';
+import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
 import 'package:simple_timer/simple_timer.dart';
 import 'dart:developer' as developer;
 
-
 class BleDataCollectionPage extends StatefulWidget {
-  String deviceId;
-  BluetoothCharacteristic characteristic;
-  BleDataCollectionPage({Key? key, required this.deviceId, required this.characteristic}) : super(key: key);
+  const BleDataCollectionPage({Key? key}) : super(key: key);
 
   @override
-  _BleDataCollectionState createState() => _BleDataCollectionState(this.deviceId, this.characteristic, false);
+  _BleDataCollectionState createState() => _BleDataCollectionState(false);
 }
 
-class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTickerProviderStateMixin{
+class _BleDataCollectionState extends State<BleDataCollectionPage>
+    with SingleTickerProviderStateMixin {
+  static const String TAG = "BleDataCollection";
   static final List<String> categories = getCategoryList();
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
-
   bool _isRecording;
-  final String deviceId;
-  final BluetoothCharacteristic characteristic;
   late TimerController _timerController;
-  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
-  StreamController<GloveMeasurement> _streamController;
-  List<GloveMeasurement> _items;
+  List<BluetoothDevice> _connectedDevices;
+  MeasurementsCollector? _measurementsCollector;
 
-
-  _BleDataCollectionState(this.deviceId, this.characteristic, this._isRecording)
-      : _streamController = new StreamController.broadcast(),
-        _items = [] {
-    _streamController = new StreamController.broadcast();
+  _BleDataCollectionState(this._isRecording) : _connectedDevices = [] {
     _timerController = TimerController(this);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -52,79 +41,83 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
       body: Center(
           child: Padding(
         padding: EdgeInsets.all(16.0),
-        child: StreamBuilder<List<int>>(
-            stream: characteristic.value,
-            initialData: characteristic.lastValue,
-            builder: (c, snapshot) {
-              final value = snapshot.data;
-              readGloveMeasurementsFromBle(value!);
+        child: StreamBuilder<List<BluetoothDevice>>(
+            stream: Stream.periodic(Duration(seconds: 2))
+                .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
+            initialData: [],
+            builder: (context, devicesSnapshot) {
+              if (devicesSnapshot.hasData) {
+                this._connectedDevices = devicesSnapshot.data!;
+              }
               return Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    width: double.infinity,
+                    child: Text(
+                      "Categoría",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  buildDropdownButton(categories, selectedCategory,
+                      (String? newValue) {
+                    setState(() {
+                      selectedCategory = newValue!;
+                      gestures = getGestureList(selectedCategory);
+                      selectedGesture = gestures[0];
+                    });
+                  }),
+                  SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    child: Text(
+                      "Gesto",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  buildDropdownButton(gestures, selectedGesture,
+                      (String? newValue) {
+                    setState(() {
+                      this.selectedGesture = newValue!;
+                    });
+                  }),
+                  SizedBox(height: 24),
+                  Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Container(
                       width: double.infinity,
                       child: Text(
-                        "Categoría",
+                        "Clickear el boton para comenzar a grabar los movimientos",
                         style: TextStyle(fontSize: 16),
                       ),
                     ),
-                    SizedBox(height: 8),
-                    buildDropdownButton(categories, selectedCategory,
-                        (String? newValue) {
-                      setState(() {
-                        selectedCategory = newValue!;
-                        gestures = getGestureList(selectedCategory);
-                        selectedGesture = gestures[0];
-                      });
-                    }),
-                    SizedBox(height: 24),
-                    Container(
-                      width: double.infinity,
-                      child: Text(
-                        "Gesto",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    buildDropdownButton(gestures, selectedGesture,
-                        (String? newValue) {
-                      setState(() {
-                        this.selectedGesture = newValue!;
-                      });
-                    }),
-                    SizedBox(height: 24),
-                    Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Container(
-                        width: double.infinity,
-                        child: Text(
-                          "Clickear el boton para comenzar a grabar los movimientos",
-                          style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 74),
+                  Container(
+                    width: 200,
+                    height: 300,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: <Widget>[
+                        SimpleTimer(
+                          controller: _timerController,
+                          duration: Duration(seconds: 10),
+                          progressIndicatorColor:
+                              Theme.of(context).primaryColor,
+                          progressTextStyle:
+                              TextStyle(color: Colors.transparent),
+                          strokeWidth: 15,
                         ),
-                      ),
+                        Padding(
+                            padding: EdgeInsets.all(24),
+                            child: buildRecordingButton()),
+                      ],
                     ),
-                    SizedBox(height: 74),
-                    Container(
-                      width: 200,
-                      height: 300,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: <Widget>[
-                          SimpleTimer(
-                            controller: _timerController,
-                            duration: Duration(seconds: 10),
-                            progressIndicatorColor: Theme.of(context).primaryColor,
-                            progressTextStyle: TextStyle(color: Colors.transparent),
-                            strokeWidth: 15,
-                          ),
-                          Padding(
-                              padding: EdgeInsets.all(24),
-                              child: buildRecordingButton()),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
+                  ),
+                ],
+              );
             }),
       )),
     );
@@ -148,57 +141,54 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
         child: (() {
           if (_isRecording) {
             return IconButton(
-              icon: Icon(
-                  Icons.stop,
-                  color: Colors.red,
-                  size: 64),
+              icon: Icon(Icons.stop, color: Colors.red, size: 64),
               onPressed: () => stopRecording(),
             );
           } else {
             return IconButton(
               icon: Icon(Icons.circle,
-                  color: Theme.of(context).primaryColor,
-                  size: 64),
+                  color: Theme.of(context).primaryColor, size: 64),
               onPressed: () => startRecording(),
             );
-        }
+          }
         })());
   }
 
   Future<VoidCallback?> startRecording() async {
-    developer.log('startRecording');
-    _timerController.start();
-    setState(() {
-      _isRecording = true;
-    });
-    developer.log('streamController');
-    _streamController = new StreamController.broadcast();
-    _streamController.stream.listen((p) => {setState(() => _items.add(p))});
-    developer.log('load msg from connection into item list');
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Capturando movimientos..."),
-        duration: Duration(seconds: 2)));
-    await characteristic.setNotifyValue(true);
-    await characteristic.read();
-
+    developer.log('startRecording', name: TAG);
+    if (this._connectedDevices.isEmpty) {
+      developer.log('Cant start recording! No device connected', name: TAG);
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => BleConnectionErrorPage(),
+          maintainState: false));
+    } else {
+      BluetoothBackend.sendStartDataCollectionCommand(this._connectedDevices);
+      var dataCollectionCharacteristics =
+          await BluetoothBackend.getDevicesDataCollectionCharacteristics(
+              this._connectedDevices);
+      String deviceId = "${this._connectedDevices.first.id}";
+      this._measurementsCollector = new MeasurementsCollector(
+          deviceId, dataCollectionCharacteristics.first);
+      this._timerController.start();
+      this._measurementsCollector!.readMeasurements(context);
+      setState(() {
+        _isRecording = true;
+      });
+    }
   }
 
   Future<VoidCallback?> stopRecording() async {
-    developer.log('stopRecording');
+    developer.log('stopRecording', name: TAG);
     _timerController.reset();
-    _streamController.close();
     setState(() {
       _isRecording = false;
     });
-    if (_items.isNotEmpty) {
-      saveMessagesInFile("$selectedCategory-$selectedGesture", this._items);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Movimientos guardados!"),
-          duration: Duration(seconds: 1)));
+    BluetoothBackend.sendStopCommand(this._connectedDevices);
+    if (this._measurementsCollector != null) {
+      String gesture = "$selectedCategory-$selectedGesture";
+      await this._measurementsCollector!.stopReadings(context, gesture);
     }
-    await characteristic.setNotifyValue(false);
   }
-
 
   static List<String> getCategoryList() {
     return <String>["Números", "Letras", "Saludo"];
@@ -217,61 +207,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> with SingleTi
     return [];
   }
 
-
-  readGloveMeasurementsFromBle(List<int> valueRead) {
-    String stringRead = new String.fromCharCodes(valueRead);
-    developer.log("READING.... $stringRead");
-    if (stringRead.isEmpty) {
-      return;
-    }
-    if (this._streamController.isClosed) {
-      developer.log("skip: stream controller is close");
-      return;
-    }
-    var lastCharacter = stringRead.substring(stringRead.length - 1);
-    List<String> fingerMeasurements = stringRead
-        .substring(0, stringRead.length - 1)
-        .split('\n')
-        .where((s) => s.isNotEmpty)
-        .toList();
-    if (fingerMeasurements.length < 6 || lastCharacter != ";") {
-      developer.log("last character is not the expected delimiter ';'"
-          "have you change the MTU correctly ");
-      return;
-    }
-    var eventNum = int.parse(fingerMeasurements.removeAt(0));
-    try {
-      developer.log('trying to parse');
-      var pkg = GloveMeasurement.fromFingerMeasurementsList(
-          eventNum, this.deviceId, fingerMeasurements);
-      developer.log('map to -> ${pkg.toJson().toString()}');
-      this._streamController.add(pkg);
-    } catch (e) {
-      developer.log('cant parse : $stringRead  error : ${e.toString()}');
-    }
-  }
-
-  saveMessagesInFile(String word, List<GloveMeasurement> gloveMeasurements) async {
-    if (gloveMeasurements.isEmpty) {
-      return;
-    }
-    //open pop up loading
-    Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
-    var deviceId = gloveMeasurements.first.deviceId;
-    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    for (int i = 0; i < gloveMeasurements.length; i++) {
-      developer.log('saving in file -> ${gloveMeasurements[i].toJson().toString()}');
-      measurementFile.add(gloveMeasurements[i]);
-    }
-    await measurementFile.save();
-    this._items = [];
-    //close pop up loading
-    Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
-  }
-
   @override
   Future<void> dispose() async {
     super.dispose();
-    _streamController.close();
   }
 }

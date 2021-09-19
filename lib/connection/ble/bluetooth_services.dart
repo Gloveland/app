@@ -41,9 +41,7 @@ class ServiceTile extends StatelessWidget {
                     onPressed: () {
                       developer.log("${service.uuid}");
                       Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => BleDataCollectionPage(
-                              deviceId: deviceId,
-                              characteristic: characteristics.first),
+                          builder: (context) => BleDataCollectionPage(),
                           maintainState: false));
                     }),
               )),
