@@ -103,68 +103,52 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
           child: Column(
             children: <Widget>[
               StreamBuilder<List<BluetoothDevice>>(
-                stream: Stream.periodic(Duration(seconds: 2))
-                    .asyncMap((_) => FlutterBlue.instance.connectedDevices),
-                initialData: [],
-                builder: (context, connectedDevicesSnapshot) => Column(
-                  children: connectedDevicesSnapshot.data!
-                      .where((d) => d.name == BluetoothSpecification.deviceName)
-                      .map((device) => ConnectionGloveCard(
-                          iconColor: Theme.of(context).primaryColor,
-                          device: device,
-                          onTap: () => Navigator.of(context)
-                                  .push(MaterialPageRoute(builder: (context) {
-                                device
-                                    .connect()
-                                    .then((value) => device
-                                        .requestMtu(BluetoothSpecification.mtu))
-                                    .catchError((error) {
-                                  developer.log("error connecting ${error}");
-                                });
-                                return DeviceScreen(device: device);
-                              }))))
-                      .toList(),
-                ),
-              ),
-              StreamBuilder<List<ScanResult>>(
-                stream: FlutterBlue.instance.scanResults,
-                initialData: [],
-                builder: (c, scanResultSnapshot) => Column(
-                  children: scanResultSnapshot.data!
-                      .where((scanResult) =>
-                          scanResult.device.name ==
-                          BluetoothSpecification.deviceName)
-                      .where((scanResult) => shouldRender(scanResult))
-                      .map((scanResult) => ConnectionGloveCard(
-                              iconColor: Colors.grey,
-                              device: scanResult.device,
-                              onTap: () => {
-                                    if (scanResult
-                                        .advertisementData.connectable)
-                                      {
-                                        updateState(scanResult.device),
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          scanResult.device
-                                              .connect()
-                                              .then((value) => scanResult.device
-                                                  .requestMtu(
-                                                      BluetoothSpecification
-                                                          .mtu))
-                                              .catchError((error) {
-                                            developer.log(
-                                                "error connecting ${error}");
-                                          });
-                                          return DeviceScreen(
-                                              device: scanResult.device);
-                                        }))
-                                      }
-                                  })
-                          //DisconnectedGloveCard(result: scanResult),
-                          )
-                      .toList(),
-                ),
+                stream: FlutterBlue.instance.scanResults.map((list) => list
+                    .where((scanResult) =>
+                        scanResult.advertisementData.connectable)
+                    .map((scanResult) => scanResult.device)
+                    .toList(growable: true)),
+                builder: (context, scanResultSnapshot) {
+                  return StreamBuilder<List<BluetoothDevice>>(
+                      stream: Stream.periodic(Duration(seconds: 2)).asyncMap(
+                          (_) => FlutterBlue.instance.connectedDevices),
+                      initialData: [],
+                      builder: (context, connectedDevicesSnapshot) {
+                        List<BluetoothDevice> devices = [];
+                        if (scanResultSnapshot.hasData) {
+                          devices.addAll(scanResultSnapshot.data!);
+                        }
+                        if (connectedDevicesSnapshot.hasData) {
+                          connectedDevicesSnapshot.data!.forEach((connectedDevice) {
+                            if(!devices.map((e) => e.id).contains(connectedDevice.id)){
+                                devices.add(connectedDevice);
+                            }
+                          });
+                        }
+                        return Column(
+                          children: devices
+                              .where((d) =>
+                                  d.name == BluetoothSpecification.deviceName)
+                              .map((device) => ConnectionGloveCard(
+                                  iconColor: Theme.of(context).primaryColor,
+                                  device: device,
+                                  updateState: this.updateState,
+                                  onTap: () => Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (context) {
+                                        device
+                                            .connect()
+                                            .then((value) => device.requestMtu(
+                                                BluetoothSpecification.mtu))
+                                            .catchError((error) {
+                                          developer
+                                              .log("error connecting ${error}");
+                                        });
+                                        return DeviceScreen(device: device);
+                                      }))))
+                              .toSet().toList(),
+                        );
+                      });
+                },
               ),
             ],
           ),
@@ -195,27 +179,31 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
 class ConnectionGloveCard extends StatefulWidget {
   final Color iconColor;
   final BluetoothDevice device;
+  final ValueChanged<BluetoothDevice> updateState;
   final VoidCallback onTap;
 
   ConnectionGloveCard(
       {Key? key,
       required this.iconColor,
       required this.device,
+      required this.updateState,
       required this.onTap})
       : super(key: key);
 
   @override
-  _ConnectionGloveCard createState() =>
-      new _ConnectionGloveCard(this.iconColor, this.device, this.onTap);
+  _ConnectionGloveCard createState() => new _ConnectionGloveCard(
+      this.iconColor, this.device, this.updateState, this.onTap);
 }
 
 class _ConnectionGloveCard extends State {
   final Color iconColor;
   final BluetoothDevice device;
+  final ValueChanged<BluetoothDevice> updateState;
   final VoidCallback onTap;
   late bool isConnected;
 
-  _ConnectionGloveCard(this.iconColor, this.device, this.onTap);
+  _ConnectionGloveCard(
+      this.iconColor, this.device, this.updateState, this.onTap);
 
   Future<void> toggleSwitch(bool value) async {
     if (isConnected == false) {
@@ -224,7 +212,7 @@ class _ConnectionGloveCard extends State {
       });
       await this.device.connect();
       await this.device.requestMtu(BluetoothSpecification.mtu);
-
+      this.updateState(this.device);
     } else {
       setState(() {
         isConnected = false;
