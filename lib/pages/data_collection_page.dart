@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -135,13 +134,13 @@ class _DataCollectionPageState extends State<DataCollectionPage> {
           onPressed: () {
             if (devicesSnapshot.data!.isNotEmpty) {
               if (_recordingStarted) {
-                BluetoothBackend.sendCommandToConnectedDevices("stop");
+                BluetoothBackend.sendStopCommand();
                 _measurementsCollector.stopReadings();
                 setState(() {
                   _buttonIcon = Icons.fiber_manual_record;
                 });
               } else {
-                BluetoothBackend.sendCommandToConnectedDevices("start");
+                BluetoothBackend.sendStartDataCollectionCommand();
                 _measurementsCollector.readMeasurements();
                 setState(() {
                   _buttonIcon = Icons.stop;
