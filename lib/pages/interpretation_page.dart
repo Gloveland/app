@@ -6,8 +6,6 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 
-import 'dart:developer' as developer;
-
 class InterpretationPage extends StatefulWidget {
   const InterpretationPage({Key? key}) : super(key: key);
 
@@ -95,6 +93,7 @@ class _InterpretationsState extends State<Interpretations> {
   late Stream<List<int>> interpretationStream;
   static final Color background = Color.fromRGBO(0xD3, 0xD3, 0xD3, 1.0);
   final BluetoothDevice device;
+
   _InterpretationsState(this.device);
 
   @override
@@ -142,7 +141,6 @@ class _InterpretationsState extends State<Interpretations> {
           if (rawDeviceInterpretations.hasData) {
             msg = new String.fromCharCodes(rawDeviceInterpretations.data!);
           }
-          developer.log(device.id.id, name: "XXX");
           return Container(
               width: double.infinity,
               height: 48,
@@ -151,14 +149,6 @@ class _InterpretationsState extends State<Interpretations> {
               child: Text(msg));
         });
   }
-
-// List<Widget> statsToText(Map<String, double> stats) {
-//   List<Widget> statVisualizations = <Text>[];
-//   stats.forEach((key, value) {
-//     statVisualizations.add(Text("- $key: $value"));
-//   });
-//   return statVisualizations;
-// }
 }
 
 class InterpretationButton extends StatefulWidget {
