@@ -224,11 +224,13 @@ class _InterpretationButtonState extends State<InterpretationButton> {
     return _isRunning ? "Detener" : "Traducir";
   }
 
-  void _onInterpretationButtonPressed() {
+  void _onInterpretationButtonPressed() async {
+    List<BluetoothDevice> connectedDevices =
+        await BluetoothBackend.getConnectedDevices();
     if (_isRunning) {
-      BluetoothBackend.sendStopCommand();
+      BluetoothBackend.sendStopCommand(connectedDevices);
     } else {
-      BluetoothBackend.sendStartInterpretationCommand();
+      BluetoothBackend.sendStartInterpretationCommand(connectedDevices);
     }
     _isRunning = !_isRunning;
   }

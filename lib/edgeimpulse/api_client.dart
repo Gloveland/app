@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async' show Future;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:lsa_gloves/datacollection/storage.dart';
+import 'dart:developer' as developer;
 
 void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async {
 
@@ -15,10 +16,10 @@ void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async 
   );
 
   var sensor = [
-    //thump
-    Sensor("thumpAccX","m/s2"),Sensor("thumpAccY","m/s2"), Sensor("thumpAccZ","m/s2"),
-    Sensor("thumpGyroX","deg"),Sensor("thumpGyroY","deg"), Sensor("thumpGyroZ","deg"),
-    Sensor("thumpRoll","deg"),Sensor("thumpPitch","deg"), Sensor("thumpYaw","deg"),
+    //thumb
+    Sensor("thumbAccX","m/s2"),Sensor("thumbAccY","m/s2"), Sensor("thumbAccZ","m/s2"),
+    Sensor("thumbGyroX","deg"),Sensor("thumbGyroY","deg"), Sensor("thumbGyroZ","deg"),
+    Sensor("thumbRoll","deg"),Sensor("thumbPitch","deg"), Sensor("thumbYaw","deg"),
     /*
     //index
     Sensor("indexAccX","m/s2"),Sensor("indexAccY","m/s2"), Sensor("indexAccZ","m/s2"),
@@ -49,8 +50,8 @@ void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async 
   );
 
   var edgeImpulseBody = EdgeImpulseBody(protected: protected, signature: "empty", payload: payload);
-  print("sending post");
-  print(edgeImpulseBody.toJson());
+  developer.log("sending post");
+  developer.log("${edgeImpulseBody.toJson()}");
 
   Secret secret = await SecretLoader(secretPath: "assets/secrets.json").load();
 
@@ -63,7 +64,7 @@ void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async 
   request.add(utf8.encode(json.encode(edgeImpulseBody)));
   HttpClientResponse response = await request.close();
   String reply = await response.transform(utf8.decoder).join();
-  print(reply );
+  developer.log(reply );
   httpClient.close();
 }
 

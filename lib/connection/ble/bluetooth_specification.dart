@@ -6,8 +6,7 @@ class BluetoothSpecification {
   static const String deviceName = "RightHandSmartGlove";
 
   /// Service for reading measurements or retrieving interpretations from the gloves.
-  static const String LSA_GLOVE_SERVICE_UUID =
-      "7056f14b-02df-4dd8-86fd-0261c7b15c86";
+  static const String LSA_GLOVE_SERVICE_UUID = "7056f14b-02df-4dd8-86fd-0261c7b15c86";
 
   /// Characteristic for sending control commands to the gloves.
   static const String CONTROLLER_CHARACTERISTIC_UUID =
@@ -50,4 +49,7 @@ class BluetoothSpecification {
   /// This command will stop either the data collection task or the
   /// interpretations task on the device if one of them is being run
   static const String STOP_ONGOING_TASK = "stop";
+
+  /// MTU to request
+  static int mtu = 512;
 }

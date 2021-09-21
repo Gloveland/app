@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
-import 'package:lsa_gloves/model/movement.dart';
+import 'package:lsa_gloves/model/glove_measurement.dart';
 import 'package:lsa_gloves/edgeimpulse/api_client.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:developer' as developer;
 
 class GloveEventsStorage {
 
@@ -29,7 +30,7 @@ class GloveEventsStorage {
         .asyncMap((f) async => DeviceMeasurementsFile.fromFileSystem(f as File, await f.lastModified()))
         .listen((measurementsFile) => fileList.add(measurementsFile),
         onDone:  () => completer.complete(fileList),
-        onError: (error) => print("error getting datacollection: "+ error),
+        onError: (error) => developer.log("error getting datacollection: "+ error),
     );
     return completer.future;
   }
@@ -76,7 +77,7 @@ class DeviceMeasurementsFile {
     return DeviceMeasurementsFile._(file, creationDate, json);
   }
 
-  Future<bool> add(Movement measurement) async {
+  Future<bool> add(GloveMeasurement measurement) async {
     if(this.fileContent == null){
       this.fileContent = await readJsonContent();
     }
@@ -91,11 +92,11 @@ class DeviceMeasurementsFile {
     try {
       //TODO proteger concunrrencia, mutex??
       String json = jsonEncode(this.fileContent);
-      print("saving $json");
+      developer.log("saving $json");
       await this.file.writeAsString(json);
       return true;
     } catch (e) {
-      print("error saving content to file"+ e.toString());
+      developer.log("error saving content to file"+ e.toString());
       return false;
     }
   }
@@ -103,9 +104,9 @@ class DeviceMeasurementsFile {
   Future deleteFile() async {
     try {
       await file.delete();
-      print("file deleted");
+      developer.log("file deleted");
     } catch (e) {
-      print("cant delete file");
+      developer.log("cant delete file");
     }
   }
 
@@ -115,7 +116,7 @@ class DeviceMeasurementsFile {
       final contents = await file.readAsString();
       return  contents;
     } catch (e) {
-      print("error reading content to file"+ e.toString());
+      developer.log("error reading content to file"+ e.toString());
       return ""; // If encountering an error, return empty string
     }
   }
@@ -146,22 +147,31 @@ class SensorMeasurements {
 
   SensorMeasurements(this.deviceId, this.word, this.values);
 
-  bool add(Movement mov) {
-    if(mov.deviceId != this.deviceId){
-      print("wrong deviceId $mov.deviceId");
+  bool add(GloveMeasurement gloveMeasurement) {
+    if(gloveMeasurement.deviceId != this.deviceId){
+      developer.log("wrong deviceId $gloveMeasurement.deviceId");
       return false;
     }
     List<double> measurementList = [];
-    var thump = mov.hand.thump;
-    measurementList.add(thump.acc.x);
-    measurementList.add(thump.acc.y);
-    measurementList.add(thump.acc.z);
-    measurementList.add(thump.gyro.x);
-    measurementList.add(thump.gyro.y);
-    measurementList.add(thump.gyro.z);
-    measurementList.add(thump.inclination.yaw);
-    measurementList.add(thump.inclination.pitch);
-    measurementList.add(thump.inclination.roll);
+    addFingerMovements(measurementList, gloveMeasurement.pinky);
+    addFingerMovements(measurementList, gloveMeasurement.ring);
+    addFingerMovements(measurementList, gloveMeasurement.middle);
+    addFingerMovements(measurementList, gloveMeasurement.index);
+    addFingerMovements(measurementList, gloveMeasurement.thumb);
+    this.values.add(measurementList);
+    return true;
+  }
+
+  bool addFingerMovements(measurementList, Finger finger){
+    measurementList.add(finger.acc.x);
+    measurementList.add(finger.acc.y);
+    measurementList.add(finger.acc.z);
+    measurementList.add(finger.gyro.x);
+    measurementList.add(finger.gyro.y);
+    measurementList.add(finger.gyro.z);
+    measurementList.add(finger.inclination.roll);
+    measurementList.add(finger.inclination.pitch);
+    measurementList.add(finger.inclination.yaw);
     this.values.add(measurementList);
     return true;
   }

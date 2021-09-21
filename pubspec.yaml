@@ -31,8 +31,8 @@ dependencies:
   assets_audio_player: ^3.0.3+1
   #bluetooth
   flutter_blue: ^0.8.0
-  #percent indicator
   percent_indicator: ^3.0.1
+  simple_timer: 2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +53,8 @@ flutter:
   assets:
     - assets/audios/
     - assets/secrets.json
+    - assets/images/
+    - assets/images/waving_hand.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
