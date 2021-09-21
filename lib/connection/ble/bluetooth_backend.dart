@@ -30,10 +30,10 @@ class BluetoothBackend {
   }
 
   /// Sends the commands specified as a parameter to the connected devices
-  /// through the measurements characteristic.
+  /// through the control characteristic.
   ///
   /// This method is expected to be used to start and stop the measurement
-  /// readings from the glove.
+  /// readings from the glove as well as the interpretations.
   static void sendCommandToConnectedDevices(List<BluetoothDevice> connectedDevices, String command) async {
     List<BluetoothCharacteristic> characteristics =
         await getDevicesControllerCharacteristics(connectedDevices);

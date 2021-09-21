@@ -41,13 +41,17 @@ class NavDrawer extends StatelessWidget {
             Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => FileManagerPage(), maintainState: false));
           }),
-          ListTile(
-              leading: Icon(Icons.wash),
-              title: const Text("Recolectar data"),
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => BleDataCollectionPage(), maintainState: false));
-              }),
+      ListTile(
+          leading: Container(
+              width: 25,
+              height: 25,
+              child: ImageIcon(AssetImage("assets/images/waving_hand.png"))),
+          title: const Text("Recolectar data"),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => BleDataCollectionPage(),
+                maintainState: false));
+          }),
     ]));
   }
 }
