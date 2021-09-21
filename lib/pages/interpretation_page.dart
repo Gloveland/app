@@ -6,6 +6,8 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 
+import 'dart:developer' as developer;
+
 class InterpretationPage extends StatefulWidget {
   const InterpretationPage({Key? key}) : super(key: key);
 
@@ -67,7 +69,8 @@ class _InterpretationPageState extends State<InterpretationPage> {
           List<Widget> children = <Widget>[];
           if (devicesSnapshot.hasData) {
             devicesSnapshot.data!.forEach((element) {
-              children.add(Interpretations(device: element));
+              children.add(InterpretationWidget(
+                  key: Key(element.id.id), device: element));
               children.add(SizedBox(height: 16));
             });
           }
@@ -80,21 +83,25 @@ class _InterpretationPageState extends State<InterpretationPage> {
   }
 }
 
-class Interpretations extends StatefulWidget {
+/// Widget to display the interpretations of each glove.
+class InterpretationWidget extends StatefulWidget {
   final BluetoothDevice device;
 
-  const Interpretations({Key? key, required this.device}) : super(key: key);
+  const InterpretationWidget({Key? key, required this.device})
+      : super(key: key);
 
   @override
-  _InterpretationsState createState() => _InterpretationsState(device);
+  _InterpretationWidgetState createState() =>
+      _InterpretationWidgetState(device);
 }
 
-class _InterpretationsState extends State<Interpretations> {
+class _InterpretationWidgetState extends State<InterpretationWidget> {
+  static final String TAG = "InterpretationWidget";
   late Stream<List<int>> interpretationStream;
   static final Color background = Color.fromRGBO(0xD3, 0xD3, 0xD3, 1.0);
   final BluetoothDevice device;
 
-  _InterpretationsState(this.device);
+  _InterpretationWidgetState(this.device);
 
   @override
   void initState() {
@@ -114,20 +121,29 @@ class _InterpretationsState extends State<Interpretations> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    developer.log("Disposed widget of device: " + device.id.id, name: TAG);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
         width: double.infinity,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Container(
                 width: double.infinity,
-                height: 80,
                 padding: const EdgeInsets.all(8.0),
                 alignment: Alignment.topCenter,
                 color: background,
                 child: Text(device.name)),
+            Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8.0),
+                alignment: Alignment.topCenter,
+                color: background,
+                child: Text("Mac addr: ${device.id.id}")),
             displayStats()
           ],
         ));
@@ -143,7 +159,7 @@ class _InterpretationsState extends State<Interpretations> {
           }
           return Container(
               width: double.infinity,
-              height: 48,
+              height: 80,
               alignment: Alignment.center,
               color: background,
               child: Text(msg));
