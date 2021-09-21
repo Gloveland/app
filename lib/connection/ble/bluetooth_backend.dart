@@ -9,31 +9,32 @@ import 'bluetooth_specification.dart';
 /// Wrapper class to handle the communication between the app and the devices.
 class BluetoothBackend {
   static const String TAG = "BluetoothBackend";
+  static const String RightGlove = "Guante derecho";
+  static const String LeftGlove = "Guante izquierdo";
 
   /// Retrieves the connected devices.
   static Future<List<BluetoothDevice>> getConnectedDevices() {
     return FlutterBlue.instance.connectedDevices;
   }
 
-  static void sendStartDataCollectionCommand() async {
-    sendCommandToConnectedDevices(BluetoothSpecification.START_DATA_COLLECTION);
+  static void sendStartDataCollectionCommand(List<BluetoothDevice> connectedDevices) async {
+    sendCommandToConnectedDevices(connectedDevices, BluetoothSpecification.START_DATA_COLLECTION);
   }
 
-  static void sendStartInterpretationCommand() async {
-    sendCommandToConnectedDevices(BluetoothSpecification.START_INTERPRETATIONS);
+  static void sendStartInterpretationCommand(List<BluetoothDevice> connectedDevices) async {
+    sendCommandToConnectedDevices(connectedDevices, BluetoothSpecification.START_INTERPRETATIONS);
   }
 
-  static void sendStopCommand() async {
-    sendCommandToConnectedDevices(BluetoothSpecification.STOP_ONGOING_TASK);
+  static void sendStopCommand(List<BluetoothDevice> connectedDevices) async {
+    sendCommandToConnectedDevices(connectedDevices,BluetoothSpecification.STOP_ONGOING_TASK);
   }
 
   /// Sends the commands specified as a parameter to the connected devices
-  /// through the measurements characteristic.
+  /// through the control characteristic.
   ///
   /// This method is expected to be used to start and stop the measurement
-  /// readings from the glove.
-  static void sendCommandToConnectedDevices(String command) async {
-    List<BluetoothDevice> connectedDevices = await getConnectedDevices();
+  /// readings from the glove as well as the interpretations.
+  static void sendCommandToConnectedDevices(List<BluetoothDevice> connectedDevices, String command) async {
     List<BluetoothCharacteristic> characteristics =
         await getDevicesControllerCharacteristics(connectedDevices);
     characteristics.forEach((characteristic) async {
@@ -141,4 +142,17 @@ class BluetoothBackend {
         name: TAG);
     return characteristics;
   }
+
+  /// Retrieve the deviceName in spanish
+  static String getSpanishGloveName(String deviceName){
+    switch(deviceName){
+      case(BluetoothSpecification.deviceName):
+        return RightGlove;
+      default:
+        return deviceName;
+    }
+
+  }
+
+
 }

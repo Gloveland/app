@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:developer' as developer;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lsa_gloves/model/movement.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
+import 'package:lsa_gloves/model/glove_measurement.dart';
 import 'package:lsa_gloves/widgets/Dialog.dart';
 
 const String IP = '192.168.1.9'; //10.0.1.70';
@@ -59,8 +60,8 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   TextEditingController _fileNameFieldController = TextEditingController();
   String _fileNameUserInputValue;
-  StreamController<Movement> _streamController;
-  List<Movement> _items;
+  StreamController<GloveMeasurement> _streamController;
+  List<GloveMeasurement> _items;
 
   _MovementRecorderWidget(this.clientSocket, this._isRecording)
       : _fileNameUserInputValue = '',
@@ -82,18 +83,18 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
   }
 
   VoidCallback? startRecording() {
-    print('startRecording');
+    developer.log('startRecording');
     setState(() {
       _isRecording = true;
     });
-    print('streamController');
+    developer.log('streamController');
     _streamController = new StreamController.broadcast();
     _streamController.stream.listen((p) => {setState(() => _items.add(p))});
-    print('load msg from connection into item list');
+    developer.log('load msg from connection into item list');
   }
 
   VoidCallback? stopRecording() {
-    print('stopRecording');
+    developer.log('stopRecording');
     _streamController.close();
     setState(() {
       _isRecording = false;
@@ -172,14 +173,14 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     var socketSubscription = _clientSocketBroadcast.listen(null);
 
     socketSubscription.onError((error) {
-      print('socket subscription error: $error');
+      developer.log('socket subscription error: $error');
       socketSubscription.cancel();
       clientSocket.destroy();
       //TODO Reload WifiPage ?
     });
 
     socketSubscription.onDone(() {
-      print('Server left.....');
+      developer.log('Server left.....');
       socketSubscription.cancel();
       clientSocket.destroy();
       //TODO Reload WifiPage ?
@@ -190,37 +191,37 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
       final serverResponse = String.fromCharCodes(data);
       List<String> list =
           serverResponse.split('\n').where((s) => s.isNotEmpty).toList();
-      print('server : $list');
+      developer.log('server : $list');
       for (int i = 0; i < list.length; i++) {
         if (this._streamController.isClosed) {
-          print("skip: stream controller is close");
+          developer.log("skip: stream controller is close");
         } else {
           try {
             String jsonString = list[i];
-            var pkg = Movement.fromJson(jsonDecode(jsonString));
-            print('map to -> ${pkg.toJson().toString()}');
+            var pkg = GloveMeasurement.fromJson(jsonDecode(jsonString));
+            developer.log('map to -> ${pkg.toJson().toString()}');
             this._streamController.add(pkg);
           } catch (e) {
-            print('cant parse : ${list[i]}');
-            print('error : ${e.toString()}');
+            developer.log('cant parse : ${list[i]}');
+            developer.log('error : ${e.toString()}');
           }
         }
       }
     });
   }
 
-  saveMessagesInFile(String fileName, List<Movement> movements) async {
-    if (movements.isEmpty) {
+  saveMessagesInFile(String fileName, List<GloveMeasurement> gloveMeasurement) async {
+    if (gloveMeasurement.isEmpty) {
       return;
     }
     //open pop up loading
     Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
     var word = fileName;
-    var deviceId = movements.first.deviceId;
+    var deviceId = gloveMeasurement.first.deviceId;
     var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    for (int i = 0; i < movements.length; i++) {
-      print('saving in file -> ${movements[i].toJson().toString()}');
-      measurementFile.add(movements[i]);
+    for (int i = 0; i < gloveMeasurement.length; i++) {
+      developer.log('saving in file -> ${gloveMeasurement[i].toJson().toString()}');
+      measurementFile.add(gloveMeasurement[i]);
     }
     await measurementFile.save();
     this._items = [];

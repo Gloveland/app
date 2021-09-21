@@ -1,77 +1,36 @@
-import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:lsa_gloves/datacollection/storage.dart';
-import 'package:lsa_gloves/connection/ble/bluetooth_widgets.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_services.dart';
+import 'dart:developer' as developer;
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
   final BluetoothDevice device;
+
   @override
   _DeviceScreenState createState() => _DeviceScreenState(this.device);
 }
 
 class _DeviceScreenState extends State<DeviceScreen> {
   _DeviceScreenState(this.device);
+
   BluetoothDevice device;
-  int _ack = 0;
 
-  VoidCallback? connectCallBack() {
-    device.connect();
-    setState(() {
-      _ack = 0;
-    });
-  }
-
-  VoidCallback? disconnectCallBack() {
-    device.disconnect();
-  }
-
-  _readGloveMovements(BluetoothCharacteristic characteristic)  async {
-    var word = 'HOLA';
-    var deviceId = "ac:87:a3:0a:2d:1b";
-    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
-    for(int i = 0; i < 100; i++) {
-      String valueRead = await characteristic.read().then((value) => new String.fromCharCodes(value));
-      print("READING.... $valueRead");
-    }
-  }
-
-  List<Widget> _buildServiceTiles(List<BluetoothService> services) {
+  List<Widget> _buildServiceTiles(
+      String deviceId, List<BluetoothService> services) {
     return services
+        .where((bleService) =>
+            bleService.uuid.toString().toLowerCase() ==
+            BluetoothSpecification.LSA_GLOVE_SERVICE_UUID.toLowerCase())
         .map(
           (bleService) => ServiceTile(
-        service: bleService,
-        characteristicTiles: bleService.characteristics
-            .map(
-              (characteristic) => CharacteristicTile(
-            characteristic: characteristic,
-            onReadPressed: () async {
-              await _readGloveMovements(characteristic);
-            },
-            onWritePressed: () async {
-              await characteristic.write(utf8.encode("on write characteristic"), withoutResponse: true);
-              await characteristic.read();
-            },
-            onNotificationPressed: () async {
-              await characteristic.setNotifyValue(!characteristic.isNotifying);
-              await characteristic.read();
-            },
-            descriptorTiles: characteristic.descriptors
-                .map(
-                  (descriptor) => DescriptorTile(
-                descriptor: descriptor,
-                onReadPressed: () => descriptor.read(),
-                onWritePressed: () => descriptor.write(utf8.encode("on write descriptor")),
-              ),
-            )
-                .toList(),
+            service: bleService,
+            deviceId: deviceId,
+            characteristics: bleService.characteristics,
           ),
         )
-            .toList(),
-      ),
-    )
         .toList();
   }
 
@@ -85,31 +44,28 @@ class _DeviceScreenState extends State<DeviceScreen> {
             stream: device.state,
             initialData: BluetoothDeviceState.connecting,
             builder: (c, snapshot) {
-              VoidCallback? onPressed;
               String text;
               switch (snapshot.data) {
                 case BluetoothDeviceState.connected:
-                  onPressed = () => disconnectCallBack; //device.disconnect();
-                  text = 'DISCONNECT';
+                  text = 'CONNECTED';
                   break;
                 case BluetoothDeviceState.disconnected:
-                  onPressed = () => connectCallBack; //device.connect();
-                  text = 'CONNECT';
+                  text = 'DISCONNECTED';
                   break;
                 default:
-                  onPressed = null;
                   text = snapshot.data.toString().substring(21).toUpperCase();
                   break;
               }
-              return FlatButton(
-                  onPressed: onPressed,
-                  child: Text(
-                    text,
-                    style: Theme.of(context)
-                        .primaryTextTheme
-                        .button
-                        ?.copyWith(color: Colors.white),
-                  ));
+              return Center(
+                child: Text(
+                  text,
+                  textAlign: TextAlign.left,
+                  style: Theme.of(context)
+                      .primaryTextTheme
+                      .button
+                      ?.copyWith(color: Colors.white),
+                ),
+              );
             },
           )
         ],
@@ -127,11 +83,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 title: Text(
                     'Device is ${snapshot.data.toString().split('.')[1]}.'),
                 subtitle: Text('${device.id}'),
-                trailing: StreamBuilder<bool>(
-                  stream: device.isDiscoveringServices,
-                  initialData: false,
-                  builder: (c, snapshot) => IndexedStack(
-                    index: snapshot.data! ? 1 : 0,
+                trailing: StreamBuilder<List<BluetoothService>>(
+                  stream: Stream.periodic(Duration(seconds: 2))
+                      .asyncMap((_) => device.discoverServices()),
+                  initialData: [],
+                  builder: (context, servicesSnapshot) => IndexedStack(
+                    index: servicesSnapshot.data!.isEmpty ? 1 : 0,
                     children: <Widget>[
                       IconButton(
                         icon: Icon(Icons.refresh),
@@ -140,7 +97,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                       IconButton(
                         icon: SizedBox(
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation(Colors.grey),
+                            valueColor: AlwaysStoppedAnimation(Colors.red),
                           ),
                           width: 18.0,
                           height: 18.0,
@@ -160,7 +117,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 subtitle: Text('${snapshot.data} bytes'),
                 trailing: IconButton(
                   icon: Icon(Icons.edit),
-                  onPressed: () => device.requestMtu(223),
+                  onPressed: () => device.requestMtu(512),
                 ),
               ),
             ),
@@ -169,7 +126,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               initialData: [],
               builder: (c, snapshot) {
                 return Column(
-                  children: _buildServiceTiles(snapshot.data!),
+                  children: _buildServiceTiles('${device.id}', snapshot.data!),
                 );
               },
             ),
@@ -178,7 +135,4 @@ class _DeviceScreenState extends State<DeviceScreen> {
       ),
     );
   }
-
-
 }
-

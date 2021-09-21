@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/datacollection/file_content.dart';
-import 'package:lsa_gloves/pages/data_collection_page.dart';
+import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
+import 'package:lsa_gloves/pages/ble_devices_connection_page.dart';
+import 'package:lsa_gloves/pages/home_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,12 +16,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       routes: {
         FileContentPage.routeName: (context) => FileContentPage(),
+        BleGloveConnectionPage.routeName: (context) => BleGloveConnectionPage(),
+        BleConnectionErrorPage.routeName: (context) => BleConnectionErrorPage(),
       },
       title: 'Lengua de señas Argentina',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: DataCollectionPage(),
+      home: HomePage()//HomePage(),
     );
   }
 }
