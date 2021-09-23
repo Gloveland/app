@@ -17,16 +17,6 @@ class InterpretationPage extends StatefulWidget {
 
 class _InterpretationPageState extends State<InterpretationPage> {
   static final String appBarTitle = 'Interpretación';
-  static final Color background = Color.fromRGBO(0xD3, 0xD3, 0xD3, 1.0);
-
-  late Future<List<BluetoothCharacteristic>> characteristics;
-
-  @override
-  void initState() {
-    super.initState();
-    characteristics =
-        BluetoothBackend.getDevicesInterpretationCharacteristics();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +35,10 @@ class _InterpretationPageState extends State<InterpretationPage> {
                   width: double.infinity,
                   height: 48,
                   alignment: Alignment.center,
-                  color: background,
+                  color: Theme.of(context).backgroundColor,
                   child: Text(
                     "Traducción",
+                    //TODO(https://git.io/Jzuoa): display a definitive interpretation
                     style: TextStyle(fontSize: 32),
                   ),
                 ),
@@ -98,7 +89,6 @@ class InterpretationWidget extends StatefulWidget {
 class _InterpretationWidgetState extends State<InterpretationWidget> {
   static final String TAG = "InterpretationWidget";
   late Stream<List<int>> interpretationStream;
-  static final Color background = Color.fromRGBO(0xD3, 0xD3, 0xD3, 1.0);
   final BluetoothDevice device;
 
   _InterpretationWidgetState(this.device);
@@ -107,17 +97,6 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   void initState() {
     super.initState();
     loadInterpretationStream();
-  }
-
-  Future<void> loadInterpretationStream() async {
-    interpretationStream = new Stream.empty();
-    interpretationStream = await BluetoothBackend.getLsaGlovesService(device)
-        .then((service) =>
-            BluetoothBackend.getInterpretationCharacteristic(service!))
-        .then((characteristic) {
-      characteristic.setNotifyValue(true);
-      return characteristic.value;
-    });
   }
 
   @override
@@ -136,13 +115,13 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(8.0),
                 alignment: Alignment.topCenter,
-                color: background,
+                color: Theme.of(context).backgroundColor,
                 child: Text(device.name)),
             Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(8.0),
                 alignment: Alignment.topCenter,
-                color: background,
+                color: Theme.of(context).backgroundColor,
                 child: Text("Mac addr: ${device.id.id}")),
             displayStats()
           ],
@@ -161,9 +140,20 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
               width: double.infinity,
               height: 80,
               alignment: Alignment.center,
-              color: background,
+              color: Theme.of(c).backgroundColor,
               child: Text(msg));
         });
+  }
+
+  Future<void> loadInterpretationStream() async {
+    interpretationStream = new Stream.empty();
+    interpretationStream = await BluetoothBackend.getLsaGlovesService(device)
+        .then((service) =>
+            BluetoothBackend.getInterpretationCharacteristic(service!))
+        .then((characteristic) {
+      characteristic.setNotifyValue(true);
+      return characteristic.value;
+    });
   }
 }
 
