@@ -88,7 +88,7 @@ class InterpretationWidget extends StatefulWidget {
 
 class _InterpretationWidgetState extends State<InterpretationWidget> {
   static final String TAG = "InterpretationWidget";
-  late Stream<List<int>> interpretationStream;
+  Stream<List<int>> interpretationStream = Stream.empty();
   final BluetoothDevice device;
 
   _InterpretationWidgetState(this.device);
@@ -103,6 +103,16 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   void dispose() {
     super.dispose();
     developer.log("Disposed widget of device: " + device.id.id, name: TAG);
+  }
+
+  Future<void> loadInterpretationStream() async {
+    interpretationStream = await BluetoothBackend.getLsaGlovesService(device)
+        .then((service) =>
+            BluetoothBackend.getInterpretationCharacteristic(service!))
+        .then((characteristic) {
+      characteristic.setNotifyValue(true);
+      return characteristic.value;
+    });
   }
 
   @override
@@ -131,6 +141,7 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   StreamBuilder<List<int>> displayStats() {
     return StreamBuilder<List<int>>(
         stream: interpretationStream,
+        initialData: [],
         builder: (c, rawDeviceInterpretations) {
           String msg = "";
           if (rawDeviceInterpretations.hasData) {
@@ -143,17 +154,6 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
               color: Theme.of(c).backgroundColor,
               child: Text(msg));
         });
-  }
-
-  Future<void> loadInterpretationStream() async {
-    interpretationStream = new Stream.empty();
-    interpretationStream = await BluetoothBackend.getLsaGlovesService(device)
-        .then((service) =>
-            BluetoothBackend.getInterpretationCharacteristic(service!))
-        .then((characteristic) {
-      characteristic.setNotifyValue(true);
-      return characteristic.value;
-    });
   }
 }
 
