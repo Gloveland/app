@@ -4,6 +4,7 @@ import 'package:lsa_gloves/pages/ble_data_collection_page.dart';
 import 'package:lsa_gloves/pages/ble_devices_connection_page.dart';
 import 'package:lsa_gloves/connection/wifi/socket.dart';
 import 'package:lsa_gloves/pages/file_manager_page.dart';
+import 'package:lsa_gloves/pages/interpretation_page.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);
@@ -52,6 +53,13 @@ class NavDrawer extends StatelessWidget {
                 builder: (context) => BleDataCollectionPage(),
                 maintainState: false));
           }),
+      ListTile(
+          leading: Icon(Icons.translate),
+          title: const Text("Interpretación"),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => InterpretationPage(), maintainState: false));
+          })
     ]));
   }
 }
