@@ -25,12 +25,26 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   late String selectedGesture = gestures[0];
   bool _isRecording;
   late TimerController _timerController;
-  List<BluetoothDevice> _connectedDevices;
-  MeasurementsCollector? _measurementsCollector;
 
-  _BleDataCollectionState(this._isRecording) : _connectedDevices = [] {
+  _BleDataCollectionState(this._isRecording) {
     _timerController = TimerController(this);
   }
+
+  /*
+  Future<void> loadDataCollectionStream() async {
+    // TODO(https://git.io/JEyV4): Process data from more than one device.
+    var connectedDevices = await BluetoothBackend.getConnectedDevices();
+    var measurementsCollector =
+        await BluetoothBackend.getLsaGlovesService(connectedDevices.first)
+            .then((service) =>
+                BluetoothBackend.getDataCollectionCharacteristic(service!))
+            .then((characteristic) {
+      String deviceId = "${connectedDevices.first.id}";
+      return new MeasurementsCollector(deviceId, characteristic);
+    });
+    measurementsCollector.readMeasurements(context);
+  }
+   */
 
   @override
   Widget build(BuildContext context) {
@@ -41,84 +55,68 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       body: Center(
           child: Padding(
         padding: EdgeInsets.all(16.0),
-        child: StreamBuilder<List<BluetoothDevice>>(
-            stream: Stream.periodic(Duration(seconds: 2))
-                .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
-            initialData: [],
-            builder: (context, devicesSnapshot) {
-              if (devicesSnapshot.hasData) {
-                this._connectedDevices = devicesSnapshot.data!;
-              }
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    width: double.infinity,
-                    child: Text(
-                      "Categoría",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  buildDropdownButton(categories, selectedCategory,
-                      (String? newValue) {
-                    setState(() {
-                      selectedCategory = newValue!;
-                      gestures = getGestureList(selectedCategory);
-                      selectedGesture = gestures[0];
-                    });
-                  }),
-                  SizedBox(height: 24),
-                  Container(
-                    width: double.infinity,
-                    child: Text(
-                      "Gesto",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  buildDropdownButton(gestures, selectedGesture,
-                      (String? newValue) {
-                    setState(() {
-                      this.selectedGesture = newValue!;
-                    });
-                  }),
-                  SizedBox(height: 24),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Container(
-                      width: double.infinity,
-                      child: Text(
-                        "Clickear el boton para comenzar a grabar los movimientos",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 74),
-                  Container(
-                    width: 200,
-                    height: 300,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: <Widget>[
-                        SimpleTimer(
-                          controller: _timerController,
-                          duration: Duration(seconds: 10),
-                          progressIndicatorColor:
-                              Theme.of(context).primaryColor,
-                          progressTextStyle:
-                              TextStyle(color: Colors.transparent),
-                          strokeWidth: 15,
-                        ),
-                        Padding(
-                            padding: EdgeInsets.all(24),
-                            child: buildRecordingButton()),
-                      ],
-                    ),
-                  ),
-                ],
-              );
+        child:
+            Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              width: double.infinity,
+              child: Text(
+                "Categoría",
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            SizedBox(height: 8),
+            buildDropdownButton(categories, selectedCategory,
+                (String? newValue) {
+              setState(() {
+                selectedCategory = newValue!;
+                gestures = getGestureList(selectedCategory);
+                selectedGesture = gestures[0];
+              });
             }),
+            SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              child: Text(
+                "Gesto",
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            SizedBox(height: 8),
+            buildDropdownButton(gestures, selectedGesture, (String? newValue) {
+              setState(() {
+                this.selectedGesture = newValue!;
+              });
+            }),
+            SizedBox(height: 24),
+            Container(
+              width: 200,
+              height: 300,
+              decoration: new BoxDecoration(
+                  color: Colors.green
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: <Widget>[
+                  SimpleTimer(
+                    controller: _timerController,
+                    duration: Duration(seconds: 10),
+                    progressIndicatorColor: Theme.of(context).primaryColor,
+                    progressTextStyle: TextStyle(color: Colors.transparent),
+                    strokeWidth: 15,
+                  ),
+                  Padding(
+                      padding: EdgeInsets.all(24),
+                      child: buildRecordingButton()),
+                ],
+              ),
+            ),
+            SizedBox(height: 10),
+            _dataCollectionWidgets(),
+          ],
+        ),
+        // }),
       )),
     );
   }
@@ -154,24 +152,75 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
         })());
   }
 
+  _dataCollectionWidgets() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+    StreamBuilder(
+    stream: Stream.periodic(Duration(seconds: 2))
+        .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
+        builder:
+            (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+          if (!snapshot.hasData) {
+            return Loader();
+          }
+        Container(
+          width: double.infinity,
+          alignment: Alignment.topCenter,
+          decoration: new BoxDecoration(
+              color: Colors.amberAccent
+          ),
+          child: Text("3.4, 2.4", style: TextStyle(fontSize: 16)),
+        )
+      ],
+    );
+    /*return StreamBuilder<List<BluetoothDevice>>(
+        stream: Stream.periodic(Duration(seconds: 2))
+            .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
+        builder: (c, devicesSnapshot) {
+          List<Widget> children = <Widget>[];
+          if (devicesSnapshot.hasData) {
+            developer.log('devices found', name: TAG);
+            devicesSnapshot.data!.forEach((deviceElement) async {
+              var characteristic =
+                  await BluetoothBackend.getLsaGlovesService(deviceElement)
+                      .then((service) =>
+                          BluetoothBackend.getDataCollectionCharacteristic(
+                              service!));
+              var deviceId = "${deviceElement.id}";
+              developer.log(deviceId, name: TAG);
+              developer.log("${characteristic.uuid}", name: TAG);
+              var measurementCollector = new MeasurementsCollector(
+                  deviceId, characteristic);
+              children.add(DataCollectionWidget(
+                  //key: Key(deviceId),
+                  device: deviceElement,
+                  measurementsCollector: measurementCollector));
+              children.add(SizedBox(height: 16));
+            });
+          }
+          return Column(
+            //mainAxisAlignment: MainAxisAlignment.center,
+            //crossAxisAlignment: CrossAxisAlignment.center,
+            children: children,
+          );
+        });
+
+     */
+  }
+
   Future<VoidCallback?> startRecording() async {
     developer.log('startRecording', name: TAG);
-    if (this._connectedDevices.isEmpty) {
+    List<BluetoothDevice> connectedDevices = await BluetoothBackend.getConnectedDevices();
+    if (connectedDevices.isEmpty) {
       developer.log('Cant start recording! No device connected', name: TAG);
       Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => BleConnectionErrorPage(),
           maintainState: false));
     } else {
-      BluetoothBackend.sendStartDataCollectionCommand(this._connectedDevices);
-      var dataCollectionCharacteristics =
-          await BluetoothBackend.getDevicesDataCollectionCharacteristics(
-              this._connectedDevices);
-      // TODO(https://git.io/JEyV4): Process data from more than one device.
-      String deviceId = "${this._connectedDevices.first.id}";
-      this._measurementsCollector = new MeasurementsCollector(
-          deviceId, dataCollectionCharacteristics.first);
+      BluetoothBackend.sendStartDataCollectionCommand(connectedDevices);
       this._timerController.start();
-      this._measurementsCollector!.readMeasurements(context);
       setState(() {
         _isRecording = true;
       });
@@ -184,11 +233,15 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     setState(() {
       _isRecording = false;
     });
-    BluetoothBackend.sendStopCommand(this._connectedDevices);
+    List<BluetoothDevice> connectedDevices =
+        await BluetoothBackend.getConnectedDevices();
+    BluetoothBackend.sendStopCommand(connectedDevices);
+    /*
     if (this._measurementsCollector != null) {
       String gesture = "$selectedCategory-$selectedGesture";
       await this._measurementsCollector!.stopReadings(context, gesture);
     }
+     */
   }
 
   static List<String> getCategoryList() {
@@ -211,5 +264,45 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   @override
   Future<void> dispose() async {
     super.dispose();
+  }
+}
+
+/// Widget to display the dataCollection of each glove.
+class DataCollectionWidget extends StatefulWidget {
+  final BluetoothDevice device;
+  final MeasurementsCollector measurementsCollector;
+
+  const DataCollectionWidget(
+      {Key? key, required this.device, required this.measurementsCollector})
+      : super(key: key);
+
+  @override
+  _DataCollectionWidgetState createState() =>
+      _DataCollectionWidgetState(device, measurementsCollector);
+}
+
+class _DataCollectionWidgetState extends State<DataCollectionWidget> {
+  static const String TAG = "DataCollectionWidget";
+  final BluetoothDevice device;
+  final MeasurementsCollector measurementsCollector;
+
+  _DataCollectionWidgetState(this.device, this.measurementsCollector);
+
+  @override
+  Widget build(BuildContext context) {
+    return  Container(
+        width: double.infinity,
+        alignment: Alignment.topCenter,
+      decoration: new BoxDecoration(
+          color: Colors.amberAccent
+      ),
+        child: Text("3.4, 2.4", style: TextStyle(fontSize: 16)),
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    developer.log("Disposed widget of device: " + device.id.id, name: TAG);
   }
 }
