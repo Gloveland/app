@@ -185,6 +185,7 @@ class _ConnectionGloveCard extends State {
   String connectionStatusText = "Desconectado";
   IconData connectionStatusIcon = Icons.bluetooth;
   BluetoothDeviceState? btDeviceState = BluetoothDeviceState.disconnected;
+
   _ConnectionGloveCard(this.iconColor, this.device, this.updateState);
 
   @override
@@ -198,7 +199,8 @@ class _ConnectionGloveCard extends State {
               child: ListTile(
                   leading: Container(
                       height: double.infinity,
-                      child: Icon(connectionStatusIcon,
+                      child: Icon(
+                        connectionStatusIcon,
                         color: this.iconColor,
                       )),
                   title: Text(
@@ -242,20 +244,16 @@ class _ConnectionGloveCard extends State {
   }
 
   void navigateToDeviceSettings() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      device
-          .connect()
-          .then((value) => device.requestMtu(BluetoothSpecification.mtu))
-          .catchError((error) {
-        developer.log("error connecting ${error}");
-      });
-      return DeviceScreen(device: device);
-    }));
+    Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => DeviceScreen(device: device)));
   }
 
   void toggleConnection(BuildContext context) {
     if (btDeviceState != BluetoothDeviceState.connected) {
-      this.device.connect().then((value) => device.requestMtu(BluetoothSpecification.mtu));
+      this
+          .device
+          .connect()
+          .then((value) => device.requestMtu(BluetoothSpecification.mtu));
       this.updateState(this.device);
     } else {
       showDialog(

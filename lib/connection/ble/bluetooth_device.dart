@@ -25,7 +25,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
         children: <Widget>[
           StreamBuilder<BluetoothDeviceState>(
             stream: device.state,
-            initialData: BluetoothDeviceState.connecting,
+            initialData: BluetoothDeviceState.disconnected,
             builder: (c, snapshot) => SwitchListTile(
               secondary: Container(
                 height: double.infinity,
@@ -35,7 +35,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ),
               title: Text('${device.name.toString()}'),
               subtitle: Text('${device.id}'),
-              onChanged: (value) {},
+              onChanged: (value) {
+                if (value) {
+                  setState(() {
+                    device.connect().then((value) =>
+                        device.requestMtu(BluetoothSpecification.mtu));
+                  });
+                } else {
+                  device.disconnect();
+                }
+              },
               value: snapshot.data == BluetoothDeviceState.connected
                   ? true
                   : false,
@@ -45,13 +54,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
           StreamBuilder<int>(
             stream: device.mtu,
             initialData: 0,
-            builder: (c, snapshot) => ListTile(
-              title: Text('MTU Size: ${snapshot.data} bytes'),
-              trailing: IconButton(
-                icon: Icon(Icons.edit),
-                onPressed: () => device.requestMtu(512),
-              ),
-            ),
+            builder: (c, snapshot) {
+              print("Mtu updated");
+              return ListTile(
+                title: Text('MTU Size: ${snapshot.data} bytes'),
+                trailing: IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: () => device.requestMtu(512),
+                ),
+              );
+            },
           ),
           ListTile(
               title: Text("Calibración"),
@@ -60,9 +72,14 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 onPressed: () {},
               )),
           Container(
-            padding: EdgeInsets.all(16),
-            child: ConsoleWidget(),
-          )
+              padding: EdgeInsets.all(16),
+              child: ConsoleWidget(
+                  stream: Stream<List<int>>.periodic(const Duration(seconds: 1),
+                      (x) {
+                List<int> list = <int>[];
+                list.add(x);
+                return list;
+              })))
         ],
       ),
     );
@@ -70,20 +87,33 @@ class _DeviceScreenState extends State<DeviceScreen> {
 }
 
 class ConsoleWidget extends StatefulWidget {
-  const ConsoleWidget({Key? key}) : super(key: key);
+  final Stream<List<int>> stream;
+
+  const ConsoleWidget({Key? key, required this.stream}) : super(key: key);
 
   @override
-  _ConsoleWidgetState createState() => _ConsoleWidgetState();
+  _ConsoleWidgetState createState() => _ConsoleWidgetState(stream: stream);
 }
 
 class _ConsoleWidgetState extends State<ConsoleWidget> {
+  final Stream<List<int>> stream;
+
+  _ConsoleWidgetState({required this.stream});
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
       color: Theme.of(context).backgroundColor,
-      child: Text(">> Calibrating..."),
+      child: StreamBuilder<List<int>>(
+          stream: stream,
+          builder: (c, snapshot) {
+            if (snapshot.hasData) {
+              String input = snapshot.data.toString();
+              return Text(input);
+            }
+            return Text("");
+          }),
     );
   }
 }
-
