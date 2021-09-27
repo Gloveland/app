@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'dart:developer' as developer;
 
@@ -69,51 +70,22 @@ class _DeviceScreenState extends State<DeviceScreen> {
               title: Text("Calibración"),
               trailing: IconButton(
                 icon: Icon(Icons.settings_backup_restore),
-                onPressed: () {},
+                onPressed: () {
+                  BluetoothBackend.sendCalibrationCommand(device);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Row(
+                    children: [
+                      Icon(Icons.lightbulb, color: Colors.blue),
+                      SizedBox(width: 20),
+                      Expanded(
+                          child: Text(
+                              "Calibrando... espere a que se apague el led azul del dispositivo."))
+                    ],
+                  )));
+                },
               )),
-          Container(
-              padding: EdgeInsets.all(16),
-              child: ConsoleWidget(
-                  stream: Stream<List<int>>.periodic(const Duration(seconds: 1),
-                      (x) {
-                List<int> list = <int>[];
-                list.add(x);
-                return list;
-              })))
         ],
       ),
-    );
-  }
-}
-
-class ConsoleWidget extends StatefulWidget {
-  final Stream<List<int>> stream;
-
-  const ConsoleWidget({Key? key, required this.stream}) : super(key: key);
-
-  @override
-  _ConsoleWidgetState createState() => _ConsoleWidgetState(stream: stream);
-}
-
-class _ConsoleWidgetState extends State<ConsoleWidget> {
-  final Stream<List<int>> stream;
-
-  _ConsoleWidgetState({required this.stream});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      color: Theme.of(context).backgroundColor,
-      child: StreamBuilder<List<int>>(
-          stream: stream,
-          builder: (c, snapshot) {
-            if (snapshot.hasData) {
-              String input = snapshot.data.toString();
-              return Text(input);
-            }
-            return Text("");
-          }),
     );
   }
 }
