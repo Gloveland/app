@@ -26,9 +26,15 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   late String selectedGesture = gestures[0];
   bool _isRecording;
   late TimerController _timerController;
+  late DataCollectionWidget rightDataWidget;
+  late DataCollectionWidget leftDataWidget;
 
   _BleDataCollectionState(this._isRecording) {
     _timerController = TimerController(this);
+    this.rightDataWidget = DataCollectionWidget(
+        deviceName: BluetoothSpecification.RIGHT_GLOVE_NAME);
+    this.leftDataWidget = DataCollectionWidget(
+    deviceName: BluetoothSpecification.LEFT_GLOVE_NAME);
   }
 
   @override
@@ -77,11 +83,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
             Expanded(
                 child: Column(
               children: <Widget>[
-                DataCollectionWidget(
-                    deviceName: BluetoothSpecification.RIGHT_GLOVE_NAME),
-                DataCollectionWidget(
-                    deviceName: BluetoothSpecification.LEFT_GLOVE_NAME),
-              ],
+                this.rightDataWidget,
+                this.leftDataWidget],
             )),
             Container(
               width: 200,
@@ -168,6 +171,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     List<BluetoothDevice> connectedDevices =
         await BluetoothBackend.getConnectedDevices();
     BluetoothBackend.sendStopCommand(connectedDevices);
+    this.rightDataWidget.reset();
+    this.leftDataWidget.reset();
     /*
     if (this._measurementsCollector != null) {
       String gesture = "$selectedCategory-$selectedGesture";
@@ -209,6 +214,10 @@ class DataCollectionWidget extends StatefulWidget {
   @override
   _DataCollectionWidgetState createState() =>
       _DataCollectionWidgetState(deviceName);
+
+  void reset() {
+    createState();
+  }
 }
 
 class _DataCollectionWidgetState extends State<DataCollectionWidget> {
