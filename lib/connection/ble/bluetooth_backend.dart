@@ -134,7 +134,7 @@ class BluetoothBackend {
   /// Retrieve the deviceName in spanish
   static String getSpanishGloveName(String deviceName) {
     switch (deviceName) {
-      case (BluetoothSpecification.deviceName):
+      case (BluetoothSpecification.RIGHT_GLOVE_NAME):
         return RightGlove;
       default:
         return deviceName;

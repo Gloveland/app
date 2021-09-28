@@ -73,7 +73,7 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
   bool leftGloveFound;
 
   void updateState(BluetoothDevice device) {
-    if (BluetoothSpecification.deviceName == device.name) {
+    if (BluetoothSpecification.RIGHT_GLOVE_NAME == device.name) {
       setState(() {
         rightGloveFound = true;
       });
@@ -82,7 +82,7 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
 
   bool shouldRender(ScanResult scanResult) {
     switch (scanResult.device.name) {
-      case (BluetoothSpecification.deviceName):
+      case (BluetoothSpecification.RIGHT_GLOVE_NAME):
         return !rightGloveFound;
       default:
         return false;
@@ -128,7 +128,7 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
                         return Column(
                           children: devices
                               .where((d) =>
-                                  d.name == BluetoothSpecification.deviceName)
+                                  d.name == BluetoothSpecification.RIGHT_GLOVE_NAME)
                               .map((device) => ConnectionGloveCard(
                                   iconColor: Theme.of(context).primaryColor,
                                   device: device,

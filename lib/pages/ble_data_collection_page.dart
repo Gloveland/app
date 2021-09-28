@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
 import 'package:simple_timer/simple_timer.dart';
@@ -30,22 +31,6 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     _timerController = TimerController(this);
   }
 
-  /*
-  Future<void> loadDataCollectionStream() async {
-    // TODO(https://git.io/JEyV4): Process data from more than one device.
-    var connectedDevices = await BluetoothBackend.getConnectedDevices();
-    var measurementsCollector =
-        await BluetoothBackend.getLsaGlovesService(connectedDevices.first)
-            .then((service) =>
-                BluetoothBackend.getDataCollectionCharacteristic(service!))
-            .then((characteristic) {
-      String deviceId = "${connectedDevices.first.id}";
-      return new MeasurementsCollector(deviceId, characteristic);
-    });
-    measurementsCollector.readMeasurements(context);
-  }
-   */
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,8 +40,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       body: Center(
           child: Padding(
         padding: EdgeInsets.all(16.0),
-        child:
-            Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             Container(
@@ -66,7 +50,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                 style: TextStyle(fontSize: 16),
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 4),
             buildDropdownButton(categories, selectedCategory,
                 (String? newValue) {
               setState(() {
@@ -75,7 +59,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                 selectedGesture = gestures[0];
               });
             }),
-            SizedBox(height: 24),
+            SizedBox(height: 20),
             Container(
               width: double.infinity,
               child: Text(
@@ -83,19 +67,25 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                 style: TextStyle(fontSize: 16),
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 4),
             buildDropdownButton(gestures, selectedGesture, (String? newValue) {
               setState(() {
                 this.selectedGesture = newValue!;
               });
             }),
-            SizedBox(height: 24),
+            SizedBox(height: 4),
+            Expanded(
+                child: Column(
+              children: <Widget>[
+                DataCollectionWidget(
+                    deviceName: BluetoothSpecification.RIGHT_GLOVE_NAME),
+                DataCollectionWidget(
+                    deviceName: BluetoothSpecification.LEFT_GLOVE_NAME),
+              ],
+            )),
             Container(
               width: 200,
-              height: 300,
-              decoration: new BoxDecoration(
-                  color: Colors.green
-              ),
+              height: 250,
               child: Stack(
                 alignment: Alignment.center,
                 children: <Widget>[
@@ -113,7 +103,6 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
               ),
             ),
             SizedBox(height: 10),
-            _dataCollectionWidgets(),
           ],
         ),
         // }),
@@ -152,67 +141,10 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
         })());
   }
 
-  _dataCollectionWidgets() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-    StreamBuilder(
-    stream: Stream.periodic(Duration(seconds: 2))
-        .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
-        builder:
-            (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-          if (!snapshot.hasData) {
-            return Loader();
-          }
-        Container(
-          width: double.infinity,
-          alignment: Alignment.topCenter,
-          decoration: new BoxDecoration(
-              color: Colors.amberAccent
-          ),
-          child: Text("3.4, 2.4", style: TextStyle(fontSize: 16)),
-        )
-      ],
-    );
-    /*return StreamBuilder<List<BluetoothDevice>>(
-        stream: Stream.periodic(Duration(seconds: 2))
-            .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
-        builder: (c, devicesSnapshot) {
-          List<Widget> children = <Widget>[];
-          if (devicesSnapshot.hasData) {
-            developer.log('devices found', name: TAG);
-            devicesSnapshot.data!.forEach((deviceElement) async {
-              var characteristic =
-                  await BluetoothBackend.getLsaGlovesService(deviceElement)
-                      .then((service) =>
-                          BluetoothBackend.getDataCollectionCharacteristic(
-                              service!));
-              var deviceId = "${deviceElement.id}";
-              developer.log(deviceId, name: TAG);
-              developer.log("${characteristic.uuid}", name: TAG);
-              var measurementCollector = new MeasurementsCollector(
-                  deviceId, characteristic);
-              children.add(DataCollectionWidget(
-                  //key: Key(deviceId),
-                  device: deviceElement,
-                  measurementsCollector: measurementCollector));
-              children.add(SizedBox(height: 16));
-            });
-          }
-          return Column(
-            //mainAxisAlignment: MainAxisAlignment.center,
-            //crossAxisAlignment: CrossAxisAlignment.center,
-            children: children,
-          );
-        });
-
-     */
-  }
-
   Future<VoidCallback?> startRecording() async {
     developer.log('startRecording', name: TAG);
-    List<BluetoothDevice> connectedDevices = await BluetoothBackend.getConnectedDevices();
+    List<BluetoothDevice> connectedDevices =
+        await BluetoothBackend.getConnectedDevices();
     if (connectedDevices.isEmpty) {
       developer.log('Cant start recording! No device connected', name: TAG);
       Navigator.of(context).push(MaterialPageRoute(
@@ -269,40 +201,88 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 
 /// Widget to display the dataCollection of each glove.
 class DataCollectionWidget extends StatefulWidget {
-  final BluetoothDevice device;
-  final MeasurementsCollector measurementsCollector;
+  final String deviceName;
 
-  const DataCollectionWidget(
-      {Key? key, required this.device, required this.measurementsCollector})
+  const DataCollectionWidget({Key? key, required this.deviceName})
       : super(key: key);
 
   @override
   _DataCollectionWidgetState createState() =>
-      _DataCollectionWidgetState(device, measurementsCollector);
+      _DataCollectionWidgetState(deviceName);
 }
 
 class _DataCollectionWidgetState extends State<DataCollectionWidget> {
   static const String TAG = "DataCollectionWidget";
-  final BluetoothDevice device;
-  final MeasurementsCollector measurementsCollector;
+  final String deviceName;
+  late Future characteristic;
 
-  _DataCollectionWidgetState(this.device, this.measurementsCollector);
+  _DataCollectionWidgetState(this.deviceName);
+
+  @override
+  void initState() {
+    super.initState();
+    characteristic = _getFutureCharacteristic();
+  }
+
+  _getFutureCharacteristic() async {
+    return BluetoothBackend.getConnectedDevices()
+        .then((connectedDevices) => connectedDevices
+            .firstWhere((device) => device.name == this.deviceName))
+        .then((glove) => BluetoothBackend.getLsaGlovesService(glove))
+        .then((service) =>
+            BluetoothBackend.getDataCollectionCharacteristic(service!));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return  Container(
-        width: double.infinity,
-        alignment: Alignment.topCenter,
-      decoration: new BoxDecoration(
-          color: Colors.amberAccent
-      ),
-        child: Text("3.4, 2.4", style: TextStyle(fontSize: 16)),
-    );
+    return FutureBuilder(
+        future: characteristic,
+        builder: (c, characteristicSnapshot) {
+          String stringRead = "";
+          Widget dataWidget = Container();
+          if (characteristicSnapshot.hasData) {
+            BluetoothCharacteristic characteristic =
+                characteristicSnapshot.data! as BluetoothCharacteristic;
+            characteristic.setNotifyValue(true);
+            characteristic.value.listen((data) {
+              stringRead = new String.fromCharCodes(data);
+              developer.log("Incoming data: [$stringRead]", name: TAG);
+            }, onError: (err) {
+              developer.log("Error: [${err.toString()}]", name: TAG);
+            }, onDone: () {
+              developer.log("Reading measurements done", name: TAG);
+            });
+
+            dataWidget = Container(
+                width: double.infinity,
+                alignment: Alignment.topCenter,
+                decoration: new BoxDecoration(color: Colors.amberAccent),
+                child: Text(stringRead, style: TextStyle(fontSize: 10)));
+          }
+          return Expanded(
+              child: Container(
+                  width: double.infinity,
+                  child: Card(
+                    elevation: 5,
+                    color: characteristicSnapshot.hasData
+                        ? Theme.of(context).cardColor
+                        : Theme.of(context).disabledColor,
+                    child: ClipRRect(
+                      child: Column(children: <Widget>[
+                        Expanded(child: dataWidget),
+                        Container(
+                            padding: EdgeInsets.all(5),
+                            child: Text(BluetoothBackend.getSpanishGloveName(
+                                this.deviceName)))
+                      ]),
+                    ),
+                  )));
+        });
   }
 
   @override
   void dispose() {
     super.dispose();
-    developer.log("Disposed widget of device: " + device.id.id, name: TAG);
+    developer.log("Disposed widget of device: " + this.deviceName, name: TAG);
   }
 }
