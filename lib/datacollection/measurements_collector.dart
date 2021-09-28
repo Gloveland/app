@@ -12,20 +12,26 @@ import 'package:lsa_gloves/model/glove_measurement.dart';
 
 /// Class to take in charge the responsibility of receiving and processing
 /// the measurements taken from the device.
-class MeasurementsCollector {
+class MeasurementsCollector extends StatefulWidget {
+ final BluetoothCharacteristic characteristic;
+
+  const MeasurementsCollector({Key? key, required this.characteristic})
+      : super(key: key);
+
+  @override
+  State<MeasurementsCollector> createState() => _MeasurementsCollector(this.characteristic);
+}
+
+class _MeasurementsCollector extends State<MeasurementsCollector>  {
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   static const String TAG = "MeasurementsCollector";
-  String _deviceId;
-  BluetoothCharacteristic _characteristic;
+  BluetoothCharacteristic characteristic;
   List<GloveMeasurement> _items;
-  StreamSubscription<List<int>>? _subscription;
+  late StreamSubscription<List<int>> _subscription;
 
-  MeasurementsCollector(this._deviceId, this._characteristic)
-      : _items = [];
-
-  void readMeasurements(BuildContext context) async {
-    await this._characteristic.setNotifyValue(true);
-    _subscription = this._characteristic.value.listen((data) {
+  _MeasurementsCollector(this.characteristic): _items = []{
+    this.characteristic.setNotifyValue(true);
+    _subscription = this.characteristic.value.listen((data) {
       String stringRead = new String.fromCharCodes(data);
       developer.log("Incoming data: $stringRead", name: TAG);
       readGloveMeasurementsFromBle(stringRead);
@@ -34,6 +40,26 @@ class MeasurementsCollector {
     }, onDone: () {
       developer.log("Reading measurements done", name: TAG);
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<String>(
+      stream: gloveMeasurementStream(),
+      initialData: "",
+      builder: (c,  snapshot){
+        return Text(snapshot.data!, style: TextStyle(fontSize: 15));
+      },
+    );
+  }
+
+  Stream<String> gloveMeasurementStream() async* {
+    for (var item in this._items) {
+      yield item.toJson().toString();
+    }
+  }
+
+  void readMeasurements(BuildContext context) async {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Capturando movimientos..."),
         duration: Duration(seconds: 2)));
@@ -43,7 +69,7 @@ class MeasurementsCollector {
     if (stringRead.isEmpty) {
       return;
     }
-    if (this._subscription == null || this._subscription!.isPaused) {
+    if (this._subscription.isPaused) {
       developer.log("skip: subscription is cancelled", name: TAG);
       return;
     }
@@ -64,20 +90,15 @@ class MeasurementsCollector {
     try {
       developer.log('trying to parse');
       var pkg = GloveMeasurement.fromFingerMeasurementsList(
-          eventNum, this._deviceId, fingerMeasurements);
+          eventNum, "deviceId", fingerMeasurements);
       developer.log('map to -> ${pkg.toJson().toString()}');
-      this._items.add(pkg);
+      setState(() => this._items.add(pkg));
     } catch (e) {
       developer.log('cant parse : $stringRead  error : ${e.toString()}');
     }
   }
 
   stopReadings(BuildContext context, String selectedGesture) async {
-    if (this._subscription != null) {
-     this. _subscription!.cancel();
-     this._subscription = null;
-      developer.log("Subscription canceled.", name: TAG);
-    }
     if (_items.isNotEmpty) {
       saveMessagesInFile(context, selectedGesture, this._items);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -86,7 +107,7 @@ class MeasurementsCollector {
     } else {
       developer.log("Empty measurment list, nothing to save", name: TAG);
     }
-    await _characteristic.setNotifyValue(false);
+    await characteristic.setNotifyValue(false);
   }
 
   saveMessagesInFile(BuildContext context, String selectedGesture,
@@ -109,4 +130,6 @@ class MeasurementsCollector {
     //close pop up loading
     Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
   }
+
+
 }

@@ -34,7 +34,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     this.rightDataWidget = DataCollectionWidget(
         deviceName: BluetoothSpecification.RIGHT_GLOVE_NAME);
     this.leftDataWidget = DataCollectionWidget(
-    deviceName: BluetoothSpecification.LEFT_GLOVE_NAME);
+        deviceName: BluetoothSpecification.LEFT_GLOVE_NAME);
   }
 
   @override
@@ -82,9 +82,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
             SizedBox(height: 4),
             Expanded(
                 child: Column(
-              children: <Widget>[
-                this.rightDataWidget,
-                this.leftDataWidget],
+              children: <Widget>[this.rightDataWidget, this.leftDataWidget],
             )),
             Container(
               width: 200,
@@ -250,10 +248,11 @@ class _DataCollectionWidgetState extends State<DataCollectionWidget> {
           String stringRead = "";
           Widget dataWidget = Container();
           if (characteristicSnapshot.hasData) {
-            BluetoothCharacteristic characteristic =
+            BluetoothCharacteristic c =
                 characteristicSnapshot.data! as BluetoothCharacteristic;
-            characteristic.setNotifyValue(true);
-            characteristic.value.listen((data) {
+            /*c.setNotifyValue(true);
+
+            c.value.listen((data) {
               stringRead = new String.fromCharCodes(data);
               developer.log("Incoming data: [$stringRead]", name: TAG);
             }, onError: (err) {
@@ -262,11 +261,13 @@ class _DataCollectionWidgetState extends State<DataCollectionWidget> {
               developer.log("Reading measurements done", name: TAG);
             });
 
+             */
+
             dataWidget = Container(
                 width: double.infinity,
                 alignment: Alignment.topCenter,
                 decoration: new BoxDecoration(color: Colors.amberAccent),
-                child: Text(stringRead, style: TextStyle(fontSize: 10)));
+                child: MeasurementsCollector(characteristic: c));
           }
           return Expanded(
               child: Container(
@@ -293,5 +294,24 @@ class _DataCollectionWidgetState extends State<DataCollectionWidget> {
   void dispose() {
     super.dispose();
     developer.log("Disposed widget of device: " + this.deviceName, name: TAG);
+  }
+}
+
+class IncomingData extends StatelessWidget {
+  final BluetoothCharacteristic characteristic;
+
+  const IncomingData({Key? key, required this.characteristic})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<int>>(
+      stream: characteristic.value,
+      initialData: [],
+      builder: (c, snapshot) {
+        final value = new String.fromCharCodes(snapshot.data!);
+        return Text(value.toString(), style: TextStyle(fontSize: 15));
+      },
+    );
   }
 }
