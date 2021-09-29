@@ -36,11 +36,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ),
               title: Text('${device.name.toString()}'),
               subtitle: Text('${device.id}'),
-              onChanged: (value) {
-                if (value) {
+              onChanged: (btConnectionStatus) {
+                if (btConnectionStatus) {
                   setState(() {
-                    device.connect().then((value) =>
-                        device.requestMtu(BluetoothSpecification.mtu));
+                    device.connect().then((_) =>
+                        device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
                   });
                 } else {
                   device.disconnect();
@@ -61,7 +61,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 title: Text('MTU Size: ${snapshot.data} bytes'),
                 trailing: IconButton(
                   icon: Icon(Icons.edit),
-                  onPressed: () => device.requestMtu(512),
+                  onPressed: () => device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE),
                 ),
               );
             },

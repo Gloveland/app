@@ -127,7 +127,6 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
                           .where((d) =>
                               d.name == BluetoothSpecification.deviceName)
                           .map((device) => ConnectionGloveCard(
-                                iconColor: Theme.of(context).primaryColor,
                                 device: device,
                                 updateState: this.updateState,
                               ))
@@ -162,31 +161,26 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
 }
 
 class ConnectionGloveCard extends StatefulWidget {
-  final Color iconColor;
   final BluetoothDevice device;
   final ValueChanged<BluetoothDevice> updateState;
 
   ConnectionGloveCard(
-      {Key? key,
-      required this.iconColor,
-      required this.device,
-      required this.updateState})
+      {Key? key, required this.device, required this.updateState})
       : super(key: key);
 
   @override
   _ConnectionGloveCard createState() =>
-      new _ConnectionGloveCard(this.iconColor, this.device, this.updateState);
+      new _ConnectionGloveCard(this.device, this.updateState);
 }
 
 class _ConnectionGloveCard extends State {
-  final Color iconColor;
   final BluetoothDevice device;
   final ValueChanged<BluetoothDevice> updateState;
   String connectionStatusText = "Desconectado";
   IconData connectionStatusIcon = Icons.bluetooth;
   BluetoothDeviceState? btDeviceState = BluetoothDeviceState.disconnected;
 
-  _ConnectionGloveCard(this.iconColor, this.device, this.updateState);
+  _ConnectionGloveCard(this.device, this.updateState);
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +195,7 @@ class _ConnectionGloveCard extends State {
                       height: double.infinity,
                       child: Icon(
                         connectionStatusIcon,
-                        color: this.iconColor,
+                        color: Theme.of(context).primaryColor,
                       )),
                   title: Text(
                     BluetoothBackend.getSpanishGloveName(device.name),
@@ -250,10 +244,8 @@ class _ConnectionGloveCard extends State {
 
   void toggleConnection(BuildContext context) {
     if (btDeviceState != BluetoothDeviceState.connected) {
-      this
-          .device
-          .connect()
-          .then((value) => device.requestMtu(BluetoothSpecification.mtu));
+      this.device.connect().then(
+          (value) => device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
       this.updateState(this.device);
     } else {
       showDialog(
