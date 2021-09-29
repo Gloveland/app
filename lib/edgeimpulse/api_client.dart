@@ -20,7 +20,6 @@ void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async 
     Sensor("thumbAccX","m/s2"),Sensor("thumbAccY","m/s2"), Sensor("thumbAccZ","m/s2"),
     Sensor("thumbGyroX","deg"),Sensor("thumbGyroY","deg"), Sensor("thumbGyroZ","deg"),
     Sensor("thumbRoll","deg"),Sensor("thumbPitch","deg"), Sensor("thumbYaw","deg"),
-    /*
     //index
     Sensor("indexAccX","m/s2"),Sensor("indexAccY","m/s2"), Sensor("indexAccZ","m/s2"),
     Sensor("indexGyroX","deg"),Sensor("indexGyroY","deg"), Sensor("indexGyroZ","deg"),
@@ -37,7 +36,7 @@ void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async 
     Sensor("pinkyAccX","m/s2"),Sensor("pinkyAccY","m/s2"), Sensor("pinkyAccZ","m/s2"),
     Sensor("pinkyGyroX","deg"),Sensor("pinkyGyroY","deg"), Sensor("pinkyGyroZ","deg"),
     Sensor("pinkyRoll","deg"),Sensor("pinkyPitch","deg"), Sensor("pinkyYaw","deg"),
-     */
+
   ];
 
   var payload = Payload(

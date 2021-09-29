@@ -46,7 +46,7 @@ class _FileContentWidget extends State<FileContentWidget> {
             children = <Widget>[
               Padding(
                 padding: const EdgeInsets.only(top: 16),
-                child: Text('${snapshot.data}',
+                child: Text('${snapshot.data!}',
                     style: Theme.of(context).textTheme.bodyText1!),
               )
             ];
@@ -78,11 +78,13 @@ class _FileContentWidget extends State<FileContentWidget> {
             ];
           }
           return Center(
-            child: Column(
+            child: new SingleChildScrollView(
+              scrollDirection: Axis.vertical,//.horizontal
+              child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: children,
-            ),
+            )),
           );
         },
       ),
