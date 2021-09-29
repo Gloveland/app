@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
-import 'package:lsa_gloves/connection/ble/bluetooth_services.dart';
 import 'dart:developer' as developer;
 
 class DeviceScreen extends StatefulWidget {
@@ -18,120 +18,73 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   BluetoothDevice device;
 
-  List<Widget> _buildServiceTiles(
-      String deviceId, List<BluetoothService> services) {
-    return services
-        .where((bleService) =>
-            bleService.uuid.toString().toLowerCase() ==
-            BluetoothSpecification.LSA_GLOVE_SERVICE_UUID.toLowerCase())
-        .map(
-          (bleService) => ServiceTile(
-            service: bleService,
-            deviceId: deviceId,
-            characteristics: bleService.characteristics,
-          ),
-        )
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(device.name),
-        actions: <Widget>[
+      appBar: AppBar(title: Text(device.name)),
+      body: ListView(
+        children: <Widget>[
           StreamBuilder<BluetoothDeviceState>(
             stream: device.state,
-            initialData: BluetoothDeviceState.connecting,
+            initialData: BluetoothDeviceState.disconnected,
+            builder: (c, snapshot) => SwitchListTile(
+              secondary: Container(
+                height: double.infinity,
+                child: Icon(snapshot.data == BluetoothDeviceState.connected
+                    ? Icons.bluetooth_connected
+                    : Icons.bluetooth),
+              ),
+              title: Text('${device.name.toString()}'),
+              subtitle: Text('${device.id}'),
+              onChanged: (btConnectionStatus) {
+                if (btConnectionStatus) {
+                  setState(() {
+                    device.connect().then((_) =>
+                        device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
+                  });
+                } else {
+                  device.disconnect();
+                }
+              },
+              value: snapshot.data == BluetoothDeviceState.connected
+                  ? true
+                  : false,
+            ),
+          ),
+          ListTile(title: Text("ID: ${device.id}")),
+          StreamBuilder<int>(
+            stream: device.mtu,
+            initialData: 0,
             builder: (c, snapshot) {
-              String text;
-              switch (snapshot.data) {
-                case BluetoothDeviceState.connected:
-                  text = 'CONNECTED';
-                  break;
-                case BluetoothDeviceState.disconnected:
-                  text = 'DISCONNECTED';
-                  break;
-                default:
-                  text = snapshot.data.toString().substring(21).toUpperCase();
-                  break;
-              }
-              return Center(
-                child: Text(
-                  text,
-                  textAlign: TextAlign.left,
-                  style: Theme.of(context)
-                      .primaryTextTheme
-                      .button
-                      ?.copyWith(color: Colors.white),
+              print("Mtu updated");
+              return ListTile(
+                title: Text('MTU Size: ${snapshot.data} bytes'),
+                trailing: IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: () => device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE),
                 ),
               );
             },
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            StreamBuilder<BluetoothDeviceState>(
-              stream: device.state,
-              initialData: BluetoothDeviceState.connecting,
-              builder: (c, snapshot) => ListTile(
-                leading: (snapshot.data == BluetoothDeviceState.connected)
-                    ? Icon(Icons.bluetooth_connected)
-                    : Icon(Icons.bluetooth_disabled),
-                title: Text(
-                    'Device is ${snapshot.data.toString().split('.')[1]}.'),
-                subtitle: Text('${device.id}'),
-                trailing: StreamBuilder<List<BluetoothService>>(
-                  stream: Stream.periodic(Duration(seconds: 2))
-                      .asyncMap((_) => device.discoverServices()),
-                  initialData: [],
-                  builder: (context, servicesSnapshot) => IndexedStack(
-                    index: servicesSnapshot.data!.isEmpty ? 1 : 0,
-                    children: <Widget>[
-                      IconButton(
-                        icon: Icon(Icons.refresh),
-                        onPressed: () => device.discoverServices(),
-                      ),
-                      IconButton(
-                        icon: SizedBox(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation(Colors.red),
-                          ),
-                          width: 18.0,
-                          height: 18.0,
-                        ),
-                        onPressed: null,
-                      )
+          ),
+          ListTile(
+              title: Text("Calibración"),
+              trailing: IconButton(
+                icon: Icon(Icons.settings_backup_restore),
+                onPressed: () {
+                  BluetoothBackend.sendCalibrationCommand(device);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Row(
+                    children: [
+                      Icon(Icons.lightbulb, color: Colors.blue),
+                      SizedBox(width: 20),
+                      Expanded(
+                          child: Text(
+                              "Calibrando... espere a que se apague el led azul del dispositivo."))
                     ],
-                  ),
-                ),
-              ),
-            ),
-            StreamBuilder<int>(
-              stream: device.mtu,
-              initialData: 0,
-              builder: (c, snapshot) => ListTile(
-                title: Text('MTU Size'),
-                subtitle: Text('${snapshot.data} bytes'),
-                trailing: IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () => device.requestMtu(512),
-                ),
-              ),
-            ),
-            StreamBuilder<List<BluetoothService>>(
-              stream: device.services,
-              initialData: [],
-              builder: (c, snapshot) {
-                return Column(
-                  children: _buildServiceTiles('${device.id}', snapshot.data!),
-                );
-              },
-            ),
-          ],
-        ),
+                  )));
+                },
+              )),
+        ],
       ),
     );
   }
