@@ -51,6 +51,13 @@ class BluetoothSpecification {
   /// interpretations task on the device if one of them is being run
   static const String STOP_ONGOING_TASK = "stop";
 
+  /// Calibrate command.
+  ///
+  /// This command will stop any running task and start the calibration process
+  /// in the glove. The built in led of the glove will be turn on while the
+  /// calibration process is still running.
+  static const String CALIBRATE = "calibrate";
+
   /// MTU to request
-  static int mtu = 512;
+  static const int MTU_BYTES_SIZE = 512;
 }

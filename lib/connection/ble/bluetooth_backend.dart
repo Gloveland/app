@@ -29,9 +29,28 @@ class BluetoothBackend {
         connectedDevices, BluetoothSpecification.START_INTERPRETATIONS);
   }
 
+  static void sendCalibrationCommand(BluetoothDevice device) async {
+    sendCommandToConnectedDevice(device, BluetoothSpecification.CALIBRATE);
+  }
+
   static Future sendStopCommand(List<BluetoothDevice> connectedDevices) async {
     await sendCommandToConnectedDevices(
         connectedDevices, BluetoothSpecification.STOP_ONGOING_TASK);
+  }
+
+  /// Sends the command specified as a parameter to the connected device
+  /// through the control characteristic.
+  static Future sendCommandToConnectedDevice(BluetoothDevice connectedDevice, String command) async {
+    BluetoothService? service = await getLsaGlovesService(connectedDevice);
+    if (service != null) {
+      BluetoothCharacteristic characteristic = getControllerCharacteristic(service);
+      try {
+        await characteristic.write(utf8.encode(command), withoutResponse: true);
+      } catch (err) {
+        developer.log("Characteristic write failed: " + err.toString(),
+            name: TAG);
+      }
+    }
   }
 
   /// Sends the commands specified as a parameter to the connected devices
