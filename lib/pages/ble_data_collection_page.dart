@@ -6,7 +6,10 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
+import 'package:lsa_gloves/datacollection/storage.dart';
+import 'package:lsa_gloves/model/glove_measurement.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
+import 'package:lsa_gloves/widgets/Dialog.dart';
 import 'package:simple_timer/simple_timer.dart';
 import 'dart:developer' as developer;
 
@@ -20,21 +23,25 @@ class BleDataCollectionPage extends StatefulWidget {
 class _BleDataCollectionState extends State<BleDataCollectionPage>
     with SingleTickerProviderStateMixin {
   static const String TAG = "BleDataCollection";
+  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   static final List<String> categories = getCategoryList();
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
   bool _isRecording;
   late TimerController _timerController;
-  late DataCollectionWidget rightDataWidget;
-  late DataCollectionWidget leftDataWidget;
+  late MeasurementsPanel rightDataWidget;
+  late MeasurementsPanel leftDataWidget;
+
 
   _BleDataCollectionState(this._isRecording) {
-    _timerController = TimerController(this);
-    this.rightDataWidget = DataCollectionWidget(
-        deviceName: BluetoothSpecification.RIGHT_GLOVE_NAME);
-    this.leftDataWidget = DataCollectionWidget(
-        deviceName: BluetoothSpecification.LEFT_GLOVE_NAME);
+    this._timerController = TimerController(this);
+    this.rightDataWidget = MeasurementsPanel(
+        deviceName: BluetoothSpecification.RIGHT_GLOVE_NAME,
+        key: ValueKey<Object>(Object()));
+    this.leftDataWidget = MeasurementsPanel(
+        deviceName: BluetoothSpecification.LEFT_GLOVE_NAME,
+        key: ValueKey<Object>(Object()));
   }
 
   @override
@@ -157,6 +164,9 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       setState(() {
         _isRecording = true;
       });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Capturando movimientos..."),
+          duration: Duration(seconds: 2)));
     }
   }
 
@@ -169,14 +179,38 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     List<BluetoothDevice> connectedDevices =
         await BluetoothBackend.getConnectedDevices();
     BluetoothBackend.sendStopCommand(connectedDevices);
-    this.rightDataWidget.reset();
-    this.leftDataWidget.reset();
-    /*
-    if (this._measurementsCollector != null) {
-      String gesture = "$selectedCategory-$selectedGesture";
-      await this._measurementsCollector!.stopReadings(context, gesture);
+
+    var rightGloveMeasurements = await  this.rightDataWidget.stopRecordingMeasurements();
+    var leftGloveMeasurements =  await this.leftDataWidget.stopRecordingMeasurements();
+
+    String gesture = "$selectedCategory-$selectedGesture";
+    await saveMessagesInFile(context, gesture, rightGloveMeasurements);
+    //TODO save left hand measurements!
+    //await saveMessagesInFile(context, gesture, leftGloveMeasurements);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Movimientos guardados!"),
+        duration: Duration(seconds: 1)));
+  }
+
+  Future saveMessagesInFile(BuildContext context, String selectedGesture,
+      List<GloveMeasurement> gloveMeasurements) async {
+    if (gloveMeasurements.isEmpty) {
+      developer.log("Empty measurements list, nothing to save", name: TAG);
+      return;
     }
-     */
+    //open pop up loading
+    Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
+    var deviceId = gloveMeasurements.first.deviceId;
+    var measurementFile =
+    await DeviceMeasurementsFile.create(deviceId, selectedGesture);
+    for (int i = 0; i < gloveMeasurements.length; i++) {
+      developer
+          .log('saving in file -> ${gloveMeasurements[i].toJson().toString()}');
+      measurementFile.add(gloveMeasurements[i]);
+    }
+    await measurementFile.save();
+    //close pop up loading
+    Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
   }
 
   static List<String> getCategoryList() {
@@ -203,32 +237,40 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 }
 
 /// Widget to display the dataCollection of each glove.
-class DataCollectionWidget extends StatefulWidget {
+class MeasurementsPanel extends StatefulWidget {
   final String deviceName;
+  late final _MeasurementsPanelState measurementPanelState;
 
-  const DataCollectionWidget({Key? key, required this.deviceName})
-      : super(key: key);
+  MeasurementsPanel({Key? key, required this.deviceName}) : super(key: key) {
+    this.measurementPanelState = _MeasurementsPanelState(this.deviceName);
+  }
 
   @override
-  _DataCollectionWidgetState createState() =>
-      _DataCollectionWidgetState(deviceName);
+  _MeasurementsPanelState createState() => this.measurementPanelState;
 
-  void reset() {
-    createState();
+  Future<List<GloveMeasurement>> stopRecordingMeasurements() async {
+    return this.measurementPanelState.stopRecordingMeasurements();
   }
 }
 
-class _DataCollectionWidgetState extends State<DataCollectionWidget> {
-  static const String TAG = "DataCollectionWidget";
+class _MeasurementsPanelState extends State<MeasurementsPanel> {
+  static const String TAG = "MeasurementsPanel";
   final String deviceName;
   late Future characteristic;
+  MeasurementsCollector? measurementsCollector;
 
-  _DataCollectionWidgetState(this.deviceName);
+  _MeasurementsPanelState(this.deviceName);
 
   @override
   void initState() {
     super.initState();
-    characteristic = _getFutureCharacteristic();
+    this.characteristic = _getFutureCharacteristic();
+  }
+
+  @override
+  void didUpdateWidget(MeasurementsPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    developer.log("Updating MeasurementsPanel", name: TAG);
   }
 
   _getFutureCharacteristic() async {
@@ -242,32 +284,17 @@ class _DataCollectionWidgetState extends State<DataCollectionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    developer.log("Building", name: TAG);
     return FutureBuilder(
         future: characteristic,
         builder: (c, characteristicSnapshot) {
-          String stringRead = "";
-          Widget dataWidget = Container();
+          Widget dataCollectedWidget = Text("");
           if (characteristicSnapshot.hasData) {
             BluetoothCharacteristic c =
                 characteristicSnapshot.data! as BluetoothCharacteristic;
-            /*c.setNotifyValue(true);
-
-            c.value.listen((data) {
-              stringRead = new String.fromCharCodes(data);
-              developer.log("Incoming data: [$stringRead]", name: TAG);
-            }, onError: (err) {
-              developer.log("Error: [${err.toString()}]", name: TAG);
-            }, onDone: () {
-              developer.log("Reading measurements done", name: TAG);
-            });
-
-             */
-
-            dataWidget = Container(
-                width: double.infinity,
-                alignment: Alignment.topCenter,
-                decoration: new BoxDecoration(color: Colors.amberAccent),
-                child: MeasurementsCollector(characteristic: c));
+            this.measurementsCollector =
+                MeasurementsCollector(characteristic: c);
+            dataCollectedWidget = this.measurementsCollector!;
           }
           return Expanded(
               child: Container(
@@ -279,7 +306,11 @@ class _DataCollectionWidgetState extends State<DataCollectionWidget> {
                         : Theme.of(context).disabledColor,
                     child: ClipRRect(
                       child: Column(children: <Widget>[
-                        Expanded(child: dataWidget),
+                        Expanded(
+                            child: Container(
+                                width: double.infinity,
+                                alignment: Alignment.topCenter,
+                                child: dataCollectedWidget)),
                         Container(
                             padding: EdgeInsets.all(5),
                             child: Text(BluetoothBackend.getSpanishGloveName(
@@ -290,6 +321,14 @@ class _DataCollectionWidgetState extends State<DataCollectionWidget> {
         });
   }
 
+  Future<List<GloveMeasurement>> stopRecordingMeasurements() async{
+    if(this.measurementsCollector == null){
+      developer.log("Not collecting data from "+ deviceName, name: TAG);
+      return [];
+    }
+    return this.measurementsCollector!.stopRecordingMeasurements();
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -297,21 +336,103 @@ class _DataCollectionWidgetState extends State<DataCollectionWidget> {
   }
 }
 
-class IncomingData extends StatelessWidget {
+class MeasurementsCollector extends StatefulWidget {
   final BluetoothCharacteristic characteristic;
+  late final _MeasurementsCollector measurementCollectorState;
 
-  const IncomingData({Key? key, required this.characteristic})
-      : super(key: key);
+  MeasurementsCollector({Key? key, required this.characteristic})
+      : super(key: key) {
+    this.measurementCollectorState =
+        _MeasurementsCollector(this.characteristic);
+  }
+
+  @override
+  State<MeasurementsCollector> createState() => this.measurementCollectorState;
+
+  Future<List<GloveMeasurement>> stopRecordingMeasurements() async {
+    return this.measurementCollectorState.stopRecordingMeasurements();
+  }
+}
+
+class _MeasurementsCollector extends State<MeasurementsCollector> {
+  static const String TAG = "MeasurementsCollector";
+  BluetoothCharacteristic characteristic;
+  List<GloveMeasurement> _items;
+  late StreamSubscription<List<int>> _subscription;
+
+  _MeasurementsCollector(this.characteristic) : _items = [] {
+    this.characteristic.setNotifyValue(true);
+    _subscription = this.characteristic.value.listen((data) {
+      String stringRead = new String.fromCharCodes(data);
+      developer.log("Incoming data: $stringRead", name: TAG);
+      readGloveMeasurementsFromBle(stringRead);
+    }, onError: (err) {
+      developer.log("Error: ${err.toString()}", name: TAG);
+    }, onDone: () {
+      developer.log("Reading measurements done", name: TAG);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<int>>(
-      stream: characteristic.value,
-      initialData: [],
+    return StreamBuilder<String>(
+      stream: gloveMeasurementStream(),
+      initialData: "",
       builder: (c, snapshot) {
-        final value = new String.fromCharCodes(snapshot.data!);
-        return Text(value.toString(), style: TextStyle(fontSize: 15));
+        return Text(snapshot.data!, style: TextStyle(fontSize: 15));
       },
     );
+  }
+
+  Stream<String> gloveMeasurementStream() async* {
+    for (var item in this._items) {
+      yield item.toJson().toString();
+    }
+  }
+
+  readGloveMeasurementsFromBle(String stringRead) {
+    if (stringRead.isEmpty) {
+      return;
+    }
+    if (this._subscription.isPaused) {
+      developer.log("skip: subscription is cancelled", name: TAG);
+      return;
+    }
+    var lastCharacter = stringRead.substring(stringRead.length - 1);
+    List<String> fingerMeasurements = stringRead
+        .substring(0, stringRead.length - 1)
+        .split('\n')
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (fingerMeasurements.length < 6 || lastCharacter != ";") {
+      developer.log(
+          "last character is not the expected delimiter ';'"
+          "have you change the MTU correctly ",
+          name: TAG);
+      return;
+    }
+    var eventNum = int.parse(fingerMeasurements.removeAt(0));
+    try {
+      developer.log('trying to parse');
+      var pkg = GloveMeasurement.fromFingerMeasurementsList(
+          eventNum, "deviceId", fingerMeasurements);
+      developer.log('map to -> ${pkg.toJson().toString()}');
+      setState(() => this._items.add(pkg));
+    } catch (e) {
+      developer.log('cant parse : $stringRead  error : ${e.toString()}');
+    }
+  }
+
+  Future<List<GloveMeasurement>> stopRecordingMeasurements() async {
+    await characteristic.setNotifyValue(false);
+    this._subscription.cancel();
+    return this._items;
+  }
+
+
+  @override
+  void dispose() {
+    super.dispose();
+    developer.log("Disposed MeasurementsCollector: ", name: TAG);
   }
 }

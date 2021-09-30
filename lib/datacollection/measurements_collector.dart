@@ -9,7 +9,7 @@ import 'package:flutter/cupertino.dart';
 import 'dart:developer' as developer;
 
 import 'package:lsa_gloves/model/glove_measurement.dart';
-
+/*
 /// Class to take in charge the responsibility of receiving and processing
 /// the measurements taken from the device.
 class MeasurementsCollector extends StatefulWidget {
@@ -130,6 +130,5 @@ class _MeasurementsCollector extends State<MeasurementsCollector>  {
     //close pop up loading
     Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
   }
-
-
 }
+*/
