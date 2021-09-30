@@ -33,7 +33,6 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   late MeasurementsPanel rightDataWidget;
   late MeasurementsPanel leftDataWidget;
 
-
   _BleDataCollectionState(this._isRecording) {
     this._timerController = TimerController(this);
     this.rightDataWidget = MeasurementsPanel(
@@ -172,16 +171,24 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 
   Future<VoidCallback?> stopRecording() async {
     developer.log('stopRecording', name: TAG);
-    _timerController.reset();
-    setState(() {
-      _isRecording = false;
-    });
     List<BluetoothDevice> connectedDevices =
         await BluetoothBackend.getConnectedDevices();
-    BluetoothBackend.sendStopCommand(connectedDevices);
+    await BluetoothBackend.sendStopCommand(connectedDevices);
+    var rightGloveMeasurements =
+        await this.rightDataWidget.stopRecordingMeasurements();
+    var leftGloveMeasurements =
+        await this.leftDataWidget.stopRecordingMeasurements();
 
-    var rightGloveMeasurements = await  this.rightDataWidget.stopRecordingMeasurements();
-    var leftGloveMeasurements =  await this.leftDataWidget.stopRecordingMeasurements();
+    _timerController.reset();
+    setState(() {
+      this._isRecording = false;
+      this.rightDataWidget = MeasurementsPanel(
+          deviceName: BluetoothSpecification.RIGHT_GLOVE_NAME,
+          key: ValueKey<Object>(Object()));
+      this.leftDataWidget = MeasurementsPanel(
+          deviceName: BluetoothSpecification.LEFT_GLOVE_NAME,
+          key: ValueKey<Object>(Object()));
+    });
 
     String gesture = "$selectedCategory-$selectedGesture";
     await saveMessagesInFile(context, gesture, rightGloveMeasurements);
@@ -202,10 +209,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
     var deviceId = gloveMeasurements.first.deviceId;
     var measurementFile =
-    await DeviceMeasurementsFile.create(deviceId, selectedGesture);
+        await DeviceMeasurementsFile.create(deviceId, selectedGesture);
     for (int i = 0; i < gloveMeasurements.length; i++) {
-      developer
-          .log('saving in file -> ${gloveMeasurements[i].toJson().toString()}');
       measurementFile.add(gloveMeasurements[i]);
     }
     await measurementFile.save();
@@ -321,9 +326,9 @@ class _MeasurementsPanelState extends State<MeasurementsPanel> {
         });
   }
 
-  Future<List<GloveMeasurement>> stopRecordingMeasurements() async{
-    if(this.measurementsCollector == null){
-      developer.log("Not collecting data from "+ deviceName, name: TAG);
+  Future<List<GloveMeasurement>> stopRecordingMeasurements() async {
+    if (this.measurementsCollector == null) {
+      developer.log("Not collecting data from " + deviceName, name: TAG);
       return [];
     }
     return this.measurementsCollector!.stopRecordingMeasurements();
@@ -361,7 +366,12 @@ class _MeasurementsCollector extends State<MeasurementsCollector> {
   late StreamSubscription<List<int>> _subscription;
 
   _MeasurementsCollector(this.characteristic) : _items = [] {
-    this.characteristic.setNotifyValue(true);
+    try {
+      this.characteristic.setNotifyValue(true);
+    } catch (err) {
+      developer.log("Characteristic set Notify failed: " + err.toString(),
+          name: TAG);
+    }
     _subscription = this.characteristic.value.listen((data) {
       String stringRead = new String.fromCharCodes(data);
       developer.log("Incoming data: $stringRead", name: TAG);
@@ -424,11 +434,15 @@ class _MeasurementsCollector extends State<MeasurementsCollector> {
   }
 
   Future<List<GloveMeasurement>> stopRecordingMeasurements() async {
-    await characteristic.setNotifyValue(false);
+    try {
+      await characteristic.setNotifyValue(false);
+    } catch (err) {
+      developer.log("Characteristic set Notify failed: " + err.toString(),
+          name: TAG);
+    }
     this._subscription.cancel();
     return this._items;
   }
-
 
   @override
   void dispose() {
@@ -436,3 +450,5 @@ class _MeasurementsCollector extends State<MeasurementsCollector> {
     developer.log("Disposed MeasurementsCollector: ", name: TAG);
   }
 }
+
+class _lock {}

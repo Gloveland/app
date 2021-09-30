@@ -29,8 +29,8 @@ class BluetoothBackend {
         connectedDevices, BluetoothSpecification.START_INTERPRETATIONS);
   }
 
-  static void sendStopCommand(List<BluetoothDevice> connectedDevices) async {
-    sendCommandToConnectedDevices(
+  static Future sendStopCommand(List<BluetoothDevice> connectedDevices) async {
+    await sendCommandToConnectedDevices(
         connectedDevices, BluetoothSpecification.STOP_ONGOING_TASK);
   }
 
@@ -39,7 +39,7 @@ class BluetoothBackend {
   ///
   /// This method is expected to be used to start and stop the measurement
   /// readings from the glove as well as the interpretations.
-  static void sendCommandToConnectedDevices(
+  static Future sendCommandToConnectedDevices(
       List<BluetoothDevice> connectedDevices, String command) async {
     List<BluetoothCharacteristic> characteristics =
         await getDevicesControllerCharacteristics(connectedDevices);

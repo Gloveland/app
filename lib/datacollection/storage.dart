@@ -92,7 +92,6 @@ class DeviceMeasurementsFile {
     try {
       //TODO proteger concunrrencia, mutex??
       String json = jsonEncode(this.fileContent);
-      developer.log("saving $json");
       await this.file.writeAsString(json);
       return true;
     } catch (e) {
