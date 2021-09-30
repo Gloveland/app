@@ -314,7 +314,7 @@ class _MeasurementsPanelState extends State<MeasurementsPanel> {
                         Expanded(
                             child: Container(
                                 width: double.infinity,
-                                alignment: Alignment.topCenter,
+                                alignment: Alignment.center,
                                 child: dataCollectedWidget)),
                         Container(
                             padding: EdgeInsets.all(5),
@@ -389,18 +389,26 @@ class _MeasurementsCollector extends State<MeasurementsCollector> {
       stream: gloveMeasurementStream(),
       initialData: "",
       builder: (c, snapshot) {
-        return Text(snapshot.data!, style: TextStyle(fontSize: 15));
+        return Text(snapshot.data!,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+                color:Theme.of(context).primaryColor ));
       },
     );
   }
 
   Stream<String> gloveMeasurementStream() async* {
     for (var item in this._items) {
-      yield item.toJson().toString();
+      var acc = item.middle.acc;
+      var gyro = item.middle.gyro;
+      yield "${acc.x}      ${acc.y}      ${acc.z}\n "
+            "${gyro.x}      ${gyro.y}      ${gyro.z}";
     }
   }
 
-  readGloveMeasurementsFromBle(String stringRead) {
+  void readGloveMeasurementsFromBle(String stringRead) {
     if (stringRead.isEmpty) {
       return;
     }
@@ -450,5 +458,3 @@ class _MeasurementsCollector extends State<MeasurementsCollector> {
     developer.log("Disposed MeasurementsCollector: ", name: TAG);
   }
 }
-
-class _lock {}
