@@ -100,7 +100,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
   
   void onRecordButtonPressed() {
     if (_isRecording) {
-      stopRecording();
+      _stopRecording();
     } else {
       _startRecording();
     }
@@ -115,13 +115,13 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
           maintainState: false));
     } else {
       BluetoothBackend.sendStartDataCollectionCommand(_connectedDevices!);
-      _measurementsCollector.startCollection(this._connectedDevices!, this.selectedGesture);
+      _measurementsCollector.startCollecting(this._connectedDevices!, this.selectedGesture);
       _isRecording = true;
       // TODO(https://git.io/JEyV4): Process data from more than one device.
     }
   }
 
-  void stopRecording() async {
+  void _stopRecording() async {
     developer.log('stopRecording');
     BluetoothBackend.sendStopCommand(this._connectedDevices!);
     _isRecording = false;
@@ -244,7 +244,6 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
               icon: Icon(Icons.stop, color: Colors.red, size: 64),
               onPressed: () {
                 onButtonPressed.call();
-                // stopRecording();
                 _timerController.reset();
                 setState(() {
                   _isRecording = false;
@@ -257,7 +256,6 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
                   color: Theme.of(context).primaryColor, size: 64),
               onPressed: () {
                 onButtonPressed.call();
-                // startRecording();
                 _timerController.start();
                 setState(() {
                   _isRecording = true;

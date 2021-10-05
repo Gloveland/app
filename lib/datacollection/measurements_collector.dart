@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
@@ -14,30 +15,23 @@ class MeasurementsCollector {
   static const String TAG = "MeasurementsCollector";
 
   Map<String, DeviceMeasurementsFile> _deviceMeasurements = Map();
-  bool isRecording = false;
   List<StreamSubscription<List<int>>?> _subscriptions = [];
 
   /// Starts collecting measurements from all the connected devices.
   ///
   /// A measurements file will be generated for each device with its
   /// collected measurements.
-  void startCollection(List<BluetoothDevice> connectedDevices, String gesture) async {
+  void startCollecting(List<BluetoothDevice> connectedDevices, String gesture) async {
     developer.log("Starting collection for gesture '$gesture' from devices: $connectedDevices", name: TAG);
     for (BluetoothDevice device in connectedDevices) {
       BluetoothService? lsaService =
           await BluetoothBackend.getLsaGlovesService(device);
       BluetoothCharacteristic dcCharacteristic =
           BluetoothBackend.getDataCollectionCharacteristic(lsaService!);
-      initFile(device.id.id, gesture);
-      collectMeasurements(device.id.id, dcCharacteristic);
+      _initFile(device.id.id, gesture);
+      _collectMeasurements(device.id.id, dcCharacteristic);
+      sleep(Duration(milliseconds: 1000));
     }
-    isRecording = true;
-  }
-
-  void initFile(String deviceId, String gesture) async {
-    DeviceMeasurementsFile deviceMeasurementsFile
-        = await DeviceMeasurementsFile.create(deviceId, gesture);
-    _deviceMeasurements.putIfAbsent(deviceId, () => deviceMeasurementsFile);
   }
 
   /// Saves the collection files and stops recording measurements.
@@ -47,17 +41,18 @@ class MeasurementsCollector {
       await measurementsFile.save();
     }
     _deviceMeasurements.clear();
-    isRecording = false;
   }
-
+  
   /// Discards an ongoing collection, removing the generated files.
   void discardCollection() async {
     _cancelSubscriptions();
-    for (var measurementsFile in _deviceMeasurements.values) {
-      await measurementsFile.deleteFile();
-    }
     _deviceMeasurements.clear();
-    isRecording = false;
+  }
+  
+  void _initFile(String deviceId, String gesture) async {
+    DeviceMeasurementsFile deviceMeasurementsFile
+        = await DeviceMeasurementsFile.create(deviceId, gesture);
+    _deviceMeasurements.putIfAbsent(deviceId, () => deviceMeasurementsFile);
   }
 
   void _cancelSubscriptions() {
@@ -67,7 +62,7 @@ class MeasurementsCollector {
     _subscriptions = [];
   }
 
-  void collectMeasurements(String deviceId,
+  void _collectMeasurements(String deviceId,
       BluetoothCharacteristic dataCollectionCharacteristic) async {
     if (!dataCollectionCharacteristic.isNotifying) {
       await dataCollectionCharacteristic.setNotifyValue(true);
@@ -76,14 +71,13 @@ class MeasurementsCollector {
         dataCollectionCharacteristic.value.listen((data) {
       String rawMeasurements = new String.fromCharCodes(data);
       developer.log("Incoming data: $rawMeasurements", name: TAG);
-      Pair<int, List<String>>? parsedMeasurements =
+      _ParsedMeasurements? parsedMeasurements =
           _parseRawMeasurements(rawMeasurements);
       if (parsedMeasurements == null) {
         developer.log("Measurements parsing failed.", name: TAG);
         return;
       }
-      var eventNum = parsedMeasurements.first;
-      _recordParsedMeasurement(deviceId, eventNum, parsedMeasurements.second);
+      _recordParsedMeasurement(deviceId, parsedMeasurements.eventNumber, parsedMeasurements.values);
     }, onError: (err) {
       developer.log("Error: ${err.toString()}", name: TAG);
     }, onDone: () {
@@ -94,10 +88,10 @@ class MeasurementsCollector {
 
   /// Parses the raw measurements passed as a parameter.
   ///
-  /// Returns a pair containing:
-  ///   - first: the event number.
-  ///   - second: a list of float measurements represented as strings.
-  Pair<int, List<String>>? _parseRawMeasurements(String rawMeasurements) {
+  /// Returns a ParsedMeasurements instance containing the event number and a
+  /// list of float measurements represented as strings.
+  /// In case the parsing failed, null is returned.
+  _ParsedMeasurements? _parseRawMeasurements(String rawMeasurements) {
     if (rawMeasurements.isEmpty) {
       developer.log("Raw measurements was an empty string!", name: TAG);
       return null;
@@ -122,7 +116,7 @@ class MeasurementsCollector {
       return null;
     }
     int eventNum = int.parse(fingerMeasurements.removeAt(0));
-    return Pair(eventNum, fingerMeasurements);
+    return _ParsedMeasurements(eventNum, fingerMeasurements);
   }
 
   _recordParsedMeasurement(String deviceId, int eventNumber, List<String> measurements) {
@@ -138,12 +132,9 @@ class MeasurementsCollector {
   }
 }
 
-class Pair<T, Q> {
-  final T first;
-  final Q second;
-
-  Pair(this.first, this.second);
-
-  @override
-  String toString() => 'Pair[$first, $second]';
+class _ParsedMeasurements {
+  final int eventNumber;
+  final List<String> values;
+  
+  _ParsedMeasurements(this.eventNumber, this.values);
 }
