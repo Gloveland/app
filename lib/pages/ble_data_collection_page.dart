@@ -22,8 +22,10 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
-  MeasurementsCollector? _measurementsCollector;
-
+  MeasurementsCollector _measurementsCollector = MeasurementsCollector();
+  List<BluetoothDevice>? _connectedDevices;
+  bool _isRecording = false;
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +40,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
                 .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
             initialData: [],
             builder: (context, devicesSnapshot) {
-              print("XXX, devicesSnapshot: " + devicesSnapshot.data.toString());
+              this._connectedDevices = devicesSnapshot.data;
               return Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
@@ -85,12 +87,65 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
                     ),
                   ),
                   SizedBox(height: 74),
-                  RecordButton(key: Key("${devicesSnapshot.data!.length}"), devicesSnapshot: devicesSnapshot)
+                  RecordButton(
+                      key: Key("${devicesSnapshot.data!.length}"),
+                      onButtonPressed: () => onRecordButtonPressed(),
+                      devicesSnapshot: devicesSnapshot)
                 ],
               );
             }),
       )),
     );
+  }
+  
+  void onRecordButtonPressed() {
+    if (_isRecording) {
+      stopRecording();
+    } else {
+      _startRecording();
+    }
+  }
+
+  void _startRecording() {
+    developer.log('startRecording');
+    if (this._connectedDevices!.isEmpty) {
+      developer.log('Cant start recording! No device connected');
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => BleConnectionErrorPage(),
+          maintainState: false));
+    } else {
+      BluetoothBackend.sendStartDataCollectionCommand(_connectedDevices!);
+      _measurementsCollector.startCollection(this._connectedDevices!, this.selectedGesture);
+      _isRecording = true;
+      // TODO(https://git.io/JEyV4): Process data from more than one device.
+    }
+  }
+
+  void stopRecording() async {
+    developer.log('stopRecording');
+    BluetoothBackend.sendStopCommand(this._connectedDevices!);
+    _isRecording = false;
+    showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Finalizar recolección."),
+          content: Text(
+              "¿Desea guardar los archivos o descartarlos?"),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  _measurementsCollector.discardCollection();
+                  Navigator.pop(context, 'Cancelar');
+                },
+                child: Text("Descartar")),
+            TextButton(
+                onPressed: () {
+                  _measurementsCollector.saveCollection();
+                  Navigator.pop(context, 'Guardar');
+                },
+                child: Text("Guardar")),
+          ],
+        ));
   }
 
   DropdownButton<String> buildDropdownButton(List<String> values,
@@ -125,10 +180,12 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
 class RecordButton extends StatefulWidget {
 
   final AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot;
-  const RecordButton({Key? key, required this.devicesSnapshot}) : super(key: key);
+  final Function onButtonPressed;
+
+  const RecordButton({Key? key, required this.devicesSnapshot, required this.onButtonPressed}) : super(key: key);
 
   @override
-  _RecordButtonState createState() => _RecordButtonState(devicesSnapshot);
+  _RecordButtonState createState() => _RecordButtonState(devicesSnapshot, onButtonPressed);
 }
 
 class _RecordButtonState extends State<RecordButton> with SingleTickerProviderStateMixin {
@@ -136,8 +193,9 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
   late List<BluetoothDevice> connectedDevices;
   late TimerController _timerController;
   bool _isRecording = false;
+  Function onButtonPressed;
 
-  _RecordButtonState(this.devicesSnapshot) {
+  _RecordButtonState(this.devicesSnapshot, this.onButtonPressed) {
     _timerController = new TimerController(this);
   }
 
@@ -184,7 +242,8 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
             return IconButton(
               icon: Icon(Icons.stop, color: Colors.red, size: 64),
               onPressed: () {
-                stopRecording();
+                onButtonPressed.call();
+                // stopRecording();
                 _timerController.reset();
                 setState(() {
                   _isRecording = false;
@@ -196,7 +255,8 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
               icon: Icon(Icons.circle,
                   color: Theme.of(context).primaryColor, size: 64),
               onPressed: () {
-                startRecording();
+                onButtonPressed.call();
+                // startRecording();
                 _timerController.start();
                 setState(() {
                   _isRecording = true;
@@ -205,33 +265,5 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
             );
           }
         })());
-  }
-
-  void startRecording() async {
-    developer.log('startRecording');
-    if (this.connectedDevices.isEmpty) {
-      developer.log('Cant start recording! No device connected');
-      Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => BleConnectionErrorPage(),
-          maintainState: false));
-    } else {
-      BluetoothBackend.sendStartDataCollectionCommand(connectedDevices);
-      var dataCollectionCharacteristics =
-      await BluetoothBackend.getDevicesDataCollectionCharacteristics(connectedDevices);
-      // TODO(https://git.io/JEyV4): Process data from more than one device.
-      String deviceId = "${this.connectedDevices.first.id}";
-      // this._measurementsCollector = new MeasurementsCollector(
-      //     deviceId, dataCollectionCharacteristics.first);
-      // this._measurementsCollector!.readMeasurements(context);
-    }
-  }
-
-  void stopRecording() async {
-    developer.log('stopRecording');
-    BluetoothBackend.sendStopCommand(this.connectedDevices);
-    // if (this._measurementsCollector != null) {
-    //   String gesture = "$selectedCategory-$selectedGesture";
-    //   await this._measurementsCollector!.stopReadings(context, gesture);
-    // }
   }
 }

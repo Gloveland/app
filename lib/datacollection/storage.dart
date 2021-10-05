@@ -60,7 +60,6 @@ class DeviceMeasurementsFile {
   
   String get path => file.path;
   String get lastModified => "$lastModificationDate";
-  
 
   DeviceMeasurementsFile._(
       this.file,
