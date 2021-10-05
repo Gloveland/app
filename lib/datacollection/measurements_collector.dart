@@ -23,6 +23,7 @@ class MeasurementsCollector {
   /// collected measurements.
   void startCollecting(List<BluetoothDevice> connectedDevices, String gesture) async {
     developer.log("Starting collection for gesture '$gesture' from devices: $connectedDevices", name: TAG);
+    _resetState();
     for (BluetoothDevice device in connectedDevices) {
       BluetoothService? lsaService =
           await BluetoothBackend.getLsaGlovesService(device);
@@ -35,6 +36,7 @@ class MeasurementsCollector {
   }
 
   /// Saves the collection files and stops recording measurements.
+
   void saveCollection() async {
     _cancelSubscriptions();
     for (var measurementsFile in _deviceMeasurements.values) {
@@ -42,17 +44,21 @@ class MeasurementsCollector {
     }
     _deviceMeasurements.clear();
   }
-  
   /// Discards an ongoing collection, removing the generated files.
+
   void discardCollection() async {
-    _cancelSubscriptions();
-    _deviceMeasurements.clear();
+    _resetState();
   }
-  
+
   void _initFile(String deviceId, String gesture) async {
     DeviceMeasurementsFile deviceMeasurementsFile
         = await DeviceMeasurementsFile.create(deviceId, gesture);
     _deviceMeasurements.putIfAbsent(deviceId, () => deviceMeasurementsFile);
+  }
+
+  void _resetState() {
+    _cancelSubscriptions();
+    _deviceMeasurements.clear();
   }
 
   void _cancelSubscriptions() {
