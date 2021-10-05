@@ -89,8 +89,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
                   SizedBox(height: 74),
                   RecordButton(
                       key: Key("${devicesSnapshot.data!.length}"),
-                      onButtonPressed: () => onRecordButtonPressed(),
-                      devicesSnapshot: devicesSnapshot)
+                      onButtonPressed: () => onRecordButtonPressed())
                 ],
               );
             }),
@@ -180,33 +179,21 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
 
 class RecordButton extends StatefulWidget {
 
-  final AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot;
   final Function onButtonPressed;
 
-  const RecordButton({Key? key, required this.devicesSnapshot, required this.onButtonPressed}) : super(key: key);
+  const RecordButton({Key? key, required this.onButtonPressed}) : super(key: key);
 
   @override
-  _RecordButtonState createState() => _RecordButtonState(devicesSnapshot, onButtonPressed);
+  _RecordButtonState createState() => _RecordButtonState(onButtonPressed);
 }
 
 class _RecordButtonState extends State<RecordButton> with SingleTickerProviderStateMixin {
-  final AsyncSnapshot<List<BluetoothDevice>> devicesSnapshot;
-  late List<BluetoothDevice> connectedDevices;
   late TimerController _timerController;
   bool _isRecording = false;
   Function onButtonPressed;
 
-  _RecordButtonState(this.devicesSnapshot, this.onButtonPressed) {
+  _RecordButtonState(this.onButtonPressed) {
     _timerController = new TimerController(this);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (devicesSnapshot.hasData) {
-      connectedDevices = devicesSnapshot.data!;
-    }
-    developer.log("Widget updated. Devices: " + connectedDevices.toString(), name: "RecordButton");
   }
 
   @override

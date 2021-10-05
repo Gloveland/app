@@ -31,7 +31,6 @@ class MeasurementsCollector {
           BluetoothBackend.getDataCollectionCharacteristic(lsaService!);
       _initFile(device.id.id, gesture);
       _collectMeasurements(device.id.id, dcCharacteristic);
-      sleep(Duration(milliseconds: 1000));
     }
   }
 
