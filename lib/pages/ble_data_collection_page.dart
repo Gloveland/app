@@ -168,8 +168,9 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
               this._connectedDevices);
       // TODO(https://git.io/JEyV4): Process data from more than one device.
       String deviceId = "${this._connectedDevices.first.id}";
+      String deviceName = "${this._connectedDevices.first.name}";
       this._measurementsCollector = new MeasurementsCollector(
-          deviceId, dataCollectionCharacteristics.first);
+          deviceName, deviceId, dataCollectionCharacteristics.first);
       this._timerController.start();
       this._measurementsCollector!.readMeasurements(context);
       setState(() {
@@ -179,12 +180,12 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   }
 
   Future<VoidCallback?> stopRecording() async {
+    BluetoothBackend.sendStopCommand(this._connectedDevices);
     developer.log('stopRecording', name: TAG);
     _timerController.reset();
     setState(() {
       _isRecording = false;
     });
-    BluetoothBackend.sendStopCommand(this._connectedDevices);
     if (this._measurementsCollector != null) {
       String gesture = "$selectedCategory-$selectedGesture";
       await this._measurementsCollector!.stopReadings(context, gesture);

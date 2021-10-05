@@ -2,76 +2,127 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async' show Future;
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
 import 'dart:developer' as developer;
 
-void uploadFile(SensorMeasurements sensorMeasurements, DateTime datetime) async {
+class EdgeImpulseApiClient {
 
-  var fileName = sensorMeasurements.word +'-'+ datetime.toString();
+  static void uploadFile(
+      SensorMeasurements sensorMeasurements, DateTime datetime) async {
+    var fileName = sensorMeasurements.word + '-' + datetime.toString();
 
-  var protected = Protected(
-      ver: "v1",      //always v1
-      alg: "none",    //the algorithm used to sign this file. Either HS256 (HMAC-SHA256) or none (required)
-      iat: datetime.toUtc().millisecondsSinceEpoch // date when the file was created in seconds since epoch
-  );
+    var protected = Protected(
+        ver: "v1",
+        //always v1
+        alg: "none",
+        //the algorithm used to sign this file. Either HS256 (HMAC-SHA256) or none (required)
+        iat: datetime
+            .toUtc()
+            .millisecondsSinceEpoch // date when the file was created in seconds since epoch
+        );
 
-  var sensor = [
+    var payload = Payload(
+        deviceName: sensorMeasurements.deviceId,
+        //globally unique identifier for this device (e.g. MAC address)
+        deviceType: "ESP32",
+        // exact model of the device
+        //the frequency of the data in this file (in milliseconds). E.g. for 100Hz fill in 10 (new data every 10 ms.)
+        intervalMs: 10,
+        //mpu6050 Default Internal 8MHz oscillator (register 0x6B = 0) equals to  1.25 milliseconds
+        sensors: EdgeImpulseApiClient.sensorMeasurementNames,
+        values: sensorMeasurements.values);
+
+    var edgeImpulseBody = EdgeImpulseBody(
+        protected: protected, signature: "empty", payload: payload);
+    developer.log("sending post");
+    developer.log("${edgeImpulseBody.toJson()}");
+
+    Secret secret =
+        await SecretLoader(secretPath: "assets/secrets.json").load();
+
+    HttpClient httpClient = new HttpClient();
+    HttpClientRequest request = await httpClient.postUrl(
+        Uri.parse('https://ingestion.edgeimpulse.com/api/training/data'));
+    request.headers.set('Content-type', 'application/json');
+    if(BluetoothSpecification.LEFT_GLOVE_NAME == sensorMeasurements.deviceName){
+      request.headers.set('x-api-key', secret.leftGloveApiKey);
+    }else{
+      request.headers.set('x-api-key', secret.rightGloveApiKey);
+    }
+    request.headers.set('x-file-name', fileName);
+    request.headers.set('x-label', sensorMeasurements.word);
+    request.add(utf8.encode(json.encode(edgeImpulseBody)));
+    HttpClientResponse response = await request.close();
+    String reply = await response.transform(utf8.decoder).join();
+    developer.log(reply);
+    httpClient.close();
+  }
+
+  static const sensorMeasurementNames = [
     //thumb
-    Sensor("thumbAccX","m/s2"),Sensor("thumbAccY","m/s2"), Sensor("thumbAccZ","m/s2"),
-    Sensor("thumbGyroX","deg"),Sensor("thumbGyroY","deg"), Sensor("thumbGyroZ","deg"),
-    Sensor("thumbRoll","deg"),Sensor("thumbPitch","deg"), Sensor("thumbYaw","deg"),
+    SensorParameter("thumbAccX", "m/s2"),
+    SensorParameter("thumbAccY", "m/s2"),
+    SensorParameter("thumbAccZ", "m/s2"),
+    SensorParameter("thumbGyroX", "deg"),
+    SensorParameter("thumbGyroY", "deg"),
+    SensorParameter("thumbGyroZ", "deg"),
+    SensorParameter("thumbRoll", "deg"),
+    SensorParameter("thumbPitch", "deg"),
+    SensorParameter("thumbYaw", "deg"),
     //index
-    Sensor("indexAccX","m/s2"),Sensor("indexAccY","m/s2"), Sensor("indexAccZ","m/s2"),
-    Sensor("indexGyroX","deg"),Sensor("indexGyroY","deg"), Sensor("indexGyroZ","deg"),
-    Sensor("indexRoll","deg"),Sensor("indexPitch","deg"), Sensor("indexYaw","deg"),
+    SensorParameter("indexAccX", "m/s2"),
+    SensorParameter("indexAccY", "m/s2"),
+    SensorParameter("indexAccZ", "m/s2"),
+    SensorParameter("indexGyroX", "deg"),
+    SensorParameter("indexGyroY", "deg"),
+    SensorParameter("indexGyroZ", "deg"),
+    SensorParameter("indexRoll", "deg"),
+    SensorParameter("indexPitch", "deg"),
+    SensorParameter("indexYaw", "deg"),
     //middle
-    Sensor("middleAccX","m/s2"),Sensor("middleAccY","m/s2"), Sensor("middleAccZ","m/s2"),
-    Sensor("middleGyroX","deg"),Sensor("middleGyroY","deg"), Sensor("middleGyroZ","deg"),
-    Sensor("middleRoll","deg"),Sensor("middlePitch","deg"), Sensor("middleYaw","deg"),
+    SensorParameter("middleAccX", "m/s2"),
+    SensorParameter("middleAccY", "m/s2"),
+    SensorParameter("middleAccZ", "m/s2"),
+    SensorParameter("middleGyroX", "deg"),
+    SensorParameter("middleGyroY", "deg"),
+    SensorParameter("middleGyroZ", "deg"),
+    SensorParameter("middleRoll", "deg"),
+    SensorParameter("middlePitch", "deg"),
+    SensorParameter("middleYaw", "deg"),
     //ring
-    Sensor("ringAccX","m/s2"),Sensor("ringAccY","m/s2"), Sensor("ringAccZ","m/s2"),
-    Sensor("ringGyroX","deg"),Sensor("ringGyroY","deg"), Sensor("ringGyroZ","deg"),
-    Sensor("ringRoll","deg"),Sensor("ringPitch","deg"), Sensor("ringYaw","deg"),
+    SensorParameter("ringAccX", "m/s2"),
+    SensorParameter("ringAccY", "m/s2"),
+    SensorParameter("ringAccZ", "m/s2"),
+    SensorParameter("ringGyroX", "deg"),
+    SensorParameter("ringGyroY", "deg"),
+    SensorParameter("ringGyroZ", "deg"),
+    SensorParameter("ringRoll", "deg"),
+    SensorParameter("ringPitch", "deg"),
+    SensorParameter("ringYaw", "deg"),
     //pinky
-    Sensor("pinkyAccX","m/s2"),Sensor("pinkyAccY","m/s2"), Sensor("pinkyAccZ","m/s2"),
-    Sensor("pinkyGyroX","deg"),Sensor("pinkyGyroY","deg"), Sensor("pinkyGyroZ","deg"),
-    Sensor("pinkyRoll","deg"),Sensor("pinkyPitch","deg"), Sensor("pinkyYaw","deg"),
-
+    SensorParameter("pinkyAccX", "m/s2"),
+    SensorParameter("pinkyAccY", "m/s2"),
+    SensorParameter("pinkyAccZ", "m/s2"),
+    SensorParameter("pinkyGyroX", "deg"),
+    SensorParameter("pinkyGyroY", "deg"),
+    SensorParameter("pinkyGyroZ", "deg"),
+    SensorParameter("pinkyRoll", "deg"),
+    SensorParameter("pinkyPitch", "deg"),
+    SensorParameter("pinkyYaw", "deg"),
   ];
-
-  var payload = Payload(
-      deviceName: sensorMeasurements.deviceId,//globally unique identifier for this device (e.g. MAC address)
-      deviceType: "ESP32",// exact model of the device
-      //the frequency of the data in this file (in milliseconds). E.g. for 100Hz fill in 10 (new data every 10 ms.)
-      intervalMs: 10, //mpu6050 Default Internal 8MHz oscillator (register 0x6B = 0) equals to  1.25 milliseconds
-      sensors: sensor,
-      values: sensorMeasurements.values
-  );
-
-  var edgeImpulseBody = EdgeImpulseBody(protected: protected, signature: "empty", payload: payload);
-  developer.log("sending post");
-  developer.log("${edgeImpulseBody.toJson()}");
-
-  Secret secret = await SecretLoader(secretPath: "assets/secrets.json").load();
-
-  HttpClient httpClient = new HttpClient();
-  HttpClientRequest request = await httpClient.postUrl(Uri.parse('https://ingestion.edgeimpulse.com/api/training/data'));
-  request.headers.set('Content-type', 'application/json');
-  request.headers.set('x-api-key', secret.apiKey);
-  request.headers.set('x-file-name', fileName);
-  request.headers.set('x-label', sensorMeasurements.word);
-  request.add(utf8.encode(json.encode(edgeImpulseBody)));
-  HttpClientResponse response = await request.close();
-  String reply = await response.transform(utf8.decoder).join();
-  developer.log(reply );
-  httpClient.close();
 }
 
 class Secret {
-  final String apiKey;
-  Secret({this.apiKey = ""});
+  final String rightGloveApiKey;
+  final String leftGloveApiKey;
+
+  Secret({this.rightGloveApiKey = "", this.leftGloveApiKey = ""});
+
   factory Secret.fromJson(Map<String, dynamic> jsonMap) {
-    return new Secret(apiKey: jsonMap["api_key"]);
+    return new Secret(
+        rightGloveApiKey: jsonMap["RightGloveLSA-ApiKey"],
+        leftGloveApiKey: jsonMap["LeftGloveLSA-ApiKey"]);
   }
 }
 
@@ -79,15 +130,15 @@ class SecretLoader {
   final String secretPath;
 
   SecretLoader({required this.secretPath});
+
   Future<Secret> load() {
     return rootBundle.loadStructuredData<Secret>(this.secretPath,
-            (jsonStr) async {
-          final secret = Secret.fromJson(json.decode(jsonStr));
-          return secret;
-        });
+        (jsonStr) async {
+      final secret = Secret.fromJson(json.decode(jsonStr));
+      return secret;
+    });
   }
 }
-
 
 /*
 * {
@@ -120,7 +171,11 @@ class EdgeImpulseBody {
   final Protected protected;
   final String signature;
   final Payload payload;
-  EdgeImpulseBody({required this.protected, required this.signature, required this.payload});
+
+  EdgeImpulseBody(
+      {required this.protected,
+      required this.signature,
+      required this.payload});
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -129,40 +184,33 @@ class EdgeImpulseBody {
       'payload': payload.toJson(),
     };
   }
-
 }
 
 class Protected {
   final String ver;
   final String alg;
   final int iat;
+
   Protected({required this.ver, required this.alg, required this.iat});
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'ver': ver,
-      'alg': alg,
-      'iat': iat
-    };
+    return <String, dynamic>{'ver': ver, 'alg': alg, 'iat': iat};
   }
-
 }
-
 
 class Payload {
   final String deviceName;
   final String deviceType;
   final double intervalMs;
-  final List<Sensor> sensors;
+  final List<SensorParameter> sensors;
   final List<List<double>> values;
 
-  Payload({
-    required this.deviceName,
-    required this.deviceType,
-    required this.intervalMs,
-    required this.sensors,
-    required this.values });
-
+  Payload(
+      {required this.deviceName,
+      required this.deviceType,
+      required this.intervalMs,
+      required this.sensors,
+      required this.values});
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -175,15 +223,11 @@ class Payload {
   }
 }
 
-class Sensor {
-  late final String name;
-  late final String units;
+class SensorParameter {
+  final String name;
+  final String units;
 
-  Sensor(String name, String units){
-    this.name = name;
-    this.units = units;
-  }
-
+  const SensorParameter(this.name, this.units);
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -192,4 +236,3 @@ class Sensor {
     };
   }
 }
-
