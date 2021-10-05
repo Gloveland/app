@@ -127,6 +127,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
     _isRecording = false;
     showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (_) => AlertDialog(
           title: Text("Finalizar recolección."),
           content: Text(

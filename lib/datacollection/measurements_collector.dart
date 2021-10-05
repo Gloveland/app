@@ -136,44 +136,6 @@ class MeasurementsCollector {
       developer.log('cant parse : $measurements  error : ${e.toString()}');
     }
   }
-  
-  // _stopReadings(BuildContext context, String selectedGesture) async {
-  //   if (this._subscription != null) {
-  //     this._subscription!.cancel();
-  //     this._subscription = null;
-  //     developer.log("Subscription canceled.", name: TAG);
-  //   }
-  //   if (_items.isNotEmpty) {
-  //     _saveMessagesInFile(context, selectedGesture, this._items);
-  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-  //         content: Text("Movimientos guardados!"),
-  //         duration: Duration(seconds: 1)));
-  //   } else {
-  //     developer.log("Empty measurment list, nothing to save", name: TAG);
-  //   }
-  //   await _characteristic.setNotifyValue(false);
-  // }
-  //
-  // _saveMessagesInFile(BuildContext context, String selectedGesture,
-  //     List<GloveMeasurement> gloveMeasurements) async {
-  //   if (gloveMeasurements.isEmpty) {
-  //     return;
-  //   }
-  //   //open pop up loading
-  //   Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
-  //   var deviceId = gloveMeasurements.first.deviceId;
-  //   var measurementFile =
-  //       await DeviceMeasurementsFile.create(deviceId, selectedGesture);
-  //   for (int i = 0; i < gloveMeasurements.length; i++) {
-  //     developer
-  //         .log('saving in file -> ${gloveMeasurements[i].toJson().toString()}');
-  //     measurementFile.add(gloveMeasurements[i]);
-  //   }
-  //   await measurementFile.save();
-  //   this._items = [];
-  //   //close pop up loading
-  //   Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
-  // }
 }
 
 class Pair<T, Q> {
