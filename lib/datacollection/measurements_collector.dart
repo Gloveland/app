@@ -1,10 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
-import 'package:lsa_gloves/widgets/Dialog.dart';
-import 'package:flutter/cupertino.dart';
 
 import 'dart:developer' as developer;
 
@@ -13,101 +12,133 @@ import 'package:lsa_gloves/model/glove_measurement.dart';
 /// Class to take in charge the responsibility of receiving and processing
 /// the measurements taken from the device.
 class MeasurementsCollector {
-  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   static const String TAG = "MeasurementsCollector";
-  String _deviceName;
-  String _deviceId;
-  BluetoothCharacteristic _characteristic;
-  List<GloveMeasurement> _items;
-  StreamSubscription<List<int>>? _subscription;
 
-  MeasurementsCollector(this._deviceName,this._deviceId, this._characteristic)
-      : _items = [];
+  Map<String, DeviceMeasurementsFile> _deviceMeasurements = Map();
+  List<StreamSubscription<List<int>>> _subscriptions = [];
 
-  void readMeasurements(BuildContext context) async {
-    await this._characteristic.setNotifyValue(true);
-    _subscription = this._characteristic.value.listen((data) {
-      String stringRead = new String.fromCharCodes(data);
-      developer.log("Incoming data: $stringRead", name: TAG);
-      readGloveMeasurementsFromBle(stringRead);
+  /// Starts collecting measurements from all the connected devices.
+  ///
+  /// A measurements file will be generated for each device with its
+  /// collected measurements.
+  void startCollecting(List<BluetoothDevice> connectedDevices, String gesture) async {
+    developer.log("Starting collection for gesture '$gesture' from devices: $connectedDevices", name: TAG);
+    _resetState();
+    for (BluetoothDevice device in connectedDevices) {
+      BluetoothService? lsaService =
+          await BluetoothBackend.getLsaGlovesService(device);
+      BluetoothCharacteristic dcCharacteristic =
+          BluetoothBackend.getDataCollectionCharacteristic(lsaService!);
+      _initFile(device.name, device.id.id, gesture);
+      _collectMeasurements(device.id.id, dcCharacteristic);
+    }
+  }
+
+  /// Saves the collection files and stops recording measurements.
+  void saveCollection() async {
+    _cancelSubscriptions();
+    for (var measurementsFile in _deviceMeasurements.values) {
+      await measurementsFile.save();
+    }
+    _deviceMeasurements.clear();
+  }
+
+  /// Discards an ongoing collection, removing the generated files.
+  void discardCollection() async {
+    _resetState();
+  }
+
+  void _initFile(String deviceName, String deviceId, String gesture) async {
+    DeviceMeasurementsFile deviceMeasurementsFile
+        = await DeviceMeasurementsFile.create(deviceName, deviceId, gesture);
+    _deviceMeasurements.putIfAbsent(deviceId, () => deviceMeasurementsFile);
+  }
+
+  void _resetState() {
+    _cancelSubscriptions();
+    _deviceMeasurements.clear();
+  }
+
+  void _cancelSubscriptions() {
+    for (var subscription in _subscriptions) {
+      subscription.cancel();
+    }
+    _subscriptions = [];
+  }
+
+  void _collectMeasurements(String deviceId,
+      BluetoothCharacteristic dataCollectionCharacteristic) async {
+    if (!dataCollectionCharacteristic.isNotifying) {
+      await dataCollectionCharacteristic.setNotifyValue(true);
+    }
+    StreamSubscription<List<int>> subscription =
+        dataCollectionCharacteristic.value.listen((data) {
+      String rawMeasurements = new String.fromCharCodes(data);
+      developer.log("Incoming data: $rawMeasurements", name: TAG);
+      _ParsedMeasurements? parsedMeasurements =
+          _parseRawMeasurements(rawMeasurements);
+      if (parsedMeasurements == null) {
+        developer.log("Measurements parsing failed.", name: TAG);
+        return;
+      }
+      _recordParsedMeasurement(deviceId, parsedMeasurements.eventNumber, parsedMeasurements.values);
     }, onError: (err) {
       developer.log("Error: ${err.toString()}", name: TAG);
     }, onDone: () {
       developer.log("Reading measurements done", name: TAG);
     });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Capturando movimientos..."),
-        duration: Duration(seconds: 2)));
+    _subscriptions.add(subscription);
   }
 
-  readGloveMeasurementsFromBle(String stringRead) {
-    if (stringRead.isEmpty) {
-      return;
+  /// Parses the raw measurements passed as a parameter.
+  ///
+  /// Returns a ParsedMeasurements instance containing the event number and a
+  /// list of float measurements represented as strings.
+  /// In case the parsing failed, null is returned.
+  _ParsedMeasurements? _parseRawMeasurements(String rawMeasurements) {
+    if (rawMeasurements.isEmpty) {
+      developer.log("Raw measurements was an empty string!", name: TAG);
+      return null;
     }
-    if (this._subscription == null || this._subscription!.isPaused) {
-      developer.log("skip: subscription is cancelled", name: TAG);
-      return;
+    var lastCharacter = rawMeasurements.substring(rawMeasurements.length - 1);
+    if (lastCharacter != ";") {
+      developer.log(
+          "Last character is not the expected delimiter ';'. Verify the MTU is set properly.",
+          name: TAG);
+      return null;
     }
-    var lastCharacter = stringRead.substring(stringRead.length - 1);
-    List<String> fingerMeasurements = stringRead
-        .substring(0, stringRead.length - 1)
+
+    List<String> fingerMeasurements = rawMeasurements
+        .substring(0, rawMeasurements.length - 1)
         .split('\n')
         .where((s) => s.isNotEmpty)
         .toList();
-    if (fingerMeasurements.length < 6 || lastCharacter != ";") {
+    if (fingerMeasurements.length < 6) {
       developer.log(
-          "last character is not the expected delimiter ';'"
-          "have you change the MTU correctly ",
+          "Fewer measurements than expected: (${fingerMeasurements.length}).",
           name: TAG);
-      return;
+      return null;
     }
-    var eventNum = int.parse(fingerMeasurements.removeAt(0));
+    int eventNum = int.parse(fingerMeasurements.removeAt(0));
+    return _ParsedMeasurements(eventNum, fingerMeasurements);
+  }
+
+  _recordParsedMeasurement(String deviceId, int eventNumber, List<String> measurements) {
     try {
-      developer.log('trying to parse');
-      var pkg = GloveMeasurement.fromFingerMeasurementsList(
-          eventNum, this._deviceId, fingerMeasurements);
-      developer.log('map to -> ${pkg.toJson().toString()}');
-      this._items.add(pkg);
+      developer.log('Attempting to parse');
+      GloveMeasurement gloveMeasurement = GloveMeasurement.fromFingerMeasurementsList(
+          eventNumber, deviceId, measurements);
+      developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
+      _deviceMeasurements[deviceId]?.add(gloveMeasurement);
     } catch (e) {
-      developer.log('cant parse : $stringRead  error : ${e.toString()}');
+      developer.log('cant parse : $measurements  error : ${e.toString()}');
     }
   }
+}
 
-  stopReadings(BuildContext context, String selectedGesture) async {
-    if (this._subscription != null) {
-     this. _subscription!.cancel();
-     this._subscription = null;
-      developer.log("Subscription canceled.", name: TAG);
-    }
-    if (_items.isNotEmpty) {
-      saveMessagesInFile(context, selectedGesture, this._items);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Movimientos guardados!"),
-          duration: Duration(seconds: 1)));
-    } else {
-      developer.log("Empty measurment list, nothing to save", name: TAG);
-    }
-    await _characteristic.setNotifyValue(false);
-  }
-
-  saveMessagesInFile(BuildContext context, String selectedGesture,
-      List<GloveMeasurement> gloveMeasurements) async {
-    if (gloveMeasurements.isEmpty) {
-      return;
-    }
-    //open pop up loading
-    Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
-
-    var measurementFile =
-        await DeviceMeasurementsFile.create(this._deviceName, this._deviceId, selectedGesture);
-    for (int i = 0; i < gloveMeasurements.length; i++) {
-      developer
-          .log('saving in file -> ${gloveMeasurements[i].toJson().toString()}');
-      measurementFile.add(gloveMeasurements[i]);
-    }
-    await measurementFile.save();
-    this._items = [];
-    //close pop up loading
-    Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
-  }
+class _ParsedMeasurements {
+  final int eventNumber;
+  final List<String> values;
+  
+  _ParsedMeasurements(this.eventNumber, this.values);
 }
