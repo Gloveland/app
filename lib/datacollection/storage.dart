@@ -105,7 +105,7 @@ class DeviceMeasurementsFile {
       await file.delete();
       developer.log("file deleted");
     } catch (e) {
-      developer.log("cant delete file");
+      developer.log("Cant delete file: ${e.toString()}");
     }
   }
 
@@ -152,16 +152,17 @@ class SensorMeasurements {
       return false;
     }
     List<double> measurementList = [];
-    addFingerMovements(measurementList, gloveMeasurement.pinky);
-    addFingerMovements(measurementList, gloveMeasurement.ring);
-    addFingerMovements(measurementList, gloveMeasurement.middle);
-    addFingerMovements(measurementList, gloveMeasurement.index);
-    addFingerMovements(measurementList, gloveMeasurement.thumb);
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.pinky));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.ring));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.middle));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.index));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.thumb));
     this.values.add(measurementList);
     return true;
   }
 
-  bool addFingerMovements(measurementList, Finger finger){
+  List<double> extractFingerMeasurement(Finger finger){
+    List<double> measurementList = [];
     measurementList.add(finger.acc.x);
     measurementList.add(finger.acc.y);
     measurementList.add(finger.acc.z);
@@ -171,8 +172,7 @@ class SensorMeasurements {
     measurementList.add(finger.inclination.roll);
     measurementList.add(finger.inclination.pitch);
     measurementList.add(finger.inclination.yaw);
-    this.values.add(measurementList);
-    return true;
+    return measurementList;
   }
 
   factory SensorMeasurements.fromJson(dynamic json) {
