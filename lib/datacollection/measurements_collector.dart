@@ -15,7 +15,7 @@ class MeasurementsCollector {
   static const String TAG = "MeasurementsCollector";
 
   Map<String, DeviceMeasurementsFile> _deviceMeasurements = Map();
-  List<StreamSubscription<List<int>>?> _subscriptions = [];
+  List<StreamSubscription<List<int>>> _subscriptions = [];
 
   /// Starts collecting measurements from all the connected devices.
   ///
@@ -36,7 +36,6 @@ class MeasurementsCollector {
   }
 
   /// Saves the collection files and stops recording measurements.
-
   void saveCollection() async {
     _cancelSubscriptions();
     for (var measurementsFile in _deviceMeasurements.values) {
@@ -44,8 +43,8 @@ class MeasurementsCollector {
     }
     _deviceMeasurements.clear();
   }
-  /// Discards an ongoing collection, removing the generated files.
 
+  /// Discards an ongoing collection, removing the generated files.
   void discardCollection() async {
     _resetState();
   }
@@ -63,7 +62,7 @@ class MeasurementsCollector {
 
   void _cancelSubscriptions() {
     for (var subscription in _subscriptions) {
-      subscription?.cancel();
+      subscription.cancel();
     }
     _subscriptions = [];
   }
