@@ -6,6 +6,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
 import 'package:lsa_gloves/model/glove_measurement.dart';
 import 'package:lsa_gloves/widgets/Dialog.dart';
@@ -218,7 +219,7 @@ class _MovementRecorderWidget extends State<MovementRecorderWidget> {
     Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
     var word = fileName;
     var deviceId = gloveMeasurement.first.deviceId;
-    var measurementFile = await DeviceMeasurementsFile.create(deviceId, word);
+    var measurementFile = await DeviceMeasurementsFile.create(BluetoothSpecification.RIGHT_GLOVE_NAME, deviceId, word);
     for (int i = 0; i < gloveMeasurement.length; i++) {
       developer.log('saving in file -> ${gloveMeasurement[i].toJson().toString()}');
       measurementFile.add(gloveMeasurement[i]);

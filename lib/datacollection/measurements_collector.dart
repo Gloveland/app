@@ -15,12 +15,13 @@ import 'package:lsa_gloves/model/glove_measurement.dart';
 class MeasurementsCollector {
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   static const String TAG = "MeasurementsCollector";
+  String _deviceName;
   String _deviceId;
   BluetoothCharacteristic _characteristic;
   List<GloveMeasurement> _items;
   StreamSubscription<List<int>>? _subscription;
 
-  MeasurementsCollector(this._deviceId, this._characteristic)
+  MeasurementsCollector(this._deviceName,this._deviceId, this._characteristic)
       : _items = [];
 
   void readMeasurements(BuildContext context) async {
@@ -96,9 +97,9 @@ class MeasurementsCollector {
     }
     //open pop up loading
     Dialogs.showLoadingDialog(context, _keyLoader, "Guardando...");
-    var deviceId = gloveMeasurements.first.deviceId;
+
     var measurementFile =
-        await DeviceMeasurementsFile.create(deviceId, selectedGesture);
+        await DeviceMeasurementsFile.create(this._deviceName, this._deviceId, selectedGesture);
     for (int i = 0; i < gloveMeasurements.length; i++) {
       developer
           .log('saving in file -> ${gloveMeasurements[i].toJson().toString()}');
