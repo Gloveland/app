@@ -66,10 +66,10 @@ class DeviceMeasurementsFile {
       this.lastModificationDate,
       this.fileContent);
 
-  static Future<DeviceMeasurementsFile> create(String deviceId, String word) async {
+  static Future<DeviceMeasurementsFile> create(String deviceName, String deviceId, String word) async {
     var creationDate = DateTime.now();
     var values = <List<double>>[];
-    SensorMeasurements json = new SensorMeasurements(deviceId, word, values);
+    SensorMeasurements json = new SensorMeasurements(deviceName, deviceId, word, values);
     String datetimeStr = format(creationDate);
     var filename = "${word}_$datetimeStr";
     var file = await new GloveEventsStorage().createFile(filename);
@@ -126,7 +126,7 @@ class DeviceMeasurementsFile {
 
   Future<void> upload() async {
     SensorMeasurements measurementsJson = await readJsonContent();
-    uploadFile(measurementsJson, lastModificationDate);
+    EdgeImpulseApiClient.uploadFile(measurementsJson, lastModificationDate);
   }
 
   static String format(DateTime date) {
@@ -140,11 +140,12 @@ class DeviceMeasurementsFile {
 }
 
 class SensorMeasurements {
+  final String deviceName;
   final String deviceId;
   final String word;
   final List<List<double>> values;
 
-  SensorMeasurements(this.deviceId, this.word, this.values);
+  SensorMeasurements(this.deviceName, this.deviceId, this.word, this.values);
 
   bool add(GloveMeasurement gloveMeasurement) {
     if(gloveMeasurement.deviceId != this.deviceId){
@@ -185,6 +186,7 @@ class SensorMeasurements {
       }).toList();
     }
     return SensorMeasurements(
+      json['device_name'] as String,
       json['device_id'] as String,
       json['word'] as String,
       _values,
@@ -193,6 +195,7 @@ class SensorMeasurements {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'device_name': deviceName,
       'device_id': deviceId,
       'word': word,
       'values': values,

@@ -33,8 +33,8 @@ class BluetoothBackend {
     sendCommandToConnectedDevice(device, BluetoothSpecification.CALIBRATE);
   }
 
-  static void sendStopCommand(List<BluetoothDevice> connectedDevices) async {
-    sendCommandToConnectedDevices(
+  static Future sendStopCommand(List<BluetoothDevice> connectedDevices) async {
+    await sendCommandToConnectedDevices(
         connectedDevices, BluetoothSpecification.STOP_ONGOING_TASK);
   }
 
@@ -58,7 +58,7 @@ class BluetoothBackend {
   ///
   /// This method is expected to be used to start and stop the measurement
   /// readings from the glove as well as the interpretations.
-  static void sendCommandToConnectedDevices(
+  static Future sendCommandToConnectedDevices(
       List<BluetoothDevice> connectedDevices, String command) async {
     List<BluetoothCharacteristic> characteristics =
         await getDevicesControllerCharacteristics(connectedDevices);
@@ -153,8 +153,10 @@ class BluetoothBackend {
   /// Retrieve the deviceName in spanish
   static String getSpanishGloveName(String deviceName) {
     switch (deviceName) {
-      case (BluetoothSpecification.deviceName):
+      case (BluetoothSpecification.RIGHT_GLOVE_NAME):
         return RightGlove;
+      case (BluetoothSpecification.LEFT_GLOVE_NAME):
+        return LeftGlove;
       default:
         return deviceName;
     }

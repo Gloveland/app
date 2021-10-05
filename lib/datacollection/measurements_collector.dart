@@ -29,7 +29,7 @@ class MeasurementsCollector {
           await BluetoothBackend.getLsaGlovesService(device);
       BluetoothCharacteristic dcCharacteristic =
           BluetoothBackend.getDataCollectionCharacteristic(lsaService!);
-      _initFile(device.id.id, gesture);
+      _initFile(device.name, device.id.id, gesture);
       _collectMeasurements(device.id.id, dcCharacteristic);
     }
   }
@@ -48,9 +48,9 @@ class MeasurementsCollector {
     _resetState();
   }
 
-  void _initFile(String deviceId, String gesture) async {
+  void _initFile(String deviceName, String deviceId, String gesture) async {
     DeviceMeasurementsFile deviceMeasurementsFile
-        = await DeviceMeasurementsFile.create(deviceId, gesture);
+        = await DeviceMeasurementsFile.create(deviceName, deviceId, gesture);
     _deviceMeasurements.putIfAbsent(deviceId, () => deviceMeasurementsFile);
   }
 

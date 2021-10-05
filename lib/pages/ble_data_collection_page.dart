@@ -16,16 +16,17 @@ class BleDataCollectionPage extends StatefulWidget {
   _BleDataCollectionState createState() => _BleDataCollectionState();
 }
 
-class _BleDataCollectionState extends State<BleDataCollectionPage> {
+class _BleDataCollectionState extends State<BleDataCollectionPage>
+    with SingleTickerProviderStateMixin {
   static const String TAG = "BleDataCollection";
   static final List<String> categories = getCategoryList();
   late String selectedCategory = categories[0];
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
-  MeasurementsCollector _measurementsCollector = MeasurementsCollector();
-  List<BluetoothDevice>? _connectedDevices;
   bool _isRecording = false;
-  
+  List<BluetoothDevice> _connectedDevices = [];
+  MeasurementsCollector _measurementsCollector = MeasurementsCollector();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,7 +41,9 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
                 .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
             initialData: [],
             builder: (context, devicesSnapshot) {
-              this._connectedDevices = devicesSnapshot.data;
+              if (devicesSnapshot.hasData) {
+                this._connectedDevices = devicesSnapshot.data!;
+              }
               return Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
@@ -96,7 +99,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
       )),
     );
   }
-  
+
   void onRecordButtonPressed() {
     if (_isRecording) {
       _stopRecording();
@@ -107,14 +110,14 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
 
   void _startRecording() {
     developer.log('startRecording');
-    if (this._connectedDevices!.isEmpty) {
+    if (this._connectedDevices.isEmpty) {
       developer.log('Cant start recording! No device connected');
       Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => BleConnectionErrorPage(),
           maintainState: false));
     } else {
-      BluetoothBackend.sendStartDataCollectionCommand(_connectedDevices!);
-      _measurementsCollector.startCollecting(this._connectedDevices!, this.selectedGesture);
+      BluetoothBackend.sendStartDataCollectionCommand(_connectedDevices);
+      _measurementsCollector.startCollecting(this._connectedDevices, this.selectedGesture);
       _isRecording = true;
       // TODO(https://git.io/JEyV4): Process data from more than one device.
     }
@@ -122,7 +125,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage> {
 
   void _stopRecording() async {
     developer.log('stopRecording');
-    BluetoothBackend.sendStopCommand(this._connectedDevices!);
+    BluetoothBackend.sendStopCommand(this._connectedDevices);
     _isRecording = false;
     showDialog(
         context: context,
