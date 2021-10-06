@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
@@ -27,6 +28,21 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   List<BluetoothDevice> _connectedDevices = [];
   MeasurementsCollector _measurementsCollector = MeasurementsCollector();
 
+
+  Stream<List<BluetoothDevice>> connectedDevices() async* {
+   Set<String> connectedDevicesIds = new Set();
+   Stream<List<BluetoothDevice>> source = Stream.periodic(Duration(seconds: 2))
+            .asyncMap((_) => BluetoothBackend.getConnectedDevices());
+   await for (var devices in source) {
+     Set<String> newConnectedDevicesIds = devices.map((device) => "${device.id}").toSet();
+     if (!setEquals(newConnectedDevicesIds,connectedDevicesIds)){
+       developer.log(connectedDevicesIds.toString());
+       connectedDevicesIds = newConnectedDevicesIds;
+       yield devices;
+     }
+   }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,8 +53,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
           child: Padding(
         padding: EdgeInsets.all(16.0),
         child: StreamBuilder<List<BluetoothDevice>>(
-            stream: Stream.periodic(Duration(seconds: 2))
-                .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
+            stream: connectedDevices(),
             initialData: [],
             builder: (context, devicesSnapshot) {
               if (devicesSnapshot.hasData) {
@@ -90,9 +105,9 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                     ),
                   ),
                   SizedBox(height: 74),
-                  RecordButton(
-                      key: Key("${devicesSnapshot.data!.length}"),
-                      onButtonPressed: () => onRecordButtonPressed())
+                  RecordButton(),
+                      //key: ValueKey<int>(0))
+                      //onButtonPressed: () => onRecordButtonPressed())
                 ],
               );
             }),
@@ -182,33 +197,37 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 
 class RecordButton extends StatefulWidget {
 
-  final Function onButtonPressed;
-
-  const RecordButton({Key? key, required this.onButtonPressed}) : super(key: key);
+  const RecordButton({Key? key}) : super(key: key);
 
   @override
-  _RecordButtonState createState() => _RecordButtonState(onButtonPressed);
+  _RecordButtonState createState() => _RecordButtonState();
 }
 
 class _RecordButtonState extends State<RecordButton> with SingleTickerProviderStateMixin {
-  late TimerController _timerController;
-  bool _isRecording = false;
-  Function onButtonPressed;
+  //late TimerController _timerController;
+  //late bool _isRecording;
 
-  _RecordButtonState(this.onButtonPressed) {
-    _timerController = new TimerController(this);
+  @override
+  void initState() {
+    super.initState();
+    //this._isRecording = false;
+   //this._timerController = TimerController(this);
   }
+
+  _RecordButtonState();
 
   @override
   Widget build(BuildContext context) {
+    developer.log("build _RecordButtonState");
     return Container(
       width: 200,
       height: 300,
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
+          /*
           SimpleTimer(
-            controller: _timerController,
+             controller: _timerController,
             duration: Duration(seconds: 10),
             progressIndicatorColor:
             Theme.of(context).primaryColor,
@@ -216,6 +235,7 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
             TextStyle(color: Colors.transparent),
             strokeWidth: 15,
           ),
+           */
           Padding(
               padding: EdgeInsets.all(24),
               child: buildRecordingButton()),
@@ -225,17 +245,20 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
   }
 
   Container buildRecordingButton() {
+    return Container(child:Text("hola"));
+    /*
     return Container(
+
         width: 150.0,
         height: 150.0,
         child: (() {
           if (_isRecording) {
             return IconButton(
               icon: Icon(Icons.stop, color: Colors.red, size: 64),
-              onPressed: () {
+              onPressed: (){
                 onButtonPressed.call();
-                _timerController.reset();
-                setState(() {
+               _timerController.reset();
+               setState(() {
                   _isRecording = false;
                 });
               },
@@ -246,13 +269,14 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
                   color: Theme.of(context).primaryColor, size: 64),
               onPressed: () {
                 onButtonPressed.call();
-                _timerController.start();
-                setState(() {
+               _timerController.start();
+               setState(() {
                   _isRecording = true;
                 });
               },
             );
           }
         })());
+     */
   }
 }
