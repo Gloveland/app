@@ -6,17 +6,21 @@ import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'dart:developer' as developer;
 
 class DeviceScreen extends StatefulWidget {
-  const DeviceScreen({Key? key, required this.device}) : super(key: key);
+  const DeviceScreen({Key? key, required this.device, required this.isEnabled})
+      : super(key: key);
   final BluetoothDevice device;
+  final bool isEnabled;
 
   @override
-  _DeviceScreenState createState() => _DeviceScreenState(this.device);
+  _DeviceScreenState createState() =>
+      _DeviceScreenState(this.device, this.isEnabled);
 }
 
 class _DeviceScreenState extends State<DeviceScreen> {
-  _DeviceScreenState(this.device);
+  _DeviceScreenState(this.device, this._isEnabled);
 
   BluetoothDevice device;
+  bool _isEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -25,66 +29,78 @@ class _DeviceScreenState extends State<DeviceScreen> {
       body: ListView(
         children: <Widget>[
           StreamBuilder<BluetoothDeviceState>(
-            stream: device.state,
-            initialData: BluetoothDeviceState.disconnected,
-            builder: (c, snapshot) => SwitchListTile(
-              secondary: Container(
-                height: double.infinity,
-                child: Icon(snapshot.data == BluetoothDeviceState.connected
-                    ? Icons.bluetooth_connected
-                    : Icons.bluetooth),
-              ),
-              title: Text('${device.name.toString()}'),
-              subtitle: Text('${device.id}'),
-              onChanged: (btConnectionStatus) {
-                if (btConnectionStatus) {
-                  setState(() {
-                    device.connect().then((_) => device
-                        .requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
-                  });
-                } else {
-                  device.disconnect();
-                }
-              },
-              value: snapshot.data == BluetoothDeviceState.connected
-                  ? true
-                  : false,
-            ),
-          ),
-          ListTile(title: Text("ID: ${device.id}")),
-          StreamBuilder<int>(
-            stream: device.mtu,
-            initialData: 0,
-            builder: (c, snapshot) {
-              print("Mtu updated");
-              return ListTile(
-                title: Text('MTU Size: ${snapshot.data} bytes'),
-                trailing: IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () =>
-                      device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE),
-                ),
-              );
-            },
-          ),
-          ListTile(
-              title: Text("Calibración"),
-              trailing: IconButton(
-                icon: Icon(Icons.settings_backup_restore),
-                onPressed: () {
-                  BluetoothBackend.sendCalibrationCommand(device);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Row(
-                    children: [
-                      Icon(Icons.lightbulb, color: Colors.blue),
-                      SizedBox(width: 20),
-                      Expanded(
-                          child: Text(
-                              "Calibrando... espere a que se apague el led azul del dispositivo."))
-                    ],
-                  )));
-                },
-              )),
+              stream: device.state,
+              initialData: BluetoothDeviceState.disconnected,
+              builder: (c, snapshot) {
+                return Column(children: [
+                  SwitchListTile(
+                    secondary: Container(
+                      height: double.infinity,
+                      child: Icon(_isEnabled
+                          ? Icons.bluetooth_connected
+                          : Icons.bluetooth),
+                    ),
+                    title: Text('${device.name.toString()}'),
+                    subtitle: Text('${device.id}'),
+                    onChanged: (bool switchValue) {
+                      if (switchValue) {
+                        setState(() {
+                          _isEnabled = true;
+                        });
+                        device.connect().then((_) => device
+                            .requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
+                      } else {
+                        setState(() {
+                          _isEnabled = false;
+                        });
+                        device.disconnect();
+                      }
+                    },
+                    value: _isEnabled,
+                  ),
+                  ListTile(title: Text("ID: ${device.id}")),
+                  StreamBuilder<int>(
+                    stream: device.mtu,
+                    initialData: 0,
+                    builder: (c, snapshot) {
+                      var mtuSize = snapshot.hasData ? snapshot.data : 0;
+                      return ListTile(
+                        title: Text('MTU Size: $mtuSize bytes'),
+                        trailing: IconButton(
+                          icon: Icon(Icons.settings_backup_restore),
+                          onPressed: () => device.requestMtu(
+                              BluetoothSpecification.MTU_BYTES_SIZE),
+                        ),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 30),
+                  FractionallySizedBox(
+                      widthFactor: 0.5,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            textStyle: const TextStyle(fontSize: 20)),
+                        onPressed: (_isEnabled &&
+                                snapshot.data == BluetoothDeviceState.connected)
+                            ? () {
+                                BluetoothBackend.sendCalibrationCommand(device);
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                        content: Row(
+                                  children: [
+                                    Icon(Icons.lightbulb, color: Colors.blue),
+                                    SizedBox(width: 20),
+                                    Expanded(
+                                        child: Text(
+                                            "Calibrando... espere a que se apague el led azul del dispositivo."))
+                                  ],
+                                )));
+                              }
+                            : null,
+                        child: const Text('Calibrar'),
+                      )),
+                ]);
+              }),
         ],
       ),
     );
