@@ -81,7 +81,6 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,12 +117,13 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
                     return Column(
                       children: devices
                           .where((d) =>
-                      d.name == BluetoothSpecification.RIGHT_GLOVE_NAME ||
-                          d.name == BluetoothSpecification.LEFT_GLOVE_NAME)
+                              d.name ==
+                                  BluetoothSpecification.RIGHT_GLOVE_NAME ||
+                              d.name == BluetoothSpecification.LEFT_GLOVE_NAME)
                           .map((device) => ConnectionGloveCard(
-                        device: device,
-                        updateState: this.updateState,
-                      ))
+                                device: device,
+                                updateState: this.updateState,
+                              ))
                           .toSet()
                           .toList(),
                     );
@@ -239,27 +239,27 @@ class _ConnectionGloveCard extends State {
   void toggleConnection(BuildContext context) {
     if (btDeviceState != BluetoothDeviceState.connected) {
       this.device.connect().then(
-              (value) => device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
+          (value) => device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
       this.updateState(this.device);
     } else {
       showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text("¿Desconectar?"),
-            content: Text(
-                "Finalizará la conexión con ${device.name.toString()}"),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context, 'Cancelar'),
-                  child: Text("Cancelar")),
-              TextButton(
-                  onPressed: () {
-                    device.disconnect();
-                    Navigator.pop(context, "Desconectar");
-                  },
-                  child: Text("Desconectar")),
-            ],
-          ));
+                title: Text("¿Desconectar?"),
+                content: Text(
+                    "Finalizará la conexión con ${device.name.toString()}"),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, 'Cancelar'),
+                      child: Text("Cancelar")),
+                  TextButton(
+                      onPressed: () {
+                        device.disconnect();
+                        Navigator.pop(context, "Desconectar");
+                      },
+                      child: Text("Desconectar")),
+                ],
+              ));
     }
   }
 }

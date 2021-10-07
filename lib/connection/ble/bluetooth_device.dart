@@ -39,8 +39,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
               onChanged: (btConnectionStatus) {
                 if (btConnectionStatus) {
                   setState(() {
-                    device.connect().then((_) =>
-                        device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
+                    device.connect().then((_) => device
+                        .requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
                   });
                 } else {
                   device.disconnect();
@@ -61,7 +61,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 title: Text('MTU Size: ${snapshot.data} bytes'),
                 trailing: IconButton(
                   icon: Icon(Icons.edit),
-                  onPressed: () => device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE),
+                  onPressed: () =>
+                      device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE),
                 ),
               );
             },
@@ -74,14 +75,14 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   BluetoothBackend.sendCalibrationCommand(device);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Row(
-                        children: [
-                          Icon(Icons.lightbulb, color: Colors.blue),
-                          SizedBox(width: 20),
-                          Expanded(
-                              child: Text(
-                                  "Calibrando... espere a que se apague el led azul del dispositivo."))
-                        ],
-                      )));
+                    children: [
+                      Icon(Icons.lightbulb, color: Colors.blue),
+                      SizedBox(width: 20),
+                      Expanded(
+                          child: Text(
+                              "Calibrando... espere a que se apague el led azul del dispositivo."))
+                    ],
+                  )));
                 },
               )),
         ],
