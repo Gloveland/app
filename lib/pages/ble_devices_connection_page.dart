@@ -83,7 +83,6 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

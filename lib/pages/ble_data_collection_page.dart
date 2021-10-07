@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
@@ -27,6 +28,21 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   List<BluetoothDevice> _connectedDevices = [];
   MeasurementsCollector _measurementsCollector = MeasurementsCollector();
 
+  Stream<List<BluetoothDevice>> connectedDevices() async* {
+    Set<String> connectedDevicesIds = new Set();
+    Stream<List<BluetoothDevice>> source = Stream.periodic(Duration(seconds: 2))
+        .asyncMap((_) => BluetoothBackend.getConnectedDevices());
+    await for (var devices in source) {
+      Set<String> newConnectedDevicesIds =
+          devices.map((device) => "${device.id.id}").toSet();
+      if (!setEquals(newConnectedDevicesIds, connectedDevicesIds)) {
+        developer.log(connectedDevicesIds.toString(), name: TAG);
+        connectedDevicesIds = newConnectedDevicesIds;
+        yield devices;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,8 +53,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
           child: Padding(
         padding: EdgeInsets.all(16.0),
         child: StreamBuilder<List<BluetoothDevice>>(
-            stream: Stream.periodic(Duration(seconds: 2))
-                .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
+            stream: connectedDevices(),
             initialData: [],
             builder: (context, devicesSnapshot) {
               if (devicesSnapshot.hasData) {
@@ -78,20 +93,10 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                       this.selectedGesture = newValue!;
                     });
                   }),
-                  SizedBox(height: 24),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Container(
-                      width: double.infinity,
-                      child: Text(
-                        "Clickear el boton para comenzar a grabar los movimientos",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 74),
+                  SizedBox(height: 100),
                   RecordButton(
-                      key: Key("${devicesSnapshot.data!.length}"),
+                      key: ValueKey(this._connectedDevices.length),
+                      disabled: this._connectedDevices.isEmpty,
                       onButtonPressed: () => onRecordButtonPressed())
                 ],
               );
@@ -117,7 +122,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
           maintainState: false));
     } else {
       BluetoothBackend.sendStartDataCollectionCommand(_connectedDevices);
-      _measurementsCollector.startCollecting(this._connectedDevices, this.selectedGesture);
+      _measurementsCollector.startCollecting(
+          this._connectedDevices, this.selectedGesture);
       _isRecording = true;
       // TODO(https://git.io/JEyV4): Process data from more than one device.
     }
@@ -131,24 +137,23 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
         context: context,
         barrierDismissible: false,
         builder: (_) => AlertDialog(
-          title: Text("Finalizar recolección."),
-          content: Text(
-              "¿Desea guardar los archivos o descartarlos?"),
-          actions: [
-            TextButton(
-                onPressed: () {
-                  _measurementsCollector.discardCollection();
-                  Navigator.pop(context, 'Cancelar');
-                },
-                child: Text("Descartar")),
-            TextButton(
-                onPressed: () {
-                  _measurementsCollector.saveCollection();
-                  Navigator.pop(context, 'Guardar');
-                },
-                child: Text("Guardar")),
-          ],
-        ));
+              title: Text("Finalizar recolección."),
+              content: Text("¿Desea guardar los archivos o descartarlos?"),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      _measurementsCollector.discardCollection();
+                      Navigator.pop(context, 'Cancelar');
+                    },
+                    child: Text("Descartar")),
+                TextButton(
+                    onPressed: () {
+                      _measurementsCollector.saveCollection();
+                      Navigator.pop(context, 'Guardar');
+                    },
+                    child: Text("Guardar")),
+              ],
+            ));
   }
 
   DropdownButton<String> buildDropdownButton(List<String> values,
@@ -181,26 +186,33 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 }
 
 class RecordButton extends StatefulWidget {
-
   final Function onButtonPressed;
+  final bool disabled;
 
-  const RecordButton({Key? key, required this.onButtonPressed}) : super(key: key);
+  const RecordButton(
+      {Key? key, required this.disabled, required this.onButtonPressed})
+      : super(key: key);
 
   @override
-  _RecordButtonState createState() => _RecordButtonState(onButtonPressed);
+  _RecordButtonState createState() =>
+      _RecordButtonState(disabled, onButtonPressed);
 }
 
-class _RecordButtonState extends State<RecordButton> with SingleTickerProviderStateMixin {
+class _RecordButtonState extends State<RecordButton>
+    with SingleTickerProviderStateMixin {
   late TimerController _timerController;
-  bool _isRecording = false;
+  late bool _isRecording;
+  bool _disabled;
   Function onButtonPressed;
 
-  _RecordButtonState(this.onButtonPressed) {
-    _timerController = new TimerController(this);
+  _RecordButtonState(this._disabled, this.onButtonPressed) {
+    this._isRecording = false;
+    this._timerController = new TimerController(this);
   }
 
   @override
   Widget build(BuildContext context) {
+    developer.log("build _RecordButtonState");
     return Container(
       width: 200,
       height: 300,
@@ -210,15 +222,11 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
           SimpleTimer(
             controller: _timerController,
             duration: Duration(seconds: 10),
-            progressIndicatorColor:
-            Theme.of(context).primaryColor,
-            progressTextStyle:
-            TextStyle(color: Colors.transparent),
+            progressIndicatorColor: Theme.of(context).primaryColor,
+            progressTextStyle: TextStyle(color: Colors.transparent),
             strokeWidth: 15,
           ),
-          Padding(
-              padding: EdgeInsets.all(24),
-              child: buildRecordingButton()),
+          Padding(padding: EdgeInsets.all(24), child: buildRecordingButton()),
         ],
       ),
     );
@@ -232,25 +240,32 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
           if (_isRecording) {
             return IconButton(
               icon: Icon(Icons.stop, color: Colors.red, size: 64),
-              onPressed: () {
-                onButtonPressed.call();
-                _timerController.reset();
-                setState(() {
-                  _isRecording = false;
-                });
-              },
+              onPressed: _disabled
+                  ? null
+                  : () {
+                      onButtonPressed.call();
+                      _timerController.reset();
+                      setState(() {
+                        _isRecording = false;
+                      });
+                    },
             );
           } else {
             return IconButton(
               icon: Icon(Icons.circle,
-                  color: Theme.of(context).primaryColor, size: 64),
-              onPressed: () {
-                onButtonPressed.call();
-                _timerController.start();
-                setState(() {
-                  _isRecording = true;
-                });
-              },
+                  color: _disabled
+                      ? Theme.of(context).disabledColor
+                      : Theme.of(context).primaryColor,
+                  size: 64),
+              onPressed: _disabled
+                  ? null
+                  : () {
+                      onButtonPressed.call();
+                      _timerController.start();
+                      setState(() {
+                        _isRecording = true;
+                      });
+                    },
             );
           }
         })());
