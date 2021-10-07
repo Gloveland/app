@@ -28,19 +28,19 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   List<BluetoothDevice> _connectedDevices = [];
   MeasurementsCollector _measurementsCollector = MeasurementsCollector();
 
-
   Stream<List<BluetoothDevice>> connectedDevices() async* {
-   Set<String> connectedDevicesIds = new Set();
-   Stream<List<BluetoothDevice>> source = Stream.periodic(Duration(seconds: 2))
-            .asyncMap((_) => BluetoothBackend.getConnectedDevices());
-   await for (var devices in source) {
-     Set<String> newConnectedDevicesIds = devices.map((device) => "${device.id}").toSet();
-     if (!setEquals(newConnectedDevicesIds,connectedDevicesIds)){
-       developer.log(connectedDevicesIds.toString());
-       connectedDevicesIds = newConnectedDevicesIds;
-       yield devices;
-     }
-   }
+    Set<String> connectedDevicesIds = new Set();
+    Stream<List<BluetoothDevice>> source = Stream.periodic(Duration(seconds: 2))
+        .asyncMap((_) => BluetoothBackend.getConnectedDevices());
+    await for (var devices in source) {
+      Set<String> newConnectedDevicesIds =
+          devices.map((device) => "${device.id.id}").toSet();
+      if (!setEquals(newConnectedDevicesIds, connectedDevicesIds)) {
+        developer.log(connectedDevicesIds.toString(), name: TAG);
+        connectedDevicesIds = newConnectedDevicesIds;
+        yield devices;
+      }
+    }
   }
 
   @override
@@ -105,9 +105,10 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                     ),
                   ),
                   SizedBox(height: 74),
-                  RecordButton(),
-                      //key: ValueKey<int>(0))
-                      //onButtonPressed: () => onRecordButtonPressed())
+                  RecordButton(
+                      key: ValueKey(this._connectedDevices.length),
+                      disabled: this._connectedDevices.isEmpty,
+                      onButtonPressed: () => onRecordButtonPressed())
                 ],
               );
             }),
@@ -132,7 +133,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
           maintainState: false));
     } else {
       BluetoothBackend.sendStartDataCollectionCommand(_connectedDevices);
-      _measurementsCollector.startCollecting(this._connectedDevices, this.selectedGesture);
+      _measurementsCollector.startCollecting(
+          this._connectedDevices, this.selectedGesture);
       _isRecording = true;
       // TODO(https://git.io/JEyV4): Process data from more than one device.
     }
@@ -146,24 +148,23 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
         context: context,
         barrierDismissible: false,
         builder: (_) => AlertDialog(
-          title: Text("Finalizar recolección."),
-          content: Text(
-              "¿Desea guardar los archivos o descartarlos?"),
-          actions: [
-            TextButton(
-                onPressed: () {
-                  _measurementsCollector.discardCollection();
-                  Navigator.pop(context, 'Cancelar');
-                },
-                child: Text("Descartar")),
-            TextButton(
-                onPressed: () {
-                  _measurementsCollector.saveCollection();
-                  Navigator.pop(context, 'Guardar');
-                },
-                child: Text("Guardar")),
-          ],
-        ));
+              title: Text("Finalizar recolección."),
+              content: Text("¿Desea guardar los archivos o descartarlos?"),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      _measurementsCollector.discardCollection();
+                      Navigator.pop(context, 'Cancelar');
+                    },
+                    child: Text("Descartar")),
+                TextButton(
+                    onPressed: () {
+                      _measurementsCollector.saveCollection();
+                      Navigator.pop(context, 'Guardar');
+                    },
+                    child: Text("Guardar")),
+              ],
+            ));
   }
 
   DropdownButton<String> buildDropdownButton(List<String> values,
@@ -196,25 +197,29 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 }
 
 class RecordButton extends StatefulWidget {
+  final Function onButtonPressed;
+  final bool disabled;
 
-  const RecordButton({Key? key}) : super(key: key);
+  const RecordButton(
+      {Key? key, required this.disabled, required this.onButtonPressed})
+      : super(key: key);
 
   @override
-  _RecordButtonState createState() => _RecordButtonState();
+  _RecordButtonState createState() =>
+      _RecordButtonState(disabled, onButtonPressed);
 }
 
-class _RecordButtonState extends State<RecordButton> with SingleTickerProviderStateMixin {
-  //late TimerController _timerController;
-  //late bool _isRecording;
+class _RecordButtonState extends State<RecordButton>
+    with SingleTickerProviderStateMixin {
+  late TimerController _timerController;
+  late bool _isRecording;
+  bool _disabled;
+  Function onButtonPressed;
 
-  @override
-  void initState() {
-    super.initState();
-    //this._isRecording = false;
-   //this._timerController = TimerController(this);
+  _RecordButtonState(this._disabled, this.onButtonPressed) {
+    this._isRecording = false;
+    this._timerController = new TimerController(this);
   }
-
-  _RecordButtonState();
 
   @override
   Widget build(BuildContext context) {
@@ -225,58 +230,55 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-          /*
           SimpleTimer(
-             controller: _timerController,
+            controller: _timerController,
             duration: Duration(seconds: 10),
-            progressIndicatorColor:
-            Theme.of(context).primaryColor,
-            progressTextStyle:
-            TextStyle(color: Colors.transparent),
+            progressIndicatorColor: Theme.of(context).primaryColor,
+            progressTextStyle: TextStyle(color: Colors.transparent),
             strokeWidth: 15,
           ),
-           */
-          Padding(
-              padding: EdgeInsets.all(24),
-              child: buildRecordingButton()),
+          Padding(padding: EdgeInsets.all(24), child: buildRecordingButton()),
         ],
       ),
     );
   }
 
   Container buildRecordingButton() {
-    return Container(child:Text("hola"));
-    /*
     return Container(
-
         width: 150.0,
         height: 150.0,
         child: (() {
           if (_isRecording) {
             return IconButton(
               icon: Icon(Icons.stop, color: Colors.red, size: 64),
-              onPressed: (){
-                onButtonPressed.call();
-               _timerController.reset();
-               setState(() {
-                  _isRecording = false;
-                });
-              },
+              onPressed: _disabled
+                  ? null
+                  : () {
+                      onButtonPressed!.call();
+                      _timerController.reset();
+                      setState(() {
+                        _isRecording = false;
+                      });
+                    },
             );
           } else {
             return IconButton(
               icon: Icon(Icons.circle,
-                  color: Theme.of(context).primaryColor, size: 64),
-              onPressed: () {
-                onButtonPressed.call();
-               _timerController.start();
-               setState(() {
-                  _isRecording = true;
-                });
-              },
+                  color: _disabled
+                      ? Theme.of(context).disabledColor
+                      : Theme.of(context).primaryColor,
+                  size: 64),
+              onPressed: _disabled
+                  ? null
+                  : () {
+                      onButtonPressed.call();
+                      _timerController.start();
+                      setState(() {
+                        _isRecording = true;
+                      });
+                    },
             );
           }
         })());
-     */
   }
 }

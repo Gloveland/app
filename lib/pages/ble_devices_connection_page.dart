@@ -199,7 +199,6 @@ class _ConnectionGloveCard extends State {
                     connectionStatusText,
                     style: Theme.of(context).textTheme.caption,
                   ),
-                  onTap: () => toggleConnection(c),
                   onLongPress: navigateToDeviceSettings,
                   trailing: IconButton(
                       icon: Icon(Icons.settings),
@@ -236,30 +235,4 @@ class _ConnectionGloveCard extends State {
         MaterialPageRoute(builder: (context) => DeviceScreen(device: device)));
   }
 
-  void toggleConnection(BuildContext context) {
-    if (btDeviceState != BluetoothDeviceState.connected) {
-      this.device.connect().then(
-          (value) => device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
-      this.updateState(this.device);
-    } else {
-      showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-                title: Text("¿Desconectar?"),
-                content: Text(
-                    "Finalizará la conexión con ${device.name.toString()}"),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, 'Cancelar'),
-                      child: Text("Cancelar")),
-                  TextButton(
-                      onPressed: () {
-                        device.disconnect();
-                        Navigator.pop(context, "Desconectar");
-                      },
-                      child: Text("Desconectar")),
-                ],
-              ));
-    }
-  }
 }
