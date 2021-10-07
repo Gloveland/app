@@ -93,18 +93,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                       this.selectedGesture = newValue!;
                     });
                   }),
-                  SizedBox(height: 24),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Container(
-                      width: double.infinity,
-                      child: Text(
-                        "Clickear el boton para comenzar a grabar los movimientos",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 74),
+                  SizedBox(height: 100),
                   RecordButton(
                       key: ValueKey(this._connectedDevices.length),
                       disabled: this._connectedDevices.isEmpty,
@@ -254,7 +243,7 @@ class _RecordButtonState extends State<RecordButton>
               onPressed: _disabled
                   ? null
                   : () {
-                      onButtonPressed!.call();
+                      onButtonPressed.call();
                       _timerController.reset();
                       setState(() {
                         _isRecording = false;
