@@ -14,7 +14,7 @@ class BluetoothBackend with ChangeNotifier {
   static const String RightGlove = "Guante derecho";
   static const String LeftGlove = "Guante izquierdo";
 
-  List<BluetoothDevice> connectedDevices = [];
+  List<BluetoothDevice> _connectedDevices = [];
   Map<BluetoothDevice, BluetoothCharacteristic> _controllerCharacteristics =
       Map();
   Map<BluetoothDevice, BluetoothCharacteristic> _dataCollectionCharacteristics =
@@ -22,8 +22,9 @@ class BluetoothBackend with ChangeNotifier {
   Map<BluetoothDevice, BluetoothCharacteristic> _interpretationCharacteristics =
       Map();
 
-  Map<BluetoothDevice, BluetoothCharacteristic> get controllerCharacteristics =>
-      _controllerCharacteristics;
+  List<BluetoothDevice> get connectedDevices => _connectedDevices;
+  Map<BluetoothDevice, BluetoothCharacteristic>
+      get controllerCharacteristics => _controllerCharacteristics;
 
   Map<BluetoothDevice, BluetoothCharacteristic>
       get dataCollectionCharacteristics => _dataCollectionCharacteristics;
@@ -34,40 +35,77 @@ class BluetoothBackend with ChangeNotifier {
   late Stream<List<BluetoothDevice>> connectedDevicesStream;
 
   BluetoothBackend() {
-    startMonitoringDevices();
+    _startMonitoringDevices();
   }
 
-  void startMonitoringDevices() {
+  /// Starts monitoring the connected devices and notifies the listeners of this
+  /// class when a connection event (i.e. connection or disconnection) happens.
+  void _startMonitoringDevices() {
     this.connectedDevicesStream = Stream.periodic(Duration(seconds: 2))
         .asyncMap((_) => BluetoothBackend.getConnectedDevices())
         .asBroadcastStream();
-    this.connectedDevicesStream.listen((connectedDevices) async {
-      if (this.connectedDevices.length != connectedDevices.length) {
-        this.connectedDevices = connectedDevices;
-        _requestMtu(connectedDevices)
-            .then((_) => _updateState(connectedDevices))
+    this.connectedDevicesStream.listen((newConnectedDevices) async {
+      if (this._connectedDevices.length != newConnectedDevices.length) {
+        developer.log("Connection event.", name: TAG);
+        _assertAnyDisconnection(
+            this._connectedDevices, newConnectedDevices);
+        this._connectedDevices = newConnectedDevices;
+        _updateState(newConnectedDevices)
+            .then((_) => _requestMtu(newConnectedDevices))
             .then((_) {
-              print("Notifying");
-              notifyListeners();
+          developer.log("Notifying listeners...", name: TAG);
+          notifyListeners();
         });
       }
     });
   }
 
-  Future _updateState(List<BluetoothDevice> connectedDevices) async {
-    Map<BluetoothDevice, BluetoothService> devicesServices =
-        await getDevicesLsaGlovesServices(connectedDevices);
-    this._controllerCharacteristics =
-        getDevicesControllerCharacteristics(devicesServices);
-    this._dataCollectionCharacteristics =
-        getDevicesDataCollectionCharacteristics(devicesServices);
-    this._interpretationCharacteristics =
-        getDevicesInterpretationCharacteristics(devicesServices);
+  /// Notifies flutter blue of a disconnection.
+  ///
+  /// When a device gets disconnected from the application, it's important to
+  /// make the disconnection explicit with Flutter Blue, otherwise we might
+  /// stumble with a Platform exception when the device gets reconnected.
+  ///
+  /// In order to reconnect a device, the user will have to manually go to the
+  /// connections page and reconnect the device (as opposed to automatic
+  /// reconnection).
+  void _assertAnyDisconnection(List<BluetoothDevice> oldDevices,
+      List<BluetoothDevice> newDevices) async {
+    if (oldDevices.length > newDevices.length) {
+      Set<BluetoothDevice> disconnectedDevices =
+          oldDevices.toSet().difference(newDevices.toSet());
+      for (var disconnectedDevice in disconnectedDevices) {
+        await disconnectedDevice.disconnect();
+      }
+    }
   }
 
+  /// Reloads the information of the characteristics contained in the class.
+  Future _updateState(List<BluetoothDevice> connectedDevices) async {
+    try {
+      Map<BluetoothDevice, BluetoothService> devicesServices =
+      await getDevicesLsaGlovesServices(connectedDevices);
+      developer.log("Retrieved device services amount: ${devicesServices.length}.", name: TAG);
+      this._controllerCharacteristics =
+          getDevicesControllerCharacteristics(devicesServices);
+      this._dataCollectionCharacteristics =
+          getDevicesDataCollectionCharacteristics(devicesServices);
+      this._interpretationCharacteristics =
+          getDevicesInterpretationCharacteristics(devicesServices);
+    } catch (err) {
+      developer.log("Error retrieving services: ${err.toString()}.", name: TAG);
+    }
+  }
+
+  /// Requests a MTU update with [BluetoothSpecification.MTU_BYTES_SIZE] to the
+  /// [connectedDevices].
   Future _requestMtu(List<BluetoothDevice> connectedDevices) async {
-    for (var device in connectedDevices) {
-      device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+    try {
+      for (var device in connectedDevices) {
+        device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+      }
+    } catch (err) {
+      developer.log("Error requesting MTU: ${err.toString()}", name: TAG);
     }
   }
 
@@ -173,12 +211,21 @@ class BluetoothBackend with ChangeNotifier {
   /// Retrieves the LSA glove service from the specified device.
   static Future<BluetoothService?> getLsaGlovesService(
       BluetoothDevice bluetoothDevice) async {
-    List<BluetoothService> services = await bluetoothDevice.discoverServices();
-    return services.firstWhereOrNull((service) {
-      developer.log("Service uuid: ${service.uuid.toString()}", name: TAG);
-      return service.uuid.toString() ==
-          BluetoothSpecification.LSA_GLOVE_SERVICE_UUID;
-    });
+    try {
+      List<BluetoothService> services =
+          await bluetoothDevice.discoverServices();
+      return services.firstWhereOrNull((service) {
+        developer.log("Service uuid: ${service.uuid.toString()}", name: TAG);
+        return service.uuid.toString() ==
+            BluetoothSpecification.LSA_GLOVE_SERVICE_UUID;
+      });
+    } catch (error) {
+      developer.log(
+          "Failed retrieving services for device ${bluetoothDevice.id.id}: " +
+              error.toString(),
+          name: TAG);
+      return Future.error(error);
+    }
   }
 
   static Future<Map<BluetoothDevice, BluetoothService>>
@@ -187,10 +234,7 @@ class BluetoothBackend with ChangeNotifier {
     for (var device in devices) {
       BluetoothService? service = await getLsaGlovesService(device);
       if (service != null) {
-        print("Adding service: " + service.toString());
         services[device] = service;
-      } else {
-        print("Service was null");
       }
     }
     return services;

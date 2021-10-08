@@ -203,6 +203,8 @@ class _InterpretationButtonState extends State<InterpretationButton> {
       BluetoothBackend.sendStartInterpretationCommandToControllers(
           _controllerCharacteristics);
     }
-    _isRunning = !_isRunning;
+    setState(() {
+      _isRunning = !_isRunning;
+    });
   }
 }
