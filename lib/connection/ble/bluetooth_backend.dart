@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:synchronized/synchronized.dart';
 import 'dart:developer' as developer;
 
 import 'bluetooth_specification.dart';
@@ -11,6 +12,7 @@ class BluetoothBackend {
   static const String TAG = "BluetoothBackend";
   static const String RightGlove = "Guante derecho";
   static const String LeftGlove = "Guante izquierdo";
+  static Lock lock = new Lock();
 
   /// Retrieves the connected devices.
   static Future<List<BluetoothDevice>> getConnectedDevices() {
@@ -40,10 +42,12 @@ class BluetoothBackend {
 
   /// Sends the command specified as a parameter to the connected device
   /// through the control characteristic.
-  static void sendCommandToConnectedDevice(BluetoothDevice connectedDevice, String command) async {
+  static void sendCommandToConnectedDevice(
+      BluetoothDevice connectedDevice, String command) async {
     BluetoothService? service = await getLsaGlovesService(connectedDevice);
     if (service != null) {
-      BluetoothCharacteristic characteristic = getControllerCharacteristic(service);
+      BluetoothCharacteristic characteristic =
+          getControllerCharacteristic(service);
       try {
         await characteristic.write(utf8.encode(command), withoutResponse: true);
       } catch (err) {
@@ -64,7 +68,10 @@ class BluetoothBackend {
         await getDevicesControllerCharacteristics(connectedDevices);
     characteristics.forEach((characteristic) async {
       try {
-        await characteristic.write(utf8.encode(command), withoutResponse: true);
+        await lock.synchronized(() async {
+          await characteristic.write(utf8.encode(command),
+              withoutResponse: true);
+        });
       } catch (err) {
         developer.log("Characteristic write failed: " + err.toString(),
             name: TAG);
@@ -164,7 +171,18 @@ class BluetoothBackend {
 
   static Future<void> requestMtu(List<BluetoothDevice> connectedDevices) async {
     for (var device in connectedDevices) {
-      await device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+      await lock.synchronized(() async {
+        await device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+      });
+    }
+  }
+
+  static Future<void> setNotify(
+      BluetoothCharacteristic dataCollectionCharacteristic) async {
+    if (!dataCollectionCharacteristic.isNotifying) {
+      await lock.synchronized(() async {
+        await dataCollectionCharacteristic.setNotifyValue(true);
+      });
     }
   }
 }
