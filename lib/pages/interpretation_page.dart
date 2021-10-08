@@ -1,12 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
+import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 
 import 'dart:developer' as developer;
+
+import 'package:provider/provider.dart';
 
 class InterpretationPage extends StatefulWidget {
   const InterpretationPage({Key? key}) : super(key: key);
@@ -43,7 +44,7 @@ class _InterpretationPageState extends State<InterpretationPage> {
                   ),
                 ),
                 SizedBox(height: 16),
-                _devices(),
+                InterpretationsPanel(),
                 Spacer(),
                 InterpretationButton()
               ]),
@@ -51,68 +52,66 @@ class _InterpretationPageState extends State<InterpretationPage> {
       ),
     );
   }
+}
 
-  StreamBuilder<List<BluetoothDevice>> _devices() {
-    return StreamBuilder<List<BluetoothDevice>>(
-        stream: Stream.periodic(Duration(seconds: 2))
-            .asyncMap((_) => BluetoothBackend.getConnectedDevices()),
-        builder: (c, devicesSnapshot) {
-          List<Widget> children = <Widget>[];
-          if (devicesSnapshot.hasData) {
-            devicesSnapshot.data!.forEach((element) {
-              children.add(InterpretationWidget(
-                  key: Key(element.id.id), device: element));
-              children.add(SizedBox(height: 16));
-            });
-          }
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: children,
-          );
-        });
+class InterpretationsPanel extends StatefulWidget {
+  const InterpretationsPanel({Key? key}) : super(key: key);
+
+  @override
+  _InterpretationsPanelState createState() => _InterpretationsPanelState();
+}
+
+class _InterpretationsPanelState extends State<InterpretationsPanel> {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<BluetoothBackend>(builder: (context, backend, _) {
+      List<Widget> children = <Widget>[];
+      print(backend.connectedDevices);
+      print(backend.controllerCharacteristics);
+      for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry
+          in backend.interpretationCharacteristics.entries) {
+        children.add(InterpretationWidget(
+          key: Key(entry.key.id.id),
+          device: entry.key,
+          interpretationCharacteristic: entry.value,
+        ));
+      }
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: children,
+      );
+    });
   }
 }
 
 /// Widget to display the interpretations of each glove.
 class InterpretationWidget extends StatefulWidget {
   final BluetoothDevice device;
+  final BluetoothCharacteristic interpretationCharacteristic;
 
-  const InterpretationWidget({Key? key, required this.device})
+  const InterpretationWidget(
+      {Key? key,
+      required this.device,
+      required this.interpretationCharacteristic})
       : super(key: key);
 
   @override
   _InterpretationWidgetState createState() =>
-      _InterpretationWidgetState(device);
+      _InterpretationWidgetState(device, interpretationCharacteristic);
 }
 
 class _InterpretationWidgetState extends State<InterpretationWidget> {
   static final String TAG = "InterpretationWidget";
-  Stream<List<int>> interpretationStream = Stream.empty();
   final BluetoothDevice device;
+  final BluetoothCharacteristic interpretationCharacteristic;
 
-  _InterpretationWidgetState(this.device);
-
-  @override
-  void initState() {
-    super.initState();
-    loadInterpretationStream();
-  }
+  _InterpretationWidgetState(this.device, this.interpretationCharacteristic);
 
   @override
   void dispose() {
     super.dispose();
     developer.log("Disposed widget of device: " + device.id.id, name: TAG);
-  }
-
-  Future<void> loadInterpretationStream() async {
-    interpretationStream = await BluetoothBackend.getLsaGlovesService(device)
-        .then((service) =>
-            BluetoothBackend.getInterpretationCharacteristic(service!))
-        .then((characteristic) {
-      characteristic.setNotifyValue(true);
-      return characteristic.value;
-    });
   }
 
   @override
@@ -139,8 +138,11 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   }
 
   StreamBuilder<List<int>> displayStats() {
+    if (!interpretationCharacteristic.isNotifying) {
+      interpretationCharacteristic.setNotifyValue(true);
+    }
     return StreamBuilder<List<int>>(
-        stream: interpretationStream,
+        stream: interpretationCharacteristic.value,
         initialData: [],
         builder: (c, rawDeviceInterpretations) {
           String msg = "";
@@ -167,37 +169,17 @@ class InterpretationButton extends StatefulWidget {
 class _InterpretationButtonState extends State<InterpretationButton> {
   bool _isEnabled = false;
   bool _isRunning = false;
-  late StreamSubscription<List<BluetoothDevice>> streamSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    streamSubscription = Stream.periodic(Duration(seconds: 2))
-        .asyncMap((_) => BluetoothBackend.getConnectedDevices())
-        .listen((devices) {
-      if (devices.isEmpty) {
-        setState(() {
-          _isEnabled = false;
-        });
-      } else {
-        setState(() {
-          _isEnabled = true;
-        });
-      }
-    });
-  }
+  Iterable<BluetoothCharacteristic> _controllerCharacteristics = [];
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: buildElevatedButton(),
+    return Consumer<BluetoothBackend>(
+      builder: (context, backend, _) {
+        _isEnabled = backend.connectedDevices.length > 0 ? true : false;
+        _controllerCharacteristics = backend.controllerCharacteristics.values;
+        return buildElevatedButton();
+      },
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    streamSubscription.cancel();
   }
 
   ElevatedButton buildElevatedButton() {
@@ -215,12 +197,11 @@ class _InterpretationButtonState extends State<InterpretationButton> {
   }
 
   void _onInterpretationButtonPressed() async {
-    List<BluetoothDevice> connectedDevices =
-        await BluetoothBackend.getConnectedDevices();
     if (_isRunning) {
-      BluetoothBackend.sendStopCommand(connectedDevices);
+      BluetoothBackend.sendStopCommandToControllers(_controllerCharacteristics);
     } else {
-      BluetoothBackend.sendStartInterpretationCommand(connectedDevices);
+      BluetoothBackend.sendStartInterpretationCommandToControllers(
+          _controllerCharacteristics);
     }
     _isRunning = !_isRunning;
   }
