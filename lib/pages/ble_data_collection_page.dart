@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -105,12 +106,47 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     );
   }
 
-  void onRecordButtonPressed() {
+  Future<void> onRecordButtonPressed() async {
     if (_isRecording) {
       _stopRecording();
     } else {
+      await Future.wait([
+        BluetoothBackend.requestMtu(this._connectedDevices)
+            .then((value) => developer.log('Request mtu complete', name: TAG)),
+        showDialog(
+            context: context,
+                builder: (context) {
+                  return this._countDownDialogBuilder();
+                })
+            .then((value) =>
+                developer.log("CountDown dialog complete", name: TAG))
+      ]);
       _startRecording();
     }
+  }
+
+  Widget _countDownDialogBuilder() {
+    return AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(50.0))),
+        content: Container(
+            height: 200,
+            width: 200,
+            child: DefaultTextStyle(
+                style: Theme.of(context).textTheme.headline2!,
+                child: Center(
+                    child: AnimatedTextKit(
+                  isRepeatingAnimation: false,
+                  animatedTexts: [
+                    ScaleAnimatedText('3', scalingFactor: 0.1),
+                    ScaleAnimatedText('2', scalingFactor: 0.1),
+                    ScaleAnimatedText('1', scalingFactor: 0.1),
+                    ScaleAnimatedText('ya!',
+                        scalingFactor: 0,
+                        duration: const Duration(milliseconds: 700)),
+                  ],
+                  onFinished: () => Navigator.pop(context),
+                )))));
   }
 
   void _startRecording() {
@@ -242,8 +278,8 @@ class _RecordButtonState extends State<RecordButton>
               icon: Icon(Icons.stop, color: Colors.red, size: 64),
               onPressed: _disabled
                   ? null
-                  : () {
-                      onButtonPressed.call();
+                  : () async {
+                      await onButtonPressed.call();
                       _timerController.reset();
                       setState(() {
                         _isRecording = false;
@@ -259,8 +295,8 @@ class _RecordButtonState extends State<RecordButton>
                   size: 64),
               onPressed: _disabled
                   ? null
-                  : () {
-                      onButtonPressed.call();
+                  : () async {
+                      await onButtonPressed.call();
                       _timerController.start();
                       setState(() {
                         _isRecording = true;

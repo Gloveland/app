@@ -251,9 +251,7 @@ class _ConnectionGloveCard extends State {
 
   void toggleConnection(BuildContext context) {
     if (btDeviceState != BluetoothDeviceState.connected) {
-      this.device.connect().then(
-              (value) =>
-              device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
+      this.device.connect();
       this.updateState(this.device);
     } else {
       showDialog(
