@@ -14,23 +14,32 @@ import 'package:lsa_gloves/model/glove_measurement.dart';
 class MeasurementsCollector {
   static const String TAG = "MeasurementsCollector";
 
-  Map<String, DeviceMeasurementsFile> _deviceMeasurements = Map();
-  List<StreamSubscription<List<int>>> _subscriptions = [];
+  Map<String, DeviceMeasurementsFile> _deviceMeasurements;
+  List<StreamSubscription<List<int>>> _subscriptions;
+
+  MeasurementsCollector()
+      : this._subscriptions = [],
+        this._deviceMeasurements = Map();
 
   /// Starts collecting measurements from all the connected devices.
   ///
   /// A measurements file will be generated for each device with its
   /// collected measurements.
-  void startCollecting(List<BluetoothDevice> connectedDevices, String gesture) async {
-    developer.log("Starting collection for gesture '$gesture' from devices: $connectedDevices", name: TAG);
+  void startCollecting(
+      List<BluetoothDevice> connectedDevices, String gesture) async {
+    developer.log(
+        "Starting collection for gesture '$gesture' from devices: $connectedDevices",
+        name: TAG);
     _resetState();
     for (BluetoothDevice device in connectedDevices) {
       BluetoothService? lsaService =
           await BluetoothBackend.getLsaGlovesService(device);
-      BluetoothCharacteristic dcCharacteristic =
-          BluetoothBackend.getDataCollectionCharacteristic(lsaService!);
-      _initFile(device.name, device.id.id, gesture);
-      _collectMeasurements(device.id.id, dcCharacteristic);
+      if (lsaService != null) {
+        BluetoothCharacteristic dcCharacteristic =
+            BluetoothBackend.getDataCollectionCharacteristic(lsaService);
+        _initFile(device.name, device.id.id, gesture);
+        _collectMeasurements(device.id.id, dcCharacteristic);
+      }
     }
   }
 
@@ -49,8 +58,8 @@ class MeasurementsCollector {
   }
 
   void _initFile(String deviceName, String deviceId, String gesture) async {
-    DeviceMeasurementsFile deviceMeasurementsFile
-        = await DeviceMeasurementsFile.create(deviceName, deviceId, gesture);
+    DeviceMeasurementsFile deviceMeasurementsFile =
+        await DeviceMeasurementsFile.create(deviceName, deviceId, gesture);
     _deviceMeasurements.putIfAbsent(deviceId, () => deviceMeasurementsFile);
   }
 
@@ -81,7 +90,8 @@ class MeasurementsCollector {
         developer.log("Measurements parsing failed.", name: TAG);
         return;
       }
-      _recordParsedMeasurement(deviceId, parsedMeasurements.eventNumber, parsedMeasurements.values);
+      _recordParsedMeasurement(
+          deviceId, parsedMeasurements.eventNumber, parsedMeasurements.values);
     }, onError: (err) {
       developer.log("Error: ${err.toString()}", name: TAG);
     }, onDone: () {
@@ -123,11 +133,13 @@ class MeasurementsCollector {
     return _ParsedMeasurements(eventNum, fingerMeasurements);
   }
 
-  _recordParsedMeasurement(String deviceId, int eventNumber, List<String> measurements) {
+  _recordParsedMeasurement(
+      String deviceId, int eventNumber, List<String> measurements) {
     try {
       developer.log('Attempting to parse');
-      GloveMeasurement gloveMeasurement = GloveMeasurement.fromFingerMeasurementsList(
-          eventNumber, deviceId, measurements);
+      GloveMeasurement gloveMeasurement =
+          GloveMeasurement.fromFingerMeasurementsList(
+              eventNumber, deviceId, measurements);
       developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
       _deviceMeasurements[deviceId]?.add(gloveMeasurement);
     } catch (e) {
@@ -139,6 +151,6 @@ class MeasurementsCollector {
 class _ParsedMeasurements {
   final int eventNumber;
   final List<String> values;
-  
+
   _ParsedMeasurements(this.eventNumber, this.values);
 }

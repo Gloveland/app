@@ -269,4 +269,10 @@ class BluetoothBackend {
         return deviceName;
     }
   }
+
+  static Future<void> requestMtu(List<BluetoothDevice> connectedDevices) async {
+    for (var device in connectedDevices) {
+      await device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+    }
+  }
 }
