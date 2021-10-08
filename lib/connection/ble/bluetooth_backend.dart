@@ -20,40 +20,28 @@ class BluetoothBackend {
     return _bluetoothBackend;
   }
 
-  List<BluetoothDevice> _connectedDevices = [];
-  Map<BluetoothDevice, BluetoothCharacteristic> _controllerCharacteristics =
+  List<BluetoothDevice> connectedDevices = [];
+  Map<BluetoothDevice, BluetoothCharacteristic> controllerCharacteristics =
       Map();
-  Map<BluetoothDevice, BluetoothCharacteristic> _dataCollectionCharacteristics =
+  Map<BluetoothDevice, BluetoothCharacteristic> dataCollectionCharacteristics =
       Map();
-  Map<BluetoothDevice, BluetoothCharacteristic> _interpretationCharacteristics =
+  Map<BluetoothDevice, BluetoothCharacteristic> interpretationCharacteristics =
       Map();
 
-  late Stream<List<BluetoothDevice>> _connectedDevicesStream;
+  late Stream<List<BluetoothDevice>> connectedDevicesStream;
 
   /// Stream controller for the streams providing the updated controller characteristics.
   var _controllerCharacteristicsSC =
-      StreamController<Map<BluetoothDevice, BluetoothCharacteristic>>();
+      StreamController<Map<BluetoothDevice, BluetoothCharacteristic>>.broadcast();
 
   /// Stream controller for the streams providing the updated data collection characteristics.
   var _dataCollectionCharacteristicsSC =
-      StreamController<Map<BluetoothDevice, BluetoothCharacteristic>>();
+      StreamController<Map<BluetoothDevice, BluetoothCharacteristic>>.broadcast();
 
   /// Stream controller for the streams providing the updated interpretation characteristics.
   var _interpretationCharacteristicsSC =
-      StreamController<Map<BluetoothDevice, BluetoothCharacteristic>>();
-
-  Map<BluetoothDevice, BluetoothCharacteristic> get controllerCharacteristics {
-    return _controllerCharacteristics;
-  }
-
-  Map<BluetoothDevice, BluetoothCharacteristic> get dataCollectionCharacteristics {
-    return _dataCollectionCharacteristics;
-  }
-
-  Map<BluetoothDevice, BluetoothCharacteristic> get interpretationCharacteristics {
-    return _interpretationCharacteristics;
-  }
-
+      StreamController<Map<BluetoothDevice, BluetoothCharacteristic>>.broadcast();
+  
   Stream<Map<BluetoothDevice, BluetoothCharacteristic>> get dataCollectionCharacteristicsStream {
     return _dataCollectionCharacteristicsSC.stream;
   }
@@ -71,12 +59,12 @@ class BluetoothBackend {
   }
 
   void startMonitoringDevices() {
-    this._connectedDevicesStream = Stream.periodic(Duration(seconds: 2))
+    this.connectedDevicesStream = Stream.periodic(Duration(seconds: 2))
         .asyncMap((_) => BluetoothBackend.getConnectedDevices()).asBroadcastStream();
-    this._connectedDevicesStream
+    this.connectedDevicesStream
         .listen((connectedDevices) {
-      if (_connectedDevices.length != connectedDevices.length) {
-        this._connectedDevices = connectedDevices;
+      if (this.connectedDevices.length != connectedDevices.length) {
+        this.connectedDevices = connectedDevices;
         _requestMtu(connectedDevices);
         _updateState(connectedDevices);
         _notifyStreamListeners();
@@ -87,23 +75,37 @@ class BluetoothBackend {
   void _updateState(List<BluetoothDevice> connectedDevices) async {
     Map<BluetoothDevice, BluetoothService> devicesServices =
         await getDevicesLsaGlovesServices(connectedDevices);
-    this._controllerCharacteristics =
+    this.controllerCharacteristics =
         getDevicesControllerCharacteristics(devicesServices);
-    this._dataCollectionCharacteristics =
+    this.dataCollectionCharacteristics =
         getDevicesDataCollectionCharacteristics(devicesServices);
-    this._interpretationCharacteristics =
+    this.interpretationCharacteristics =
         getDevicesInterpretationCharacteristics(devicesServices);
   }
 
   void _notifyStreamListeners() {
-    _controllerCharacteristicsSC.add(this._controllerCharacteristics);
-    _dataCollectionCharacteristicsSC.add(this._dataCollectionCharacteristics);
-    _interpretationCharacteristicsSC.add(this._interpretationCharacteristics);
+    _controllerCharacteristicsSC.add(this.controllerCharacteristics);
+    _dataCollectionCharacteristicsSC.add(this.dataCollectionCharacteristics);
+    _interpretationCharacteristicsSC.add(this.interpretationCharacteristics);
   }
 
   void _requestMtu(List<BluetoothDevice> connectedDevices) {
     for (var device in connectedDevices) {
       device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+    }
+  }
+
+  void sendStartInterpretationCommandToConnectedDevices() {
+    for (var characteristic in controllerCharacteristics.values) {
+      writeCommandToCharacteristic(
+          BluetoothSpecification.START_INTERPRETATIONS, characteristic);
+    }
+  }
+
+  void sendStopCommandToConnectedDevices() {
+    for (var characteristic in controllerCharacteristics.values) {
+      writeCommandToCharacteristic(
+          BluetoothSpecification.STOP_ONGOING_TASK, characteristic);
     }
   }
 
@@ -141,12 +143,17 @@ class BluetoothBackend {
     if (service != null) {
       BluetoothCharacteristic characteristic =
           getControllerCharacteristic(service);
-      try {
-        await characteristic.write(utf8.encode(command), withoutResponse: true);
-      } catch (err) {
-        developer.log("Characteristic write failed: " + err.toString(),
-            name: TAG);
-      }
+      writeCommandToCharacteristic(command, characteristic);
+    }
+  }
+
+  static void writeCommandToCharacteristic(
+      String command, BluetoothCharacteristic characteristic) async {
+    try {
+      await characteristic.write(utf8.encode(command), withoutResponse: true);
+    } catch (err) {
+      developer.log("Characteristic write failed: " + err.toString(),
+          name: TAG);
     }
   }
 
