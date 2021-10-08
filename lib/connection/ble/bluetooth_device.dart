@@ -47,8 +47,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         setState(() {
                           _isEnabled = true;
                         });
-                        device.connect().then((_) => device
-                            .requestMtu(BluetoothSpecification.MTU_BYTES_SIZE));
+                        device.connect();
                       } else {
                         setState(() {
                           _isEnabled = false;
