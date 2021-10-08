@@ -110,39 +110,43 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     if (_isRecording) {
       _stopRecording();
     } else {
-      developer.log('dialog');
-      Navigator.of(context).restorablePush(_countDownDialogBuilder);
-      await BluetoothBackend.requestMtu(this._connectedDevices)
-          .then((value) => _startRecording());
-      developer.log('LISTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
+      await Future.wait([
+        BluetoothBackend.requestMtu(this._connectedDevices)
+            .then((value) => developer.log('Request mtu complete', name: TAG)),
+        showDialog(
+            context: context,
+                builder: (context) {
+                  return this._countDownDialogBuilder();
+                })
+            .then((value) =>
+                developer.log("CountDown dialog complete", name: TAG))
+      ]);
+      _startRecording();
     }
   }
 
-  static Route<Object?> _countDownDialogBuilder(
-      BuildContext context, Object? arguments) {
-    //List<BluetoothDevice> connectedDevices = arguments! as List<BluetoothDevice>;
-    return DialogRoute<void>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(50.0))),
-          content: Container(
-              height: 200,
-              width: 200,
-              child: DefaultTextStyle(
-                  style: Theme.of(context).textTheme.headline2!,
-                  child: Center(
-                      child: AnimatedTextKit(
-                    isRepeatingAnimation: false,
-                    animatedTexts: [
-                      ScaleAnimatedText('3', scalingFactor: 0.2),
-                      ScaleAnimatedText('2', scalingFactor: 0.2),
-                      ScaleAnimatedText('1', scalingFactor: 0.2),
-                      ScaleAnimatedText('ya!', scalingFactor: 0.2),
-                    ],
-                    onFinished: () => Navigator.pop(context),
-                  ))))),
-    );
+  Widget _countDownDialogBuilder() {
+    return AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(50.0))),
+        content: Container(
+            height: 200,
+            width: 200,
+            child: DefaultTextStyle(
+                style: Theme.of(context).textTheme.headline2!,
+                child: Center(
+                    child: AnimatedTextKit(
+                  isRepeatingAnimation: false,
+                  animatedTexts: [
+                    ScaleAnimatedText('3', scalingFactor: 0.1),
+                    ScaleAnimatedText('2', scalingFactor: 0.1),
+                    ScaleAnimatedText('1', scalingFactor: 0.1),
+                    ScaleAnimatedText('ya!',
+                        scalingFactor: 0,
+                        duration: const Duration(milliseconds: 700)),
+                  ],
+                  onFinished: () => Navigator.pop(context),
+                )))));
   }
 
   void _startRecording() {
@@ -274,8 +278,8 @@ class _RecordButtonState extends State<RecordButton>
               icon: Icon(Icons.stop, color: Colors.red, size: 64),
               onPressed: _disabled
                   ? null
-                  : () {
-                      onButtonPressed.call();
+                  : () async {
+                      await onButtonPressed.call();
                       _timerController.reset();
                       setState(() {
                         _isRecording = false;
@@ -291,8 +295,8 @@ class _RecordButtonState extends State<RecordButton>
                   size: 64),
               onPressed: _disabled
                   ? null
-                  : () {
-                      onButtonPressed.call();
+                  : () async {
+                      await onButtonPressed.call();
                       _timerController.start();
                       setState(() {
                         _isRecording = true;
