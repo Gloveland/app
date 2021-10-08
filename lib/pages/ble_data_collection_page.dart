@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -105,12 +106,43 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     );
   }
 
-  void onRecordButtonPressed() {
+  Future<void> onRecordButtonPressed() async {
     if (_isRecording) {
       _stopRecording();
     } else {
-      _startRecording();
+      developer.log('dialog');
+      Navigator.of(context).restorablePush(_countDownDialogBuilder);
+      await BluetoothBackend.requestMtu(this._connectedDevices)
+          .then((value) => _startRecording());
+      developer.log('LISTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
     }
+  }
+
+  static Route<Object?> _countDownDialogBuilder(
+      BuildContext context, Object? arguments) {
+    //List<BluetoothDevice> connectedDevices = arguments! as List<BluetoothDevice>;
+    return DialogRoute<void>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(50.0))),
+          content: Container(
+              height: 200,
+              width: 200,
+              child: DefaultTextStyle(
+                  style: Theme.of(context).textTheme.headline2!,
+                  child: Center(
+                      child: AnimatedTextKit(
+                    isRepeatingAnimation: false,
+                    animatedTexts: [
+                      ScaleAnimatedText('3', scalingFactor: 0.2),
+                      ScaleAnimatedText('2', scalingFactor: 0.2),
+                      ScaleAnimatedText('1', scalingFactor: 0.2),
+                      ScaleAnimatedText('ya!', scalingFactor: 0.2),
+                    ],
+                    onFinished: () => Navigator.pop(context),
+                  ))))),
+    );
   }
 
   void _startRecording() {
