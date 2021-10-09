@@ -71,7 +71,7 @@ class DeviceMeasurementsFile {
     var values = <List<double>>[];
     SensorMeasurements json = new SensorMeasurements(deviceName, deviceId, word, values);
     String datetimeStr = format(creationDate);
-    var filename = "${word}_$datetimeStr";
+    var filename = "${deviceName.substring(0,1)}_${word}_$datetimeStr";
     var file = await new GloveEventsStorage().createFile(filename);
     return DeviceMeasurementsFile._(file, creationDate, json);
   }
