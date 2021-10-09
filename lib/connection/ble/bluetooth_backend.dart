@@ -109,20 +109,6 @@ class BluetoothBackend with ChangeNotifier {
     }
   }
 
-  void sendStartInterpretationCommandToConnectedDevices() {
-    for (var characteristic in _controllerCharacteristics.values) {
-      writeCommandToCharacteristic(
-          BluetoothSpecification.START_INTERPRETATIONS, characteristic);
-    }
-  }
-
-  void sendStopCommandToConnectedDevices() {
-    for (var characteristic in _controllerCharacteristics.values) {
-      writeCommandToCharacteristic(
-          BluetoothSpecification.STOP_ONGOING_TASK, characteristic);
-    }
-  }
-
   /// Retrieves the connected devices.
   static Future<List<BluetoothDevice>> getConnectedDevices() {
     return FlutterBlue.instance.connectedDevices;
@@ -140,6 +126,8 @@ class BluetoothBackend with ChangeNotifier {
         connectedDevices, BluetoothSpecification.START_INTERPRETATIONS);
   }
 
+  /// Sends the interpretation command through the specified controller
+  /// characteristics passed as parameters.
   static void sendStartInterpretationCommandToControllers(
       Iterable<BluetoothCharacteristic> controllerCharacteristics) {
     for (var characteristic in controllerCharacteristics) {
@@ -148,6 +136,8 @@ class BluetoothBackend with ChangeNotifier {
     }
   }
 
+  /// Sends the stop command through the specified controller characteristics
+  /// passed as parameters.
   static void sendStopCommandToControllers(
       Iterable<BluetoothCharacteristic> controllerCharacteristics) {
     for (var characteristic in controllerCharacteristics) {
@@ -198,7 +188,7 @@ class BluetoothBackend with ChangeNotifier {
         await getDevicesLsaGlovesServices(connectedDevices);
     Map<BluetoothDevice, BluetoothCharacteristic> characteristics =
         getDevicesControllerCharacteristics(services);
-    characteristics.forEach((_, characteristic) async {
+    characteristics.values.forEach((characteristic) async {
       try {
         await characteristic.write(utf8.encode(command), withoutResponse: true);
       } catch (err) {
