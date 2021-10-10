@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
-import 'dart:developer' as developer;
+
+import 'package:provider/provider.dart';
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({Key? key, required this.device, required this.isEnabled})
@@ -82,7 +83,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         onPressed: (_isEnabled &&
                                 snapshot.data == BluetoothDeviceState.connected)
                             ? () {
-                                BluetoothBackend.sendCalibrationCommand(device);
+                                Provider.of<BluetoothBackend>(context)
+                                    .sendCalibrationCommand(device);
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(SnackBar(
                                         content: Row(

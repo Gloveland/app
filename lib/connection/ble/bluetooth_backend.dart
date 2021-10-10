@@ -146,8 +146,16 @@ class BluetoothBackend with ChangeNotifier {
     }
   }
 
-  static void sendCalibrationCommand(BluetoothDevice device) async {
-    sendCommandToConnectedDevice(device, BluetoothSpecification.CALIBRATE);
+  void sendCalibrationCommand(BluetoothDevice device) async {
+    BluetoothCharacteristic? controller = _controllerCharacteristics[device];
+    if (controller != null) {
+      writeCommandToCharacteristic(
+          BluetoothSpecification.CALIBRATE, controller);
+    } else {
+      developer.log(
+          "Controller characteristic not found for device ${device.id.id}!",
+          name: TAG);
+    }
   }
 
   static Future sendStopCommandToDevices(List<BluetoothDevice> connectedDevices) async {
