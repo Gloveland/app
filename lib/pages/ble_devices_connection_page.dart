@@ -6,6 +6,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
+import 'package:provider/provider.dart';
 import '../connection/ble/bluetooth_device.dart';
 import 'dart:developer' as developer;
 
@@ -46,10 +47,8 @@ class BluetoothOffScreen extends StatelessWidget {
               color: Colors.white54,
             ),
             Text(
-              'Bluetooth Adapter is ${state != null ? state.toString()
-                  .substring(15) : 'not available'}.',
-              style: Theme
-                  .of(context)
+              'Bluetooth Adapter is ${state != null ? state.toString().substring(15) : 'not available'}.',
+              style: Theme.of(context)
                   .primaryTextTheme
                   .subhead
                   ?.copyWith(color: Colors.white),
@@ -69,6 +68,8 @@ class FindDevicesScreen extends StatefulWidget {
 }
 
 class _FindDevicesScreen extends State<FindDevicesScreen> {
+  static final String TAG = "Devices screen";
+
   _FindDevicesScreen(this.rightGloveConnected, this.leftGloveConnected);
 
   bool rightGloveConnected;
@@ -90,52 +91,34 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
         title: Text('Dispositivos'),
       ),
       drawer: NavDrawer(),
-      body: Column(
-        children: <Widget>[
-          StreamBuilder<List<BluetoothDevice>>(
-            stream: FlutterBlue.instance.scanResults.map((list) =>
-                list
-                    .where((scanResult) =>
-                scanResult.advertisementData.connectable)
-                    .map((scanResult) => scanResult.device)
-                    .toList(growable: true)),
-            builder: (context, scanResultSnapshot) {
-              return StreamBuilder<List<BluetoothDevice>>(
-                  stream: Stream.periodic(Duration(seconds: 2))
-                      .asyncMap((_) => FlutterBlue.instance.connectedDevices),
-                  initialData: [],
-                  builder: (context, connectedDevicesSnapshot) {
-                    List<BluetoothDevice> devices = [];
-                    if (scanResultSnapshot.hasData) {
-                      devices.addAll(scanResultSnapshot.data!);
-                    }
-                    if (connectedDevicesSnapshot.hasData) {
-                      connectedDevicesSnapshot.data!.forEach((connectedDevice) {
-                        if (!devices
-                            .map((e) => e.id)
-                            .contains(connectedDevice.id)) {
-                          devices.add(connectedDevice);
-                        }
-                      });
-                    }
-                    return Column(
-                      children: devices
-                          .where((d) =>
-                      d.name == BluetoothSpecification.RIGHT_GLOVE_NAME ||
-                          d.name == BluetoothSpecification.LEFT_GLOVE_NAME)
-                          .map((device) =>
-                          ConnectionGloveCard(
-                            device: device,
-                            updateState: this.updateState,
-                          ))
-                          .toSet()
-                          .toList(),
-                    );
-                  });
-            },
-          ),
-        ],
-      ),
+      body: (BuildContext context) {
+        BluetoothBackend backend = Provider.of<BluetoothBackend>(context);
+        return StreamBuilder<List<BluetoothDevice>>(
+          stream: backend.availableDevicesStream,
+          builder: (context, scanResultSnapshot) {
+            Set<BluetoothDevice> availableDevices = Set();
+            if (scanResultSnapshot.hasData) {
+              availableDevices = scanResultSnapshot.data!
+                  .where((device) =>
+                      device.name == BluetoothSpecification.RIGHT_GLOVE_NAME ||
+                      device.name == BluetoothSpecification.LEFT_GLOVE_NAME)
+                  .toSet();
+            }
+            Set<BluetoothDevice> connectedDevices =
+                backend.connectedDevices.toSet();
+            Set<BluetoothDevice> devicesToDisplay =
+                availableDevices.union(connectedDevices);
+            developer.log(devicesToDisplay.map((e) => e.id.id).toString(),
+                name: TAG);
+            return Column(
+              children: devicesToDisplay
+                  .map((device) => ConnectionGloveCard(
+                      key: Key(device.id.id), device: device))
+                  .toList(),
+            );
+          },
+        );
+      }(context),
       floatingActionButton: StreamBuilder<bool>(
         stream: FlutterBlue.instance.isScanning,
         initialData: false,
@@ -149,9 +132,8 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
           } else {
             return FloatingActionButton(
                 child: Icon(Icons.search),
-                onPressed: () =>
-                    FlutterBlue.instance
-                        .startScan(timeout: Duration(seconds: 4)));
+                onPressed: () => FlutterBlue.instance
+                    .startScan(timeout: Duration(seconds: 4)));
           }
         },
       ),
@@ -161,25 +143,20 @@ class _FindDevicesScreen extends State<FindDevicesScreen> {
 
 class ConnectionGloveCard extends StatefulWidget {
   final BluetoothDevice device;
-  final ValueChanged<BluetoothDevice> updateState;
 
-  ConnectionGloveCard(
-      {Key? key, required this.device, required this.updateState})
-      : super(key: key);
+  ConnectionGloveCard({Key? key, required this.device}) : super(key: key);
 
   @override
-  _ConnectionGloveCard createState() =>
-      new _ConnectionGloveCard(this.device, this.updateState);
+  _ConnectionGloveCard createState() => new _ConnectionGloveCard(this.device);
 }
 
 class _ConnectionGloveCard extends State {
   final BluetoothDevice device;
-  final ValueChanged<BluetoothDevice> updateState;
   String connectionStatusText = "Desconectado";
   IconData connectionStatusIcon = Icons.bluetooth;
   BluetoothDeviceState? btDeviceState = BluetoothDeviceState.disconnected;
 
-  _ConnectionGloveCard(this.device, this.updateState);
+  _ConnectionGloveCard(this.device);
 
   @override
   Widget build(BuildContext context) {
@@ -188,16 +165,16 @@ class _ConnectionGloveCard extends State {
         initialData: BluetoothDeviceState.disconnected,
         builder: (c, deviceStatesSnapshot) {
           updateStatusDisplay(deviceStatesSnapshot.data);
-          bool switchEnabled = (btDeviceState == BluetoothDeviceState.connected || btDeviceState == BluetoothDeviceState.connecting);
+          bool switchEnabled =
+              (btDeviceState == BluetoothDeviceState.connected ||
+                  btDeviceState == BluetoothDeviceState.connecting);
           return Card(
               child: ListTile(
                   leading: Container(
                       height: double.infinity,
                       child: Icon(
                         connectionStatusIcon,
-                        color: Theme
-                            .of(context)
-                            .primaryColor,
+                        color: Theme.of(context).primaryColor,
                       )),
                   title: Text(
                     BluetoothBackend.getSpanishGloveName(device.name),
@@ -205,16 +182,14 @@ class _ConnectionGloveCard extends State {
                   ),
                   subtitle: Text(
                     connectionStatusText,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .caption,
+                    style: Theme.of(context).textTheme.caption,
                   ),
                   onTap: () => toggleConnection(c),
-              onLongPress: () => navigateToDeviceSettings(switchEnabled),
-          trailing: IconButton(
-          icon: Icon(Icons.settings),
-          onPressed: ()=> navigateToDeviceSettings(switchEnabled))));
+                  onLongPress: () => navigateToDeviceSettings(switchEnabled),
+                  trailing: IconButton(
+                      icon: Icon(Icons.settings),
+                      onPressed: () =>
+                          navigateToDeviceSettings(switchEnabled))));
         });
   }
 
@@ -243,21 +218,18 @@ class _ConnectionGloveCard extends State {
   }
 
   void navigateToDeviceSettings(bool isConnected) {
-    Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) =>
-            DeviceScreen(
-                device: device, isEnabled: isConnected)));
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) =>
+            DeviceScreen(device: device, isEnabled: isConnected)));
   }
 
   void toggleConnection(BuildContext context) {
     if (btDeviceState != BluetoothDeviceState.connected) {
       this.device.connect();
-      this.updateState(this.device);
     } else {
       showDialog(
           context: context,
-          builder: (_) =>
-              AlertDialog(
+          builder: (_) => AlertDialog(
                 title: Text("¿Desconectar?"),
                 content: Text(
                     "Finalizará la conexión con ${device.name.toString()}"),
