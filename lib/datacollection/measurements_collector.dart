@@ -1,12 +1,8 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
-
 import 'dart:developer' as developer;
-
 import 'package:lsa_gloves/model/glove_measurement.dart';
 
 /// Class to take in charge the responsibility of receiving and processing
@@ -16,6 +12,7 @@ class MeasurementsCollector {
 
   Map<String, DeviceMeasurementsFile> _deviceMeasurements;
   List<StreamSubscription<List<int>>> _subscriptions;
+
 
   MeasurementsCollector()
       : this._subscriptions = [],
@@ -27,9 +24,6 @@ class MeasurementsCollector {
   /// collected measurements.
   void startCollecting(
       List<BluetoothDevice> connectedDevices, String gesture) async {
-    developer.log(
-        "Starting collection for gesture '$gesture' from devices: $connectedDevices",
-        name: TAG);
     _resetState();
     for (BluetoothDevice device in connectedDevices) {
       BluetoothService? lsaService =
@@ -37,6 +31,9 @@ class MeasurementsCollector {
       if (lsaService != null) {
         BluetoothCharacteristic dcCharacteristic =
             BluetoothBackend.getDataCollectionCharacteristic(lsaService);
+        developer.log(
+            "${device.name} [${device.id.id}] Starting collection gesture '$gesture'",
+            name: TAG);
         _initFile(device.name, device.id.id, gesture);
         _collectMeasurements(device.id.id, dcCharacteristic);
       }
@@ -77,9 +74,7 @@ class MeasurementsCollector {
 
   void _collectMeasurements(String deviceId,
       BluetoothCharacteristic dataCollectionCharacteristic) async {
-    if (!dataCollectionCharacteristic.isNotifying) {
-      await dataCollectionCharacteristic.setNotifyValue(true);
-    }
+    BluetoothBackend.setNotify(dataCollectionCharacteristic);
     StreamSubscription<List<int>> subscription =
         dataCollectionCharacteristic.value.listen((data) {
       String rawMeasurements = new String.fromCharCodes(data);

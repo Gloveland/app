@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:synchronized/synchronized.dart';
 import 'dart:developer' as developer;
 
 import 'bluetooth_specification.dart';
@@ -13,6 +14,7 @@ class BluetoothBackend with ChangeNotifier {
   static const String TAG = "BluetoothBackend";
   static const String RightGlove = "Guante derecho";
   static const String LeftGlove = "Guante izquierdo";
+  static Lock lock = new Lock();
 
   List<BluetoothDevice> _connectedDevices = [];
   Map<BluetoothDevice, BluetoothCharacteristic> _controllerCharacteristics =
@@ -156,7 +158,9 @@ class BluetoothBackend with ChangeNotifier {
   static void writeCommandToCharacteristic(
       String command, BluetoothCharacteristic characteristic) async {
     try {
-      await characteristic.write(utf8.encode(command), withoutResponse: true);
+      await lock.synchronized(() async {
+        await characteristic.write(utf8.encode(command), withoutResponse: true);
+      });
     } catch (err) {
       developer.log("Characteristic write failed: " + err.toString(),
           name: TAG);
@@ -284,7 +288,18 @@ class BluetoothBackend with ChangeNotifier {
 
   static Future<void> requestMtu(List<BluetoothDevice> connectedDevices) async {
     for (var device in connectedDevices) {
-      await device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+      await lock.synchronized(() async {
+        await device.requestMtu(BluetoothSpecification.MTU_BYTES_SIZE);
+      });
+    }
+  }
+
+  static Future<void> setNotify(
+      BluetoothCharacteristic dataCollectionCharacteristic) async {
+    if (!dataCollectionCharacteristic.isNotifying) {
+      await lock.synchronized(() async {
+        await dataCollectionCharacteristic.setNotifyValue(true);
+      });
     }
   }
 }

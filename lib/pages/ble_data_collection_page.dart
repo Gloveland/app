@@ -161,7 +161,6 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       _measurementsCollector.startCollecting(
           this._connectedDevices, this.selectedGesture);
       _isRecording = true;
-      // TODO(https://git.io/JEyV4): Process data from more than one device.
     }
   }
 
