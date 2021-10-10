@@ -34,18 +34,30 @@ class BluetoothBackend with ChangeNotifier {
   Map<BluetoothDevice, BluetoothCharacteristic>
       get interpretationCharacteristics => _interpretationCharacteristics;
 
+  /// Stream providing the information of the connected devices. This stream
+  /// monitors the connected devices every 2 seconds.
   late Stream<List<BluetoothDevice>> connectedDevicesStream;
 
+  late Stream<List<BluetoothDevice>> availableDevicesStream;
+
   BluetoothBackend() {
+    _initializeStreams();
     _startMonitoringDevices();
+  }
+
+  void _initializeStreams() {
+    availableDevicesStream = FlutterBlue.instance.scanResults.map((list) => list
+        .where((scanResult) => scanResult.advertisementData.connectable)
+        .map((scanResult) => scanResult.device)
+        .toList(growable: true));
+    this.connectedDevicesStream = Stream.periodic(Duration(seconds: 2))
+        .asyncMap((_) => BluetoothBackend.getConnectedDevices())
+        .asBroadcastStream();
   }
 
   /// Starts monitoring the connected devices and notifies the listeners of this
   /// class when a connection event (i.e. connection or disconnection) happens.
   void _startMonitoringDevices() {
-    this.connectedDevicesStream = Stream.periodic(Duration(seconds: 2))
-        .asyncMap((_) => BluetoothBackend.getConnectedDevices())
-        .asBroadcastStream();
     this.connectedDevicesStream.listen((newConnectedDevices) async {
       if (this._connectedDevices.length != newConnectedDevices.length) {
         developer.log("Connection event.", name: TAG);
