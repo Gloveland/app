@@ -51,7 +51,7 @@ class BluetoothBackend with ChangeNotifier {
         .map((scanResult) => scanResult.device)
         .toList(growable: true));
     this.connectedDevicesStream = Stream.periodic(Duration(seconds: 2))
-        .asyncMap((_) => BluetoothBackend.getConnectedDevices())
+        .asyncMap((_) => FlutterBlue.instance.connectedDevices)
         .asBroadcastStream();
   }
 
@@ -65,6 +65,7 @@ class BluetoothBackend with ChangeNotifier {
             this._connectedDevices, newConnectedDevices);
         this._connectedDevices = newConnectedDevices;
         _updateState(newConnectedDevices)
+            .then((_) => _configureCharacteristics())
             .then((_) => _requestMtu(newConnectedDevices))
             .then((_) {
           developer.log("Notifying listeners...", name: TAG);
@@ -111,6 +112,32 @@ class BluetoothBackend with ChangeNotifier {
     }
   }
 
+  /// Enables the notifications for the data collection and interpretation
+  /// characteristics.
+  Future _configureCharacteristics() async {
+    developer.log(
+        "Enabling notifications for the data collection characteristics...",
+        name: TAG);
+    await _enableNotificationsForCharacteristics(
+        _dataCollectionCharacteristics.values);
+
+    developer.log(
+        "Enabling notifications for the interpretation characteristics...",
+        name: TAG);
+    await _enableNotificationsForCharacteristics(
+        _interpretationCharacteristics.values);
+  }
+
+  static Future _enableNotificationsForCharacteristics(
+      Iterable<BluetoothCharacteristic> characteristics) async {
+    for (var characteristic in characteristics) {
+      bool result = await characteristic.setNotifyValue(true);
+      developer.log(
+          "Notifications enabled for characteristic ${characteristic.uuid} ${result ? "succeeded." : "failed."}",
+          name: TAG);
+    }
+  }
+
   /// Requests a MTU update with [BluetoothSpecification.MTU_BYTES_SIZE] to the
   /// [connectedDevices].
   Future _requestMtu(List<BluetoothDevice> connectedDevices) async {
@@ -123,33 +150,28 @@ class BluetoothBackend with ChangeNotifier {
     }
   }
 
-  /// Retrieves the connected devices.
-  static Future<List<BluetoothDevice>> getConnectedDevices() {
-    return FlutterBlue.instance.connectedDevices;
-  }
-
-  static void sendStartDataCollectionCommand(
-      List<BluetoothDevice> connectedDevices) async {
-    sendCommandToConnectedDevices(
-        connectedDevices, BluetoothSpecification.START_DATA_COLLECTION);
+  void sendStartDataCollectionCommand() {
+    for (var characteristic in controllerCharacteristics.values) {
+      _writeCommandToCharacteristic(BluetoothSpecification.START_DATA_COLLECTION, characteristic);
+    }
   }
 
   void sendStartInterpretationCommand() {
     for (var characteristic in controllerCharacteristics.values) {
-      writeCommandToCharacteristic(BluetoothSpecification.START_INTERPRETATIONS, characteristic);
+      _writeCommandToCharacteristic(BluetoothSpecification.START_INTERPRETATIONS, characteristic);
     }
   }
 
   void sendStopCommand() {
     for (var characteristic in controllerCharacteristics.values) {
-      writeCommandToCharacteristic(BluetoothSpecification.STOP_ONGOING_TASK, characteristic);
+      _writeCommandToCharacteristic(BluetoothSpecification.STOP_ONGOING_TASK, characteristic);
     }
   }
 
   void sendCalibrationCommand(BluetoothDevice device) async {
     BluetoothCharacteristic? controller = _controllerCharacteristics[device];
     if (controller != null) {
-      writeCommandToCharacteristic(
+      _writeCommandToCharacteristic(
           BluetoothSpecification.CALIBRATE, controller);
     } else {
       developer.log(
@@ -158,24 +180,7 @@ class BluetoothBackend with ChangeNotifier {
     }
   }
 
-  static Future sendStopCommandToDevices(List<BluetoothDevice> connectedDevices) async {
-    await sendCommandToConnectedDevices(
-        connectedDevices, BluetoothSpecification.STOP_ONGOING_TASK);
-  }
-
-  /// Sends the command specified as a parameter to the connected device
-  /// through the control characteristic.
-  static void sendCommandToConnectedDevice(
-      BluetoothDevice connectedDevice, String command) async {
-    BluetoothService? service = await getLsaGlovesService(connectedDevice);
-    if (service != null) {
-      BluetoothCharacteristic characteristic =
-          getControllerCharacteristic(service);
-      writeCommandToCharacteristic(command, characteristic);
-    }
-  }
-
-  static void writeCommandToCharacteristic(
+  static void _writeCommandToCharacteristic(
       String command, BluetoothCharacteristic characteristic) async {
     try {
       await lock.synchronized(() async {
@@ -185,21 +190,6 @@ class BluetoothBackend with ChangeNotifier {
       developer.log("Characteristic write failed: " + err.toString(),
           name: TAG);
     }
-  }
-
-  /// Sends the commands specified as a parameter to the connected devices
-  /// through the control characteristic.
-  ///
-  /// This method is expected to be used to start and stop the measurement
-  /// readings from the glove as well as the interpretations.
-  static Future sendCommandToConnectedDevices(
-      List<BluetoothDevice> connectedDevices, String command) async {
-    Map<BluetoothDevice, BluetoothService> services =
-        await getDevicesLsaGlovesServices(connectedDevices);
-    Map<BluetoothDevice, BluetoothCharacteristic> characteristics =
-        getDevicesControllerCharacteristics(services);
-    characteristics.values.forEach((characteristic) =>
-        writeCommandToCharacteristic(command, characteristic));
   }
 
   /// Retrieves the LSA glove service from the specified device.

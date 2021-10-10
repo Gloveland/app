@@ -13,7 +13,6 @@ class MeasurementsCollector {
   Map<String, DeviceMeasurementsFile> _deviceMeasurements;
   List<StreamSubscription<List<int>>> _subscriptions;
 
-
   MeasurementsCollector()
       : this._subscriptions = [],
         this._deviceMeasurements = Map();
@@ -23,20 +22,18 @@ class MeasurementsCollector {
   /// A measurements file will be generated for each device with its
   /// collected measurements.
   void startCollecting(
-      List<BluetoothDevice> connectedDevices, String gesture) async {
+      String gesture,
+      Map<BluetoothDevice, BluetoothCharacteristic>
+          dataCollectionCharacteristics) async {
     _resetState();
-    for (BluetoothDevice device in connectedDevices) {
-      BluetoothService? lsaService =
-          await BluetoothBackend.getLsaGlovesService(device);
-      if (lsaService != null) {
-        BluetoothCharacteristic dcCharacteristic =
-            BluetoothBackend.getDataCollectionCharacteristic(lsaService);
-        developer.log(
-            "${device.name} [${device.id.id}] Starting collection gesture '$gesture'",
-            name: TAG);
-        _initFile(device.name, device.id.id, gesture);
-        _collectMeasurements(device.id.id, dcCharacteristic);
-      }
+    for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry
+        in dataCollectionCharacteristics.entries) {
+      BluetoothDevice device = entry.key;
+      developer.log(
+          "${device.name} [${device.id.id}] Starting collection gesture '$gesture'",
+          name: TAG);
+      _initFile(device.name, device.id.id, gesture);
+      _collectMeasurements(device.id.id, entry.value);
     }
   }
 
@@ -74,7 +71,7 @@ class MeasurementsCollector {
 
   void _collectMeasurements(String deviceId,
       BluetoothCharacteristic dataCollectionCharacteristic) async {
-    BluetoothBackend.setNotify(dataCollectionCharacteristic);
+    // BluetoothBackend.setNotify(dataCollectionCharacteristic);
     StreamSubscription<List<int>> subscription =
         dataCollectionCharacteristic.value.listen((data) {
       String rawMeasurements = new String.fromCharCodes(data);
