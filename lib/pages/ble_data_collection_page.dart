@@ -4,7 +4,6 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
@@ -115,9 +114,15 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                     child: AnimatedTextKit(
                   isRepeatingAnimation: false,
                   animatedTexts: [
-                    ScaleAnimatedText('3', scalingFactor: 0.1, duration: Duration(milliseconds: 500)),
-                    ScaleAnimatedText('2', scalingFactor: 0.1, duration: Duration(milliseconds: 500)),
-                    ScaleAnimatedText('1', scalingFactor: 0.1, duration: Duration(milliseconds: 500)),
+                    ScaleAnimatedText('3',
+                        scalingFactor: 0.1,
+                        duration: Duration(milliseconds: 500)),
+                    ScaleAnimatedText('2',
+                        scalingFactor: 0.1,
+                        duration: Duration(milliseconds: 500)),
+                    ScaleAnimatedText('1',
+                        scalingFactor: 0.1,
+                        duration: Duration(milliseconds: 500)),
                     ScaleAnimatedText('ya!',
                         scalingFactor: 0,
                         duration: const Duration(milliseconds: 500)),

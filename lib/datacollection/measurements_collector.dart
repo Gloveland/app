@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
 import 'dart:developer' as developer;
 import 'package:lsa_gloves/model/glove_measurement.dart';
@@ -71,7 +70,6 @@ class MeasurementsCollector {
 
   void _collectMeasurements(String deviceId,
       BluetoothCharacteristic dataCollectionCharacteristic) async {
-    // BluetoothBackend.setNotify(dataCollectionCharacteristic);
     StreamSubscription<List<int>> subscription =
         dataCollectionCharacteristic.value.listen((data) {
       String rawMeasurements = new String.fromCharCodes(data);
