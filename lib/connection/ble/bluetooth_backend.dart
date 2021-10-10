@@ -120,29 +120,15 @@ class BluetoothBackend with ChangeNotifier {
         connectedDevices, BluetoothSpecification.START_DATA_COLLECTION);
   }
 
-  static void sendStartInterpretationCommand(
-      List<BluetoothDevice> connectedDevices) async {
-    sendCommandToConnectedDevices(
-        connectedDevices, BluetoothSpecification.START_INTERPRETATIONS);
-  }
-
-  /// Sends the interpretation command through the specified controller
-  /// characteristics passed as parameters.
-  static void sendStartInterpretationCommandToControllers(
-      Iterable<BluetoothCharacteristic> controllerCharacteristics) {
-    for (var characteristic in controllerCharacteristics) {
-      writeCommandToCharacteristic(
-          BluetoothSpecification.START_INTERPRETATIONS, characteristic);
+  void sendStartInterpretationCommand() {
+    for (var characteristic in controllerCharacteristics.values) {
+      writeCommandToCharacteristic(BluetoothSpecification.START_INTERPRETATIONS, characteristic);
     }
   }
 
-  /// Sends the stop command through the specified controller characteristics
-  /// passed as parameters.
-  static void sendStopCommandToControllers(
-      Iterable<BluetoothCharacteristic> controllerCharacteristics) {
-    for (var characteristic in controllerCharacteristics) {
-      writeCommandToCharacteristic(
-          BluetoothSpecification.STOP_ONGOING_TASK, characteristic);
+  void sendStopCommand() {
+    for (var characteristic in controllerCharacteristics.values) {
+      writeCommandToCharacteristic(BluetoothSpecification.STOP_ONGOING_TASK, characteristic);
     }
   }
 
@@ -150,7 +136,7 @@ class BluetoothBackend with ChangeNotifier {
     sendCommandToConnectedDevice(device, BluetoothSpecification.CALIBRATE);
   }
 
-  static Future sendStopCommand(List<BluetoothDevice> connectedDevices) async {
+  static Future sendStopCommandToDevices(List<BluetoothDevice> connectedDevices) async {
     await sendCommandToConnectedDevices(
         connectedDevices, BluetoothSpecification.STOP_ONGOING_TASK);
   }
@@ -188,14 +174,8 @@ class BluetoothBackend with ChangeNotifier {
         await getDevicesLsaGlovesServices(connectedDevices);
     Map<BluetoothDevice, BluetoothCharacteristic> characteristics =
         getDevicesControllerCharacteristics(services);
-    characteristics.values.forEach((characteristic) async {
-      try {
-        await characteristic.write(utf8.encode(command), withoutResponse: true);
-      } catch (err) {
-        developer.log("Characteristic write failed: " + err.toString(),
-            name: TAG);
-      }
-    });
+    characteristics.values.forEach((characteristic) =>
+        writeCommandToCharacteristic(command, characteristic));
   }
 
   /// Retrieves the LSA glove service from the specified device.

@@ -66,8 +66,6 @@ class _InterpretationsPanelState extends State<InterpretationsPanel> {
   Widget build(BuildContext context) {
     return Consumer<BluetoothBackend>(builder: (context, backend, _) {
       List<Widget> children = <Widget>[];
-      print(backend.connectedDevices);
-      print(backend.controllerCharacteristics);
       for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry
           in backend.interpretationCharacteristics.entries) {
         children.add(InterpretationWidget(
@@ -169,39 +167,32 @@ class InterpretationButton extends StatefulWidget {
 class _InterpretationButtonState extends State<InterpretationButton> {
   bool _isEnabled = false;
   bool _isRunning = false;
-  Iterable<BluetoothCharacteristic> _controllerCharacteristics = [];
 
   @override
   Widget build(BuildContext context) {
     return Consumer<BluetoothBackend>(
       builder: (context, backend, _) {
         _isEnabled = backend.connectedDevices.length > 0 ? true : false;
-        _controllerCharacteristics = backend.controllerCharacteristics.values;
-        return buildElevatedButton();
+        if (_isEnabled) {
+          return ElevatedButton(
+              onPressed: () => _onInterpretationButtonPressed(backend),
+              child: Text(_getButtonText()));
+        } else {
+          return ElevatedButton(onPressed: null, child: Text("Traducir"));
+        }
       },
     );
-  }
-
-  ElevatedButton buildElevatedButton() {
-    if (_isEnabled) {
-      return ElevatedButton(
-          onPressed: _onInterpretationButtonPressed,
-          child: Text(_getButtonText()));
-    } else {
-      return ElevatedButton(onPressed: null, child: Text("Traducir"));
-    }
   }
 
   String _getButtonText() {
     return _isRunning ? "Detener" : "Traducir";
   }
 
-  void _onInterpretationButtonPressed() async {
+  void _onInterpretationButtonPressed(BluetoothBackend bluetoothBackend) async {
     if (_isRunning) {
-      BluetoothBackend.sendStopCommandToControllers(_controllerCharacteristics);
+      bluetoothBackend.sendStopCommand();
     } else {
-      BluetoothBackend.sendStartInterpretationCommandToControllers(
-          _controllerCharacteristics);
+      bluetoothBackend.sendStartInterpretationCommand();
     }
     setState(() {
       _isRunning = !_isRunning;
