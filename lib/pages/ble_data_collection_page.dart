@@ -166,7 +166,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 
   void _stopRecording() async {
     developer.log('stopRecording');
-    BluetoothBackend.sendStopCommand(this._connectedDevices);
+    BluetoothBackend.sendStopCommandToDevices(this._connectedDevices);
     _isRecording = false;
     showDialog(
         context: context,

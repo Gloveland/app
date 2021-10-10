@@ -4,9 +4,17 @@ import 'package:lsa_gloves/datacollection/file_content.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
 import 'package:lsa_gloves/pages/ble_devices_connection_page.dart';
 import 'package:lsa_gloves/pages/home_page.dart';
+import 'package:provider/provider.dart';
+
+import 'connection/ble/bluetooth_backend.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+      ChangeNotifierProvider(
+        create: (_) => BluetoothBackend(),
+        child: MyApp(),
+      )
+  );
 }
 
 class MyApp extends StatelessWidget {
