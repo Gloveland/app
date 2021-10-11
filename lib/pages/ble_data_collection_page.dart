@@ -40,8 +40,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
           child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Consumer<BluetoothBackend>(builder: (context, backend, _) {
-          return SingleChildScrollView(
-              child: Column(
+          return Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               Container(
@@ -75,14 +74,17 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                   this.selectedGesture = newValue!;
                 });
               }),
-              SizedBox(height: 8),
-              RecordButton(
-                  key: ValueKey(backend.connectedDevices.length),
-                  disabled: backend.connectedDevices.isEmpty,
-                  onButtonPressed: () => onRecordButtonPressed(backend)),
               DataVisualizer(collector: _measurementsCollector),
+              Expanded(
+                  child: Align(
+                      alignment: FractionalOffset.bottomCenter,
+                      child: RecordButton(
+                          key: ValueKey(backend.connectedDevices.length),
+                          disabled: backend.connectedDevices.isEmpty,
+                          onButtonPressed: () =>
+                              onRecordButtonPressed(backend)))),
             ],
-          ));
+          );
         }),
       )),
     );
@@ -329,9 +331,9 @@ class _DataVisualizerState extends State<DataVisualizer>
           .map((value) => Container(
               margin: EdgeInsets.only(top: 8),
               width: double.infinity,
-              color: Theme.of(context).backgroundColor,
               padding: EdgeInsets.all(8),
-              child: Text(value.toString())))
+              child: Text(
+                  "Guante: ${value.deviceId} - Event number: ${value.eventNum}")))
           .toList(),
     );
   }

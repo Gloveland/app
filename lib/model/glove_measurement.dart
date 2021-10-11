@@ -25,17 +25,6 @@ class GloveMeasurement {
         index = Finger.fromJson(json['index'] as Map<String, dynamic>),
         thumb = Finger.fromJson(json['thumb'] as Map<String, dynamic>);
 
-  @override
-  String toString() {
-    return "Device: $deviceId\n"
-        "Event number: $eventNum\n"
-        "\nThumb: \n$thumb\n"
-        "\nIndex: $index\n"
-        "\nMiddle: $middle\n"
-        "\nRing: $ring\n"
-        "\nPinky: $pinky\n";
-  }
-
   Map<String, dynamic> toJson() => {
     'device_id': deviceId,
     'event_num': eventNum,
@@ -45,6 +34,7 @@ class GloveMeasurement {
     'index' : index.toJson(),
     'thumb': thumb.toJson(),
   };
+
 
   static fromFingerMeasurementsList(int eventNum, String deviceId, List<String> fingerMeasurements) {
     Map<String, Finger> measurementsMap = new Map();
@@ -64,6 +54,7 @@ class GloveMeasurement {
     Finger? thumb = measurementsMap[thumbLetter];
     return new GloveMeasurement(deviceId, eventNum,pinky!, ring!, middle!, index!, thumb!);
   }
+
 }
 
 class Finger {
@@ -88,10 +79,6 @@ class Finger {
         gyro = Gyro(m[3],m[4], m[5]),
         inclination = Inclination(m[6],m[7], m[8]);
 
-  @override
-  String toString() {
-    return "Acceleration: $acc\nGyro: $gyro\nInclination: $inclination.";
-  }
 }
 class Acceleration {
   final double x;
@@ -108,11 +95,6 @@ class Acceleration {
     'y': y,
     'z': z,
   };
-
-  @override
-  String toString() {
-    return "x: $x y: $y z: $z.";
-  }
 }
 
 class Gyro {
@@ -129,11 +111,6 @@ class Gyro {
     'y': y,
     'z': z,
   };
-
-  @override
-  String toString() {
-    return "x: $x y: $y z: $z.";
-  }
 }
 
 class Inclination {
@@ -151,10 +128,6 @@ class Inclination {
     'yaw': yaw,
   };
 
-  @override
-  String toString() {
-    return "roll: $roll pitch: $pitch yaw: $yaw.";
-  }
 }
 
 
