@@ -7,6 +7,7 @@ import 'package:lsa_gloves/datacollection/storage.dart';
 import 'dart:developer' as developer;
 
 class EdgeImpulseApiClient {
+  static const String TAG = "EdgeImpulseApiClient";
 
   static void uploadFile(
       SensorMeasurements sensorMeasurements, DateTime datetime) async {
@@ -23,6 +24,7 @@ class EdgeImpulseApiClient {
         );
 
     double averageIntervalInMilliseconds = sensorMeasurements.intervalSumInMillis / double.parse("${sensorMeasurements.values.length}");
+    developer.log("averageIntervalInMilliseconds: $averageIntervalInMilliseconds", name: TAG);
     var payload = Payload(
         deviceName: sensorMeasurements.deviceId,
         //globally unique identifier for this device (e.g. MAC address)
@@ -36,8 +38,7 @@ class EdgeImpulseApiClient {
 
     var edgeImpulseBody = EdgeImpulseBody(
         protected: protected, signature: "empty", payload: payload);
-    developer.log("sending post");
-    developer.log("${edgeImpulseBody.toJson()}");
+    developer.log("sending post ${edgeImpulseBody.toJson()}", name: TAG);
 
     Secret secret =
         await SecretLoader(secretPath: "assets/secrets.json").load();
@@ -56,7 +57,7 @@ class EdgeImpulseApiClient {
     request.add(utf8.encode(json.encode(edgeImpulseBody)));
     HttpClientResponse response = await request.close();
     String reply = await response.transform(utf8.decoder).join();
-    developer.log(reply);
+    developer.log(reply, name: TAG);
     httpClient.close();
   }
 
