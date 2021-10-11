@@ -9,16 +9,18 @@ class GloveMeasurement {
 
   final String deviceId;
   final int eventNum;
+  final double elapsedTime;
   final Finger thumb;
   final Finger index;
   final Finger middle;
   final Finger ring;
   final Finger pinky;
 
-  GloveMeasurement(this.deviceId, this.eventNum, this.pinky, this.ring, this.middle, this.index, this.thumb);
+  GloveMeasurement(this.deviceId, this.eventNum,this.elapsedTime,this.pinky, this.ring, this.middle, this.index, this.thumb);
 
   GloveMeasurement.fromJson(Map<String, dynamic> json)
   :  deviceId = json['device_id'], eventNum = json['event_num'],
+        elapsedTime = json['elapsed_time'],
         pinky = Finger.fromJson(json['pinky'] as Map<String, dynamic>),
         ring = Finger.fromJson(json['ring'] as Map<String, dynamic>),
         middle = Finger.fromJson(json['middle'] as Map<String, dynamic>),
@@ -27,6 +29,7 @@ class GloveMeasurement {
 
   Map<String, dynamic> toJson() => {
     'device_id': deviceId,
+    'elapsed_time': elapsedTime,
     'event_num': eventNum,
     'pinky' : pinky.toJson(),
     'ring': ring.toJson(),
@@ -36,7 +39,7 @@ class GloveMeasurement {
   };
 
 
-  static fromFingerMeasurementsList(int eventNum, String deviceId, List<String> fingerMeasurements) {
+  static fromFingerMeasurementsList(int eventNum, double elapsedTime, String deviceId, List<String> fingerMeasurements) {
     Map<String, Finger> measurementsMap = new Map();
 
     for (final item in fingerMeasurements) {
@@ -52,7 +55,7 @@ class GloveMeasurement {
     Finger? middle = measurementsMap[middleLetter];
     Finger? index = measurementsMap[indexLetter];
     Finger? thumb = measurementsMap[thumbLetter];
-    return new GloveMeasurement(deviceId, eventNum,pinky!, ring!, middle!, index!, thumb!);
+    return new GloveMeasurement(deviceId, eventNum, elapsedTime, pinky!, ring!, middle!, index!, thumb!);
   }
 
 }

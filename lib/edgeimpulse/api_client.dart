@@ -22,13 +22,14 @@ class EdgeImpulseApiClient {
             .millisecondsSinceEpoch // date when the file was created in seconds since epoch
         );
 
+    double averageIntervalInMilliseconds = sensorMeasurements.intervalSumInMillis / double.parse("${sensorMeasurements.values.length}");
     var payload = Payload(
         deviceName: sensorMeasurements.deviceId,
         //globally unique identifier for this device (e.g. MAC address)
         deviceType: "ESP32",
         // exact model of the device
         //the frequency of the data in this file (in milliseconds). E.g. for 100Hz fill in 10 (new data every 10 ms.)
-        intervalMs: 10,
+        intervalMs: averageIntervalInMilliseconds,
         //mpu6050 Default Internal 8MHz oscillator (register 0x6B = 0) equals to  1.25 milliseconds
         sensors: EdgeImpulseApiClient.sensorMeasurementNames,
         values: sensorMeasurements.values);
