@@ -4,10 +4,10 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
+import 'package:provider/provider.dart';
 import 'package:simple_timer/simple_timer.dart';
 import 'dart:developer' as developer;
 
@@ -26,23 +26,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
   bool _isRecording = false;
-  List<BluetoothDevice> _connectedDevices = [];
-  MeasurementsCollector _measurementsCollector = MeasurementsCollector();
-
-  Stream<List<BluetoothDevice>> connectedDevices() async* {
-    Set<String> connectedDevicesIds = new Set();
-    Stream<List<BluetoothDevice>> source = Stream.periodic(Duration(seconds: 2))
-        .asyncMap((_) => BluetoothBackend.getConnectedDevices());
-    await for (var devices in source) {
-      Set<String> newConnectedDevicesIds =
-          devices.map((device) => "${device.id.id}").toSet();
-      if (!setEquals(newConnectedDevicesIds, connectedDevicesIds)) {
-        developer.log(connectedDevicesIds.toString(), name: TAG);
-        connectedDevicesIds = newConnectedDevicesIds;
-        yield devices;
-      }
-    }
-  }
+  MeasurementsCollector _measurementsCollector = new MeasurementsCollector();
 
   @override
   Widget build(BuildContext context) {
@@ -53,75 +37,67 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       body: Center(
           child: Padding(
         padding: EdgeInsets.all(16.0),
-        child: StreamBuilder<List<BluetoothDevice>>(
-            stream: connectedDevices(),
-            initialData: [],
-            builder: (context, devicesSnapshot) {
-              if (devicesSnapshot.hasData) {
-                this._connectedDevices = devicesSnapshot.data!;
-              }
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    width: double.infinity,
-                    child: Text(
-                      "Categoría",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  buildDropdownButton(categories, selectedCategory,
-                      (String? newValue) {
-                    setState(() {
-                      selectedCategory = newValue!;
-                      gestures = getGestureList(selectedCategory);
-                      selectedGesture = gestures[0];
-                    });
-                  }),
-                  SizedBox(height: 24),
-                  Container(
-                    width: double.infinity,
-                    child: Text(
-                      "Gesto",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  buildDropdownButton(gestures, selectedGesture,
-                      (String? newValue) {
-                    setState(() {
-                      this.selectedGesture = newValue!;
-                    });
-                  }),
-                  SizedBox(height: 100),
-                  RecordButton(
-                      key: ValueKey(this._connectedDevices.length),
-                      disabled: this._connectedDevices.isEmpty,
-                      onButtonPressed: () => onRecordButtonPressed())
-                ],
-              );
-            }),
+        child: Consumer<BluetoothBackend>(builder: (context, backend, _) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: double.infinity,
+                child: Text(
+                  "Categoría",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+              SizedBox(height: 8),
+              buildDropdownButton(categories, selectedCategory,
+                  (String? newValue) {
+                setState(() {
+                  selectedCategory = newValue!;
+                  gestures = getGestureList(selectedCategory);
+                  selectedGesture = gestures[0];
+                });
+              }),
+              SizedBox(height: 24),
+              Container(
+                width: double.infinity,
+                child: Text(
+                  "Gesto",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+              SizedBox(height: 8),
+              buildDropdownButton(gestures, selectedGesture,
+                  (String? newValue) {
+                setState(() {
+                  this.selectedGesture = newValue!;
+                });
+              }),
+              SizedBox(height: 100),
+              RecordButton(
+                  key: ValueKey(backend.connectedDevices.length),
+                  disabled: backend.connectedDevices.isEmpty,
+                  onButtonPressed: () => onRecordButtonPressed(backend))
+            ],
+          );
+        }),
       )),
     );
   }
 
-  Future<void> onRecordButtonPressed() async {
+  Future<void> onRecordButtonPressed(BluetoothBackend backend) async {
     if (_isRecording) {
-      _stopRecording();
+      _stopRecording(backend);
     } else {
       await Future.wait([
-        BluetoothBackend.requestMtu(this._connectedDevices)
-            .then((value) => developer.log('Request mtu complete', name: TAG)),
         showDialog(
-            context: context,
+                context: context,
                 builder: (context) {
                   return this._countDownDialogBuilder();
                 })
             .then((value) =>
                 developer.log("CountDown dialog complete", name: TAG))
       ]);
-      _startRecording();
+      _startRecording(backend);
     }
   }
 
@@ -138,35 +114,41 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                     child: AnimatedTextKit(
                   isRepeatingAnimation: false,
                   animatedTexts: [
-                    ScaleAnimatedText('3', scalingFactor: 0.1),
-                    ScaleAnimatedText('2', scalingFactor: 0.1),
-                    ScaleAnimatedText('1', scalingFactor: 0.1),
+                    ScaleAnimatedText('3',
+                        scalingFactor: 0.1,
+                        duration: Duration(milliseconds: 500)),
+                    ScaleAnimatedText('2',
+                        scalingFactor: 0.1,
+                        duration: Duration(milliseconds: 500)),
+                    ScaleAnimatedText('1',
+                        scalingFactor: 0.1,
+                        duration: Duration(milliseconds: 500)),
                     ScaleAnimatedText('ya!',
                         scalingFactor: 0,
-                        duration: const Duration(milliseconds: 700)),
+                        duration: const Duration(milliseconds: 500)),
                   ],
                   onFinished: () => Navigator.pop(context),
                 )))));
   }
 
-  void _startRecording() {
+  void _startRecording(BluetoothBackend bluetoothBackend) {
     developer.log('startRecording');
-    if (this._connectedDevices.isEmpty) {
-      developer.log('Cant start recording! No device connected');
+    if (bluetoothBackend.connectedDevices.isEmpty) {
+      developer.log('Cant start recording! No devices connected.');
       Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => BleConnectionErrorPage(),
           maintainState: false));
     } else {
-      BluetoothBackend.sendStartDataCollectionCommand(_connectedDevices);
+      bluetoothBackend.sendStartDataCollectionCommand();
       _measurementsCollector.startCollecting(
-          this._connectedDevices, this.selectedGesture);
+          this.selectedGesture, bluetoothBackend.dataCollectionCharacteristics);
       _isRecording = true;
     }
   }
 
-  void _stopRecording() async {
+  void _stopRecording(BluetoothBackend bluetoothBackend) async {
     developer.log('stopRecording');
-    BluetoothBackend.sendStopCommandToDevices(this._connectedDevices);
+    bluetoothBackend.sendStopCommand();
     _isRecording = false;
     showDialog(
         context: context,
