@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
+import 'package:lsa_gloves/datacollection/measurements_listener.dart';
+import 'package:lsa_gloves/model/glove_measurement.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_timer/simple_timer.dart';
@@ -38,7 +40,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
           child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Consumer<BluetoothBackend>(builder: (context, backend, _) {
-          return Column(
+          return SingleChildScrollView(
+              child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               Container(
@@ -72,13 +75,14 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                   this.selectedGesture = newValue!;
                 });
               }),
-              SizedBox(height: 100),
+              SizedBox(height: 8),
               RecordButton(
                   key: ValueKey(backend.connectedDevices.length),
                   disabled: backend.connectedDevices.isEmpty,
-                  onButtonPressed: () => onRecordButtonPressed(backend))
+                  onButtonPressed: () => onRecordButtonPressed(backend)),
+              DataVisualizer(collector: _measurementsCollector),
             ],
-          );
+          ));
         }),
       )),
     );
@@ -286,5 +290,56 @@ class _RecordButtonState extends State<RecordButton>
             );
           }
         })());
+  }
+}
+
+class DataVisualizer extends StatefulWidget {
+  final MeasurementsCollector collector;
+
+  const DataVisualizer({Key? key, required this.collector}) : super(key: key);
+
+  @override
+  _DataVisualizerState createState() => _DataVisualizerState(collector);
+}
+
+class _DataVisualizerState extends State<DataVisualizer>
+    with MeasurementsListener {
+  final MeasurementsCollector collector;
+
+  _DataVisualizerState(this.collector);
+
+  Map<String, GloveMeasurement> measurements = Map();
+
+  @override
+  void initState() {
+    super.initState();
+    this.collector.subscribeListener(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    this.collector.unsubscribeListener(this);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: measurements.values
+          .map((value) => Container(
+              margin: EdgeInsets.only(top: 8),
+              width: double.infinity,
+              color: Theme.of(context).backgroundColor,
+              padding: EdgeInsets.all(8),
+              child: Text(value.toString())))
+          .toList(),
+    );
+  }
+
+  @override
+  void onMeasurement(GloveMeasurement measurement) {
+    setState(() {
+      measurements[measurement.deviceId] = measurement;
+    });
   }
 }
