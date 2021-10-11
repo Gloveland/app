@@ -15,7 +15,6 @@ class GloveMeasurement {
   final Finger ring;
   final Finger pinky;
 
-
   GloveMeasurement(this.deviceId, this.eventNum, this.pinky, this.ring, this.middle, this.index, this.thumb);
 
   GloveMeasurement.fromJson(Map<String, dynamic> json)
