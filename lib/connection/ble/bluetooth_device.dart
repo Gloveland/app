@@ -83,13 +83,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         onPressed: (_isEnabled &&
                                 snapshot.data == BluetoothDeviceState.connected)
                             ? () {
-                                Provider.of<BluetoothBackend>(context)
+                                Provider.of<BluetoothBackend>(context, listen: false)
                                     .sendCalibrationCommand(device);
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(SnackBar(
                                         content: Row(
                                   children: [
-                                    Icon(Icons.lightbulb, color: Colors.blue),
+                                     Icon(Icons.lightbulb, color: Colors.blue),
                                     SizedBox(width: 20),
                                     Expanded(
                                         child: Text(
