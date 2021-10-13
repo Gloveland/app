@@ -8,8 +8,9 @@ import 'dart:developer' as developer;
 
 class EdgeImpulseApiClient {
   static const String TAG = "EdgeImpulseApiClient";
+  static const int OK_STATUS_CODE = 200;
 
-  static void uploadFile(
+  static Future<bool> uploadFile(
       SensorMeasurements sensorMeasurements, DateTime datetime) async {
     var fileName = sensorMeasurements.word + '-' + datetime.toString();
 
@@ -59,6 +60,7 @@ class EdgeImpulseApiClient {
     String reply = await response.transform(utf8.decoder).join();
     developer.log(reply, name: TAG);
     httpClient.close();
+    return response.statusCode == OK_STATUS_CODE;
   }
 
   static const sensorMeasurementNames = [

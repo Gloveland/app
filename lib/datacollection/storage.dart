@@ -55,6 +55,7 @@ class GloveEventsStorage {
 }
 
 class DeviceMeasurementsFile {
+  static const TAG = "DeviceMeasurementsFile";
   final File file;
   final DateTime lastModificationDate;
   SensorMeasurements? fileContent;
@@ -128,9 +129,16 @@ class DeviceMeasurementsFile {
     return SensorMeasurements.fromJson(json.decode(fileContent));
   }
 
-  Future<void> upload() async {
-    SensorMeasurements measurementsJson = await readJsonContent();
-    EdgeImpulseApiClient.uploadFile(measurementsJson, lastModificationDate);
+  Future<bool> upload() async {
+    try {
+      SensorMeasurements measurementsJson = await readJsonContent();
+      return EdgeImpulseApiClient.uploadFile(
+          measurementsJson, lastModificationDate);
+    }catch(e, stacktrace) {
+      developer.log(e.toString(), name: TAG);
+      developer.log(stacktrace.toString(), name: TAG);
+      return false;
+    }
   }
 
   static String format(DateTime date) {
