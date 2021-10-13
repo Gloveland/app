@@ -84,6 +84,7 @@ class MeasurementsCollector {
         GloveMeasurement gloveMeasurement =
             GloveMeasurement.fromFingerMeasurementsList(
                 parsedMeasurements.eventNumber,
+                parsedMeasurements.elapsedTime,
                 deviceId,
                 parsedMeasurements.values);
         developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
@@ -123,14 +124,15 @@ class MeasurementsCollector {
         .split('\n')
         .where((s) => s.isNotEmpty)
         .toList();
-    if (fingerMeasurements.length < 6) {
+    if (fingerMeasurements.length < 7) {
       developer.log(
           "Fewer measurements than expected: (${fingerMeasurements.length}).",
           name: TAG);
       return null;
     }
     int eventNum = int.parse(fingerMeasurements.removeAt(0));
-    return _ParsedMeasurements(eventNum, fingerMeasurements);
+    double elapsedTime = double.parse(fingerMeasurements.removeAt(0));
+    return _ParsedMeasurements(eventNum, elapsedTime,  fingerMeasurements);
   }
 
   void _notifyListeners(GloveMeasurement measurement) {
@@ -142,9 +144,10 @@ class MeasurementsCollector {
 
 class _ParsedMeasurements {
   final int eventNumber;
+  final double elapsedTime;
   final List<String> values;
 
-  _ParsedMeasurements(this.eventNumber, this.values);
+  _ParsedMeasurements(this.eventNumber, this.elapsedTime, this.values);
 
   @override
   String toString() {

@@ -7,6 +7,7 @@ import 'package:lsa_gloves/datacollection/storage.dart';
 import 'dart:developer' as developer;
 
 class EdgeImpulseApiClient {
+  static const String TAG = "EdgeImpulseApiClient";
 
   static void uploadFile(
       SensorMeasurements sensorMeasurements, DateTime datetime) async {
@@ -22,21 +23,22 @@ class EdgeImpulseApiClient {
             .millisecondsSinceEpoch // date when the file was created in seconds since epoch
         );
 
+    double averageIntervalInMilliseconds = sensorMeasurements.intervalSumInMillis / double.parse("${sensorMeasurements.values.length}");
+    developer.log("averageIntervalInMilliseconds: $averageIntervalInMilliseconds", name: TAG);
     var payload = Payload(
         deviceName: sensorMeasurements.deviceId,
         //globally unique identifier for this device (e.g. MAC address)
         deviceType: "ESP32",
         // exact model of the device
         //the frequency of the data in this file (in milliseconds). E.g. for 100Hz fill in 10 (new data every 10 ms.)
-        intervalMs: 10,
+        intervalMs: averageIntervalInMilliseconds,
         //mpu6050 Default Internal 8MHz oscillator (register 0x6B = 0) equals to  1.25 milliseconds
         sensors: EdgeImpulseApiClient.sensorMeasurementNames,
         values: sensorMeasurements.values);
 
     var edgeImpulseBody = EdgeImpulseBody(
         protected: protected, signature: "empty", payload: payload);
-    developer.log("sending post");
-    developer.log("${edgeImpulseBody.toJson()}");
+    developer.log("sending post ${edgeImpulseBody.toJson()}", name: TAG);
 
     Secret secret =
         await SecretLoader(secretPath: "assets/secrets.json").load();
@@ -55,7 +57,7 @@ class EdgeImpulseApiClient {
     request.add(utf8.encode(json.encode(edgeImpulseBody)));
     HttpClientResponse response = await request.close();
     String reply = await response.transform(utf8.decoder).join();
-    developer.log(reply);
+    developer.log(reply, name: TAG);
     httpClient.close();
   }
 
