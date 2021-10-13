@@ -165,7 +165,7 @@ class SensorMeasurements {
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.index));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.thumb));
     this.values.add(measurementList);
-    this.intervalSumInMillis = this.intervalSumInMillis + gloveMeasurement.elapsedTime;
+    this.intervalSumInMillis = this.intervalSumInMillis + gloveMeasurement.elapsedTimeMs;
     return true;
   }
 

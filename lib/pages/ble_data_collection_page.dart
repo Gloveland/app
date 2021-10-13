@@ -335,7 +335,7 @@ class _DataVisualizerState extends State<DataVisualizer>
               child: Text(
                   "Guante: ${value.deviceId} - Event number: ${value.eventNum} "
                   "- Frequency: "
-                  "${(1000 / (value.elapsedTime)).toStringAsFixed(2)}Hz")))
+                  "${(1000 / (value.elapsedTimeMs)).toStringAsFixed(2)}Hz")))
           .toList(),
     );
   }
