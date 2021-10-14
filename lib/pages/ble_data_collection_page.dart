@@ -8,6 +8,7 @@ import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/datacollection/measurements_listener.dart';
 import 'package:lsa_gloves/model/glove_measurement.dart';
+import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_timer/simple_timer.dart';
@@ -36,6 +37,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       appBar: AppBar(
         title: Text('LSA Gloves'),
       ),
+      drawer: NavDrawer(),
       body: Center(
           child: Padding(
         padding: EdgeInsets.all(16.0),
