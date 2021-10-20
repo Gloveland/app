@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lsa_gloves/pages/ble_data_collection_page.dart';
 import 'package:lsa_gloves/pages/ble_devices_connection_page.dart';
-import 'package:lsa_gloves/connection/wifi/socket.dart';
 import 'package:lsa_gloves/pages/file_manager_page.dart';
 import 'package:lsa_gloves/pages/interpretation_page.dart';
 
@@ -28,13 +27,6 @@ class NavDrawer extends StatelessWidget {
               maintainState: false));
         },
       ),
-      ListTile(
-          leading: Icon(Icons.wifi),
-          title: const Text("Conexión wifi"),
-          onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => WifiPage(), maintainState: false));
-          }),
       ListTile(
           leading: Icon(Icons.file_copy),
           title: const Text("Gestor de archivos"),

@@ -59,5 +59,5 @@ class BluetoothSpecification {
   static const String CALIBRATE = "calibrate";
 
   /// MTU to request
-  static const int MTU_BYTES_SIZE = 512;
+  static const int MTU_BYTES_SIZE = 64;
 }
