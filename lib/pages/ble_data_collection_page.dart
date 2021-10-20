@@ -28,7 +28,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
   bool _isRecording = false;
-  MeasurementsCollector _measurementsCollector = new MeasurementsCollector();
+  MeasurementsCollector _measurementsCollector =
+      new MeasurementsCollector(/* writeToFile=*/ true);
 
   @override
   Widget build(BuildContext context) {
@@ -311,7 +312,8 @@ class _DataVisualizerState extends State<DataVisualizer>
   _DataVisualizerState(this.collector);
 
   Map<String, GloveMeasurement> measurements = Map();
-
+  double elapsedTimeMs = 0;
+  int measurementsAmount = 0;
   @override
   void initState() {
     super.initState();
@@ -335,7 +337,7 @@ class _DataVisualizerState extends State<DataVisualizer>
               child: Text(
                   "Guante: ${value.deviceId} - Event number: ${value.eventNum} "
                   "- Frequency: "
-                  "${(1000 / (value.elapsedTimeMs)).toStringAsFixed(2)}Hz")))
+                  "${(1000 * measurementsAmount / elapsedTimeMs).toStringAsFixed(2)}Hz")))
           .toList(),
     );
   }
@@ -343,6 +345,8 @@ class _DataVisualizerState extends State<DataVisualizer>
   @override
   void onMeasurement(GloveMeasurement measurement) {
     setState(() {
+      elapsedTimeMs += measurement.elapsedTimeMs;
+      measurementsAmount++;
       measurements[measurement.deviceId] = measurement;
     });
   }

@@ -11,10 +11,17 @@ class MeasurementsCollector {
   static const String TAG = "MeasurementsCollector";
 
   List<StreamSubscription<List<int>>> _subscriptions;
-  MeasurementsWriter _measurementsWriter = MeasurementsWriter();
+  MeasurementsWriter? _measurementsWriter;
   List<MeasurementsListener> _listeners = [];
-  MeasurementsCollector() : this._subscriptions = [] {
-    _listeners.add(_measurementsWriter);
+  MeasurementsCollector(bool writeToFile) : this._subscriptions = [] {
+    if (writeToFile) {
+      _measurementsWriter = MeasurementsWriter();
+      _listeners.add(_measurementsWriter!);
+    }
+  }
+
+  void startTestCollection(Map<BluetoothDevice, BluetoothCharacteristic> dataCollectionCharacteristics) {
+    startCollecting("Test", dataCollectionCharacteristics);
   }
 
   /// Starts collecting measurements from all the connected devices.
@@ -26,7 +33,7 @@ class MeasurementsCollector {
       Map<BluetoothDevice, BluetoothCharacteristic>
           dataCollectionCharacteristics) async {
     _resetState();
-    _measurementsWriter.initialize(dataCollectionCharacteristics.keys, gesture);
+    _measurementsWriter?.initialize(dataCollectionCharacteristics.keys, gesture);
     for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry
         in dataCollectionCharacteristics.entries) {
       BluetoothDevice device = entry.key;
@@ -46,13 +53,13 @@ class MeasurementsCollector {
   }
 
   void saveCollection() {
-    _measurementsWriter.saveCollection();
+    _measurementsWriter?.saveCollection();
     _resetState();
   }
 
   /// Discards an ongoing collection, removing the generated files.
   void discardCollection() {
-    _measurementsWriter.discardCollection();
+    _measurementsWriter?.discardCollection();
     _resetState();
   }
 
@@ -87,7 +94,7 @@ class MeasurementsCollector {
                 parsedMeasurements.elapsedTime,
                 deviceId,
                 parsedMeasurements.values);
-        developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
+        // developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
         _notifyListeners(gloveMeasurement);
       } catch (e) {
         developer
