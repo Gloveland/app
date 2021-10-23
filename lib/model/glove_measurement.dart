@@ -1,4 +1,14 @@
 
+import 'package:flutter/material.dart';
+
+enum FingerValue {
+  Pinky,
+  Ring,
+  Middle,
+  Index,
+  Thumb
+}
+
 class GloveMeasurement {
   static const int measurementsNumber = 9;
   static const String pinkyLetter = "P";
@@ -58,6 +68,27 @@ class GloveMeasurement {
     return new GloveMeasurement(deviceId, eventNum, elapsedTime, pinky!, ring!, middle!, index!, thumb!);
   }
 
+  Finger getFinger(FingerValue fingerName) {
+    switch (fingerName) {
+      case FingerValue.Pinky:
+        return pinky;
+      case FingerValue.Ring:
+        return ring;
+      case FingerValue.Middle:
+        return middle;
+      case FingerValue.Index:
+        return index;
+      case FingerValue.Thumb:
+        return thumb;
+    }
+  }
+
+}
+
+enum SensorValue {
+  Acceleration,
+  Gyroscope,
+  Inclination
 }
 
 class Finger {
@@ -82,8 +113,19 @@ class Finger {
         gyro = Gyro(m[3],m[4], m[5]),
         inclination = Inclination(m[6],m[7], m[8]);
 
+  Vector3 getSensorValues(SensorValue sensorName) {
+    switch (sensorName) {
+      case SensorValue.Acceleration:
+        return acc;
+      case SensorValue.Gyroscope:
+        return gyro;
+      case SensorValue.Inclination:
+        return inclination;
+    }
+  }
 }
-class Acceleration {
+
+class Acceleration with Vector3 {
   final double x;
   final double y;
   final double z;
@@ -98,9 +140,24 @@ class Acceleration {
     'y': y,
     'z': z,
   };
+
+  @override
+  double getX() => x;
+  @override
+  String getXLabel() => 'x';
+
+  @override
+  double getY() => y;
+  @override
+  String getYLabel() => 'y';
+
+  @override
+  double getZ() => z;
+  @override
+  String getZLabel() => 'z';
 }
 
-class Gyro {
+class Gyro with Vector3 {
   final double x;
   final double y;
   final double z;
@@ -114,9 +171,24 @@ class Gyro {
     'y': y,
     'z': z,
   };
+
+  @override
+  double getX() => x;
+  @override
+  String getXLabel() => 'x';
+
+  @override
+  double getY() => y;
+  @override
+  String getYLabel() => 'y';
+
+  @override
+  double getZ() => z;
+  @override
+  String getZLabel() => 'z';
 }
 
-class Inclination {
+class Inclination with Vector3 {
   final double roll;
   final double pitch;
   final double yaw;
@@ -131,6 +203,29 @@ class Inclination {
     'yaw': yaw,
   };
 
+  @override
+  double getX() => roll;
+  @override
+  String getXLabel() => 'roll';
+
+  @override
+  double getY() => pitch;
+  @override
+  String getYLabel() => 'pitch';
+
+  @override
+  double getZ() => yaw;
+  @override
+  String getZLabel() => 'yaw';
 }
 
+abstract class Vector3 {
+  double getX();
+  double getY();
+  double getZ();
+
+  String getXLabel();
+  String getYLabel();
+  String getZLabel();
+}
 
