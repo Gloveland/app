@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/datacollection/measurements_listener.dart';
@@ -32,7 +33,7 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
         builder: (context, backend, _) => SafeArea(
                 child: Scaffold(
               appBar: AppBar(
-                title: Text('Dispositivos'),
+                title: Text('Visualización'),
               ),
               drawer: NavDrawer(),
               body: Padding(
@@ -50,7 +51,7 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
                           items: FingerValue.values
                               .map((value) => DropdownMenuItem<FingerValue>(
                                     value: value,
-                                    child: Text(value.toString()),
+                                    child: Text(value.spanishName()),
                                   ))
                               .toList()),
                       DropdownButton<SensorValue>(
@@ -63,14 +64,17 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
                           items: SensorValue.values
                               .map((value) => DropdownMenuItem<SensorValue>(
                                     value: value,
-                                    child: Text(value.toString()),
+                                    child: Text(value.spanishName()),
                                   ))
                               .toList()),
-                      MeasurementsChart(
-                          key: Key("$_finger-$_sensor"),
-                          measurementsCollector: _measurementsCollector,
-                          finger: _finger,
-                          sensor: _sensor)
+                      Expanded(
+                        child:MeasurementsChart(
+                            key: Key("$_finger-$_sensor"),
+                            measurementsCollector: _measurementsCollector,
+                            finger: _finger,
+                            sensor: _sensor)
+                      )
+
                     ],
                   )),
               floatingActionButton: FloatingActionButton(
@@ -158,6 +162,7 @@ class _MeasurementsChartState extends State<MeasurementsChart>
     return SfCartesianChart(
       series: <ChartSeries>[
         LineSeries<SeriesEntry, double>(
+          name: sensor.getXLabel(),
             dataSource: _measurementsX,
             xValueMapper: (SeriesEntry measurement, _) => measurement.x,
             yValueMapper: (SeriesEntry measurement, _) => measurement.y,
@@ -165,6 +170,7 @@ class _MeasurementsChartState extends State<MeasurementsChart>
               _chartSeriesControllerX = controller;
             }),
         LineSeries<SeriesEntry, double>(
+          name: sensor.getYLabel(),
             dataSource: _measurementsY,
             xValueMapper: (SeriesEntry measurement, _) => measurement.x,
             yValueMapper: (SeriesEntry measurement, _) => measurement.y,
@@ -172,6 +178,7 @@ class _MeasurementsChartState extends State<MeasurementsChart>
               _chartSeriesControllerY = controller;
             }),
         LineSeries<SeriesEntry, double>(
+          name: sensor.getZLabel(),
             dataSource: _measurementsZ,
             xValueMapper: (SeriesEntry measurement, _) => measurement.x,
             yValueMapper: (SeriesEntry measurement, _) => measurement.y,
@@ -179,6 +186,10 @@ class _MeasurementsChartState extends State<MeasurementsChart>
               _chartSeriesControllerZ = controller;
             }),
       ],
+      legend: Legend(isVisible: true, position: LegendPosition.bottom),
+      primaryXAxis: NumericAxis(
+        numberFormat: NumberFormat("##,###s")
+      )
     );
   }
 
