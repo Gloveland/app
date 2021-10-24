@@ -79,7 +79,6 @@ class MeasurementsCollector {
 
   void handleRawData(data, EventSink sink) {
     String rawMeasurement = new String.fromCharCodes(data);
-    developer.log("Incoming data: $rawMeasurement", name: TAG);
     ParsedMeasurement? parsedMeasurement =
         _parseRawMeasurement(rawMeasurement);
     if (parsedMeasurement == null) {
@@ -93,6 +92,8 @@ class MeasurementsCollector {
       BluetoothCharacteristic dataCollectionCharacteristic) async {
     StreamTransformer<List<int>,ParsedMeasurement> imuSensorMeasurementsTransformer =
         new StreamTransformer.fromHandlers(handleData: this.handleRawData);
+
+    InclinationCalculator inclinationCalculator = InclinationCalculator();
 
     var subscription = dataCollectionCharacteristic.value
         .transform(imuSensorMeasurementsTransformer)
@@ -112,7 +113,7 @@ class MeasurementsCollector {
         GloveMeasurement gloveMeasurement =
             GloveMeasurement.fromFingerMeasurementsList(
                 deviceId,
-                measurementList);
+                measurementList, inclinationCalculator);
         developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
         _notifyListeners(gloveMeasurement);
       } catch (e) {

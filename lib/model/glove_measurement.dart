@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 
 enum FingerValue {
@@ -66,19 +68,25 @@ class GloveMeasurement {
   };
 
 
-  static fromFingerMeasurementsList(String deviceId, List<ParsedMeasurement> fingerMeasurements) {
+  static fromFingerMeasurementsList(String deviceId, List<ParsedMeasurement> fingerMeasurements, InclinationCalculator calculator) {
     Map<String, Finger> measurementsMap = new Map();
 
     for (final item in fingerMeasurements) {
-      measurementsMap[item.fingerFistLetter] = Finger.fromList(item.values);
+      var acc = Acceleration(item.values[0],item.values[1], item.values[2]);
+      var gyro = Gyro(item.values[3],item.values[4], item.values[5]);
+      var inclination = calculator.calculateInclination(acc, gyro, item.elapsedTime);
+      Finger finger = new Finger(acc, gyro, inclination);
+      measurementsMap[item.fingerFistLetter] = finger;
     }
     Finger? pinky = measurementsMap[pinkyLetter];
     Finger? ring = measurementsMap[ringLetter];
     Finger? middle = measurementsMap[middleLetter];
     Finger? index = measurementsMap[indexLetter];
     Finger? thumb = measurementsMap[thumbLetter];
+
     var elapsedTime = fingerMeasurements.first.elapsedTime;
     var eventNum = fingerMeasurements.first.eventNumber;
+
     return new GloveMeasurement(deviceId, eventNum, elapsedTime, pinky!, ring!, middle!, index!, thumb!);
   }
 
@@ -165,10 +173,6 @@ class Finger {
     'inclination': inclination.toJson(),
   };
 
-  Finger.fromList(List<double> m):
-        acc = Acceleration(m[0],m[1], m[2]),
-        gyro = Gyro(m[3],m[4], m[5]),
-        inclination = Inclination(0,0, 0);
 
   Vector3 getSensorValues(SensorValue sensorName) {
     switch (sensorName) {
@@ -183,6 +187,7 @@ class Finger {
 }
 
 class Acceleration with Vector3 {
+  static const double PI = 3.1415926535897932384626433832795;
   final double x;
   final double y;
   final double z;
@@ -206,6 +211,22 @@ class Acceleration with Vector3 {
 
   @override
   double getZ() => z;
+
+  double calculateAngleX() {
+    double divisor = sqrt(pow(getX(), 2) + pow(getZ(), 2));
+    if (divisor == 0) {  // probably sensor reading error
+      return 0;
+    }
+    return (atan(getY() / divisor) * 180 / PI);
+  }
+
+  double calculateAngleY() {
+    double divisor = sqrt(pow(getY(), 2) + pow(getZ(), 2));
+    if (divisor == 0) {  // probably sensor reading error
+      return 0;
+    }
+    return (atan(-1 * getX() / divisor) * 180 / PI);
+  }
 }
 
 class Gyro with Vector3 {
@@ -231,6 +252,42 @@ class Gyro with Vector3 {
 
   @override
   double getZ() => z;
+}
+
+class InclinationCalculator{
+
+  Inclination previousInclination;
+
+  InclinationCalculator(): previousInclination = new Inclination(0, 0, 0);
+
+  Inclination calculateInclination(Acceleration currentAcc, Gyro currentGyro, double elapsedTime){
+    double row =
+    this.previousInclination.getX() + currentGyro.getX() * elapsedTime;
+    double pitch =
+    this.previousInclination.getY() + currentGyro.getY() * elapsedTime;
+    double yaw =
+    this.previousInclination.getZ() + currentGyro.getZ() * elapsedTime;
+
+    double inclinationFromAccX = currentAcc.calculateAngleX();
+    double inclinationFromAccY = currentAcc.calculateAngleY();
+
+    if ((inclinationFromAccX- row).abs() > 5.0) {
+      row = inclinationFromAccX;
+    }
+    if ((inclinationFromAccY - pitch).abs() > 5.0) {
+      pitch = inclinationFromAccY;
+    }
+
+    row = double.parse((row).toStringAsFixed(2));
+    pitch = double.parse((pitch).toStringAsFixed(2));
+    yaw = double.parse((yaw).toStringAsFixed(2));
+
+    this.previousInclination = Inclination(row, pitch, yaw);
+
+    return this.previousInclination;
+
+  }
+
 }
 
 class Inclination with Vector3 {
