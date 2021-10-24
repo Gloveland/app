@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lsa_gloves/pages/ble_data_collection_page.dart';
 import 'package:lsa_gloves/pages/ble_devices_connection_page.dart';
+import 'package:lsa_gloves/pages/data_visualization_page.dart';
 import 'package:lsa_gloves/pages/file_manager_page.dart';
 import 'package:lsa_gloves/pages/interpretation_page.dart';
 
@@ -43,6 +44,14 @@ class NavDrawer extends StatelessWidget {
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => BleDataCollectionPage(),
+                maintainState: false));
+          }),
+      ListTile(
+          leading: Icon(Icons.multiline_chart),
+          title: const Text("Visualizar data"),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => DataVisualizationPage(),
                 maintainState: false));
           }),
       ListTile(

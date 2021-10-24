@@ -8,7 +8,6 @@ import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/datacollection/measurements_listener.dart';
 import 'package:lsa_gloves/model/glove_measurement.dart';
-import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_timer/simple_timer.dart';
@@ -29,7 +28,9 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
   bool _isRecording = false;
-  MeasurementsCollector _measurementsCollector = new MeasurementsCollector();
+  MeasurementsCollector _measurementsCollector =
+      new MeasurementsCollector(/* writeToFile=*/ true);
+  int _collections = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +38,6 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       appBar: AppBar(
         title: Text('LSA Gloves'),
       ),
-      drawer: NavDrawer(),
       body: Center(
           child: Padding(
         padding: EdgeInsets.all(16.0),
@@ -76,7 +76,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                   this.selectedGesture = newValue!;
                 });
               }),
-              DataVisualizer(collector: _measurementsCollector),
+              DataVisualizer(
+                  key: Key("$_collections"), collector: _measurementsCollector),
               Expanded(
                   child: Align(
                       alignment: FractionalOffset.bottomCenter,
@@ -95,6 +96,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   Future<void> onRecordButtonPressed(BluetoothBackend backend) async {
     if (_isRecording) {
       _stopRecording(backend);
+      _collections++;
     } else {
       await Future.wait([
         showDialog(
@@ -105,7 +107,9 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
             .then((value) =>
                 developer.log("CountDown dialog complete", name: TAG))
       ]);
-      _startRecording(backend);
+      setState(() {
+        _startRecording(backend);
+      });
     }
   }
 
@@ -312,7 +316,7 @@ class _DataVisualizerState extends State<DataVisualizer>
 
   _DataVisualizerState(this.collector);
 
-  Map<String, GloveMeasurement> measurements = Map();
+  Map<String, GloveStats> _stats = Map();
 
   @override
   void initState() {
@@ -329,15 +333,14 @@ class _DataVisualizerState extends State<DataVisualizer>
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: measurements.values
-          .map((value) => Container(
+      children: _stats.entries
+          .map((entry) => Container(
               margin: EdgeInsets.only(top: 8),
               width: double.infinity,
               padding: EdgeInsets.all(8),
               child: Text(
-                  "Guante: ${value.deviceId} - Event number: ${value.eventNum} "
-                  "- Frequency: "
-                  "${(1000 / (value.elapsedTimeMs)).toStringAsFixed(2)}Hz")))
+                  "Guante: ${entry.key} - Event number: ${entry.value.eventNumber} "
+                  "- Frequency: ${entry.value.getFrequency().toStringAsFixed(2)}Hz")))
           .toList(),
     );
   }
@@ -345,7 +348,25 @@ class _DataVisualizerState extends State<DataVisualizer>
   @override
   void onMeasurement(GloveMeasurement measurement) {
     setState(() {
-      measurements[measurement.deviceId] = measurement;
+      if (!_stats.containsKey(measurement.deviceId)) {
+        _stats[measurement.deviceId] = GloveStats();
+      } else {
+        _stats[measurement.deviceId]?.update(measurement.elapsedTimeMs);
+      }
     });
+  }
+}
+
+class GloveStats {
+  double accumulatedTimeMs = 0;
+  int eventNumber = 0;
+
+  void update(double elapsedTimeMs) {
+    eventNumber++;
+    accumulatedTimeMs = accumulatedTimeMs + elapsedTimeMs;
+  }
+
+  double getFrequency() {
+    return 1000 * eventNumber / accumulatedTimeMs;
   }
 }
