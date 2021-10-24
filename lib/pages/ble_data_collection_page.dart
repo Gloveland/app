@@ -28,7 +28,8 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   late List<String> gestures = getGestureList(selectedCategory);
   late String selectedGesture = gestures[0];
   bool _isRecording = false;
-  MeasurementsCollector _measurementsCollector = new MeasurementsCollector();
+  MeasurementsCollector _measurementsCollector =
+      new MeasurementsCollector(/* writeToFile=*/ true);
   int _collections = 0;
 
   @override

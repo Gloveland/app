@@ -1,4 +1,29 @@
 
+enum FingerValue {
+  Pinky,
+  Ring,
+  Middle,
+  Index,
+  Thumb
+}
+
+extension FingerValueTranslation on FingerValue {
+  String spanishName() {
+    switch (this) {
+      case FingerValue.Pinky:
+        return "Meñique";
+      case FingerValue.Ring:
+        return "Anular";
+      case FingerValue.Middle:
+        return "Medio";
+      case FingerValue.Index:
+        return "Índice";
+      case FingerValue.Thumb:
+        return "Pulgar";
+    }
+  }
+}
+
 class GloveMeasurement {
   static const int measurementsNumber = 9;
   static const String pinkyLetter = "P";
@@ -58,6 +83,70 @@ class GloveMeasurement {
     return new GloveMeasurement(deviceId, eventNum, elapsedTime, pinky!, ring!, middle!, index!, thumb!);
   }
 
+  Finger getFinger(FingerValue fingerName) {
+    switch (fingerName) {
+      case FingerValue.Pinky:
+        return pinky;
+      case FingerValue.Ring:
+        return ring;
+      case FingerValue.Middle:
+        return middle;
+      case FingerValue.Index:
+        return index;
+      case FingerValue.Thumb:
+        return thumb;
+    }
+  }
+}
+
+enum SensorValue {
+  Acceleration,
+  Gyroscope,
+  Inclination
+}
+
+extension SensorValueExtension on SensorValue {
+  String spanishName() {
+    switch (this) {
+      case SensorValue.Acceleration:
+        return "Acelerómetro";
+      case SensorValue.Gyroscope:
+        return "Giroscopio";
+      case SensorValue.Inclination:
+        return "Inclinación";
+    }
+  }
+
+  String getXLabel() {
+    switch (this) {
+      case SensorValue.Acceleration:
+        return "x (m/s²)";
+      case SensorValue.Gyroscope:
+        return "x (º/s)";
+      case SensorValue.Inclination:
+        return "roll";
+    }
+  }
+  String getYLabel() {
+    switch (this) {
+      case SensorValue.Acceleration:
+        return "y (m/s²)";
+      case SensorValue.Gyroscope:
+        return "y (º/s)";
+      case SensorValue.Inclination:
+        return "pitch";
+    }
+  }
+  String getZLabel() {
+    switch (this) {
+      case SensorValue.Acceleration:
+        return "z (m/s²)";
+      case SensorValue.Gyroscope:
+        return "z (º/s)";
+      case SensorValue.Inclination:
+        return "yaw";
+    }
+  }
 }
 
 class Finger {
@@ -82,8 +171,19 @@ class Finger {
         gyro = Gyro(m[3],m[4], m[5]),
         inclination = Inclination(m[6],m[7], m[8]);
 
+  Vector3 getSensorValues(SensorValue sensorName) {
+    switch (sensorName) {
+      case SensorValue.Acceleration:
+        return acc;
+      case SensorValue.Gyroscope:
+        return gyro;
+      case SensorValue.Inclination:
+        return inclination;
+    }
+  }
 }
-class Acceleration {
+
+class Acceleration with Vector3 {
   final double x;
   final double y;
   final double z;
@@ -98,9 +198,18 @@ class Acceleration {
     'y': y,
     'z': z,
   };
+
+  @override
+  double getX() => x;
+
+  @override
+  double getY() => y;
+
+  @override
+  double getZ() => z;
 }
 
-class Gyro {
+class Gyro with Vector3 {
   final double x;
   final double y;
   final double z;
@@ -114,9 +223,18 @@ class Gyro {
     'y': y,
     'z': z,
   };
+
+  @override
+  double getX() => x;
+
+  @override
+  double getY() => y;
+
+  @override
+  double getZ() => z;
 }
 
-class Inclination {
+class Inclination with Vector3 {
   final double roll;
   final double pitch;
   final double yaw;
@@ -131,6 +249,19 @@ class Inclination {
     'yaw': yaw,
   };
 
+  @override
+  double getX() => roll;
+
+  @override
+  double getY() => pitch;
+
+  @override
+  double getZ() => yaw;
 }
 
+abstract class Vector3 {
+  double getX();
+  double getY();
+  double getZ();
+}
 
