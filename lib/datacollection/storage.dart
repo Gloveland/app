@@ -177,7 +177,7 @@ class SensorMeasurements {
     return true;
   }
 
-  List<double> extractFingerMeasurement(Finger finger) {
+  List<double> extractFingerMeasurement(FingerMeasurements finger) {
     List<double> measurementList = [];
     measurementList.add(finger.acc.x);
     measurementList.add(finger.acc.y);

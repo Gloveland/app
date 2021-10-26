@@ -12,10 +12,12 @@ import 'package:rxdart/rxdart.dart';
 /// the measurements taken from the device.
 class MeasurementsCollector {
   static const String TAG = "MeasurementsCollector";
+  static const String EXPECTED_FINGER_MEASUREMENTS = "PRMIT";
 
   List<StreamSubscription<List<ParsedMeasurement>>> _subscriptions;
   MeasurementsWriter? _measurementsWriter;
   List<MeasurementsListener> _listeners = [];
+
   MeasurementsCollector(bool writeToFile) : this._subscriptions = [] {
     if (writeToFile) {
       _measurementsWriter = MeasurementsWriter();
@@ -23,7 +25,9 @@ class MeasurementsCollector {
     }
   }
 
-  void startTestCollection(Map<BluetoothDevice, BluetoothCharacteristic> dataCollectionCharacteristics) {
+  void startTestCollection(
+      Map<BluetoothDevice, BluetoothCharacteristic>
+          dataCollectionCharacteristics) {
     startCollecting("Test", dataCollectionCharacteristics);
   }
 
@@ -36,7 +40,8 @@ class MeasurementsCollector {
       Map<BluetoothDevice, BluetoothCharacteristic>
           dataCollectionCharacteristics) async {
     _resetState();
-    _measurementsWriter?.initialize(dataCollectionCharacteristics.keys, gesture);
+    _measurementsWriter?.initialize(
+        dataCollectionCharacteristics.keys, gesture);
     for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry
         in dataCollectionCharacteristics.entries) {
       BluetoothDevice device = entry.key;
@@ -79,8 +84,7 @@ class MeasurementsCollector {
 
   void handleRawData(data, EventSink sink) {
     String rawMeasurement = new String.fromCharCodes(data);
-    ParsedMeasurement? parsedMeasurement =
-        _parseRawMeasurement(rawMeasurement);
+    ParsedMeasurement? parsedMeasurement = _parseRawMeasurement(rawMeasurement);
     if (parsedMeasurement == null) {
       developer.log("Measurement parsing failed.", name: TAG);
       return;
@@ -90,35 +94,39 @@ class MeasurementsCollector {
 
   void _collectMeasurements(String deviceId,
       BluetoothCharacteristic dataCollectionCharacteristic) async {
-    StreamTransformer<List<int>,ParsedMeasurement> imuSensorMeasurementsTransformer =
+    StreamTransformer<List<int>, ParsedMeasurement>
+        imuSensorMeasurementsTransformer =
         new StreamTransformer.fromHandlers(handleData: this.handleRawData);
 
     InclinationCalculator inclinationCalculator = InclinationCalculator();
 
     var subscription = dataCollectionCharacteristic.value
         .transform(imuSensorMeasurementsTransformer)
-        .transform(ScanStreamTransformer<ParsedMeasurement, List<ParsedMeasurement>>((measurementList, parsedMeasurement, i) {
-          if(measurementList!.length < 5 ){
-            var fingerLetter = parsedMeasurement.fingerFistLetter;
-            if(expectedFingerOrder(measurementList.length) == fingerLetter){
+        .transform(
+            ScanStreamTransformer<ParsedMeasurement, List<ParsedMeasurement>>(
+                (measurementList, parsedMeasurement, i) {
+          if (measurementList!.length < 5) {
+            var fingerLetter = parsedMeasurement.fingerFirstLetter;
+            if (getExpectedFingerLetterAt(measurementList.length) ==
+                fingerLetter) {
               measurementList.add(parsedMeasurement);
               return measurementList;
             }
           }
           return [];
-    }, []))
-    .where((measurementList) => measurementList.length == 5)
+        }, []))
+        .where((measurementList) => measurementList.length == 5)
         .listen((measurementList) {
       try {
         GloveMeasurement gloveMeasurement =
             GloveMeasurement.fromFingerMeasurementsList(
-                deviceId,
-                measurementList, inclinationCalculator);
+                deviceId, measurementList, inclinationCalculator);
         developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
         _notifyListeners(gloveMeasurement);
       } catch (e) {
-        developer
-            .log('cant create GloveMeasurements : $measurementList  error : ${e.toString()}', name: TAG);
+        developer.log(
+            'cant create GloveMeasurements : $measurementList  error : ${e.toString()}',
+            name: TAG);
       }
     }, onError: (err) {
       developer.log("Error: ${err.toString()}", name: TAG);
@@ -151,8 +159,7 @@ class MeasurementsCollector {
     double elapsedTime = double.parse(fingerMeasurements.removeAt(0));
     String fingerFirstLetter = fingerMeasurements.removeAt(0);
     var values = fingerMeasurements.map((val) => double.parse(val)).toList();
-    return ParsedMeasurement(
-        eventNum, elapsedTime, fingerFirstLetter,values);
+    return ParsedMeasurement(eventNum, elapsedTime, fingerFirstLetter, values);
   }
 
   void _notifyListeners(GloveMeasurement measurement) {
@@ -164,35 +171,21 @@ class MeasurementsCollector {
   @override
   void dispose() {
     this._resetState();
-
   }
 
-  expectedFingerOrder(int index) {
-    switch(index){
-      case 0:
-        return 'P';
-      case 1:
-        return 'R';
-      case 2:
-        return 'M';
-      case 3:
-        return 'I';
-      case 4:
-        return 'T';
-      default:
-        return '';
-    }
+  String getExpectedFingerLetterAt(int index) {
+    return EXPECTED_FINGER_MEASUREMENTS[index];
   }
 }
 
 class ParsedMeasurement {
   final int eventNumber;
   final double elapsedTime;
-  final String fingerFistLetter;
+  final String fingerFirstLetter;
   final List<double> values;
 
   ParsedMeasurement(
-      this.eventNumber, this.elapsedTime, this.fingerFistLetter, this.values);
+      this.eventNumber, this.elapsedTime, this.fingerFirstLetter, this.values);
 
   @override
   String toString() {
