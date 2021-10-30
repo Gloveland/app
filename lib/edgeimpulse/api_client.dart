@@ -19,9 +19,7 @@ class EdgeImpulseApiClient {
         //always v1
         alg: "none",
         //the algorithm used to sign this file. Either HS256 (HMAC-SHA256) or none (required)
-        iat: datetime
-            .toUtc()
-            .millisecondsSinceEpoch // date when the file was created in seconds since epoch
+        iat:  datetime.toUtc().millisecondsSinceEpoch ~/1000.0// date when the file was created in seconds since epoch
         );
 
     double averageIntervalInMilliseconds = sensorMeasurements.intervalSumInMillis / double.parse("${sensorMeasurements.values.length}");
@@ -32,7 +30,7 @@ class EdgeImpulseApiClient {
         deviceType: "ESP32",
         // exact model of the device
         //the frequency of the data in this file (in milliseconds). E.g. for 100Hz fill in 10 (new data every 10 ms.)
-        intervalMs: averageIntervalInMilliseconds,
+        intervalMs: averageIntervalInMilliseconds.toInt(),
         //mpu6050 Default Internal 8MHz oscillator (register 0x6B = 0) equals to  1.25 milliseconds
         sensors: EdgeImpulseApiClient.sensorMeasurementNames,
         values: sensorMeasurements.values);
@@ -205,7 +203,7 @@ class Protected {
 class Payload {
   final String deviceName;
   final String deviceType;
-  final double intervalMs;
+  final int intervalMs;
   final List<SensorParameter> sensors;
   final List<List<double>> values;
 
