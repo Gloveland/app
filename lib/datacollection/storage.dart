@@ -70,10 +70,8 @@ class DeviceMeasurementsFile {
   static Future<DeviceMeasurementsFile> create(
       String deviceName, String deviceId, String word) async {
     var creationDate = DateTime.now();
-    var values = <List<double>>[];
-    double intervalSumInMillis = 0.0;
     SensorMeasurements json = new SensorMeasurements(
-        deviceName, deviceId, word,  values, intervalSumInMillis);
+        deviceName, deviceId, word,  <List<double>>[], <double>[]);
     String datetimeStr = format(creationDate);
     var filename = "${deviceName.substring(0, 1)}_${word}_$datetimeStr";
     var file = await new GloveEventsStorage().createFile(filename);
