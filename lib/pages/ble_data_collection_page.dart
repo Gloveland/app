@@ -351,7 +351,7 @@ class _DataVisualizerState extends State<DataVisualizer>
       if (!_stats.containsKey(measurement.deviceId)) {
         _stats[measurement.deviceId] = GloveStats();
       } else {
-        _stats[measurement.deviceId]?.update(measurement.elapsedTimeMs);
+        _stats[measurement.deviceId]?.update(measurement.millis);
       }
     });
   }

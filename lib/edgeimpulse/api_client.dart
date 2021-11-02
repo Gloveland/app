@@ -52,7 +52,7 @@ class EdgeImpulseApiClient {
       request.headers.set('x-api-key', secret.rightGloveApiKey);
     }
     request.headers.set('x-file-name', fileName);
-    request.headers.set('x-label', sensorMeasurements.word);
+      request.headers.set('x-label', sensorMeasurements.word);
     request.add(utf8.encode(json.encode(edgeImpulseBody)));
     HttpClientResponse response = await request.close();
     String reply = await response.transform(utf8.decoder).join();
