@@ -30,7 +30,7 @@ class EdgeImpulseApiClient {
         deviceType: "ESP32",
         // exact model of the device
         //the frequency of the data in this file (in milliseconds). E.g. for 100Hz fill in 10 (new data every 10 ms.)
-        intervalMs: averageIntervalInMilliseconds.toInt(),
+        intervalMs: 16,
         //mpu6050 Default Internal 8MHz oscillator (register 0x6B = 0) equals to  1.25 milliseconds
         sensors: EdgeImpulseApiClient.sensorMeasurementNames,
         values: sensorMeasurements.values);

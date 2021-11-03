@@ -214,6 +214,7 @@ class SensorMeasurements {
       'device_name': deviceName,
       'device_id': deviceId,
       'word': word,
+      'measurements_amount': values.length,
       'values': values,
       'interval_sum_in_millis': intervalSumInMillis,
     };
