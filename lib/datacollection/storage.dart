@@ -165,11 +165,11 @@ class SensorMeasurements {
       return false;
     }
     List<double> measurementList = [];
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.thumb));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.pinky));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.ring));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.middle));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.index));
-    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.thumb));
     this.values.add(measurementList);
     this.millis.add(gloveMeasurement.millis);
     return true;
