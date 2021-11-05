@@ -320,17 +320,20 @@ class _DataVisualizerState extends State<DataVisualizer>
   _DataVisualizerState(this.collector);
 
   Map<String, GloveStats> _stats = Map();
+  late Stopwatch _stopwatch;
 
   @override
   void initState() {
     super.initState();
     this.collector.subscribeListener(this);
+    _stopwatch = Stopwatch();
   }
 
   @override
   void dispose() {
     super.dispose();
     this.collector.unsubscribeListener(this);
+    _stopwatch.stop();
   }
 
   @override
@@ -353,20 +356,24 @@ class _DataVisualizerState extends State<DataVisualizer>
     setState(() {
       if (!_stats.containsKey(measurement.deviceId)) {
         _stats[measurement.deviceId] = GloveStats();
+        _stopwatch.reset();
+        _stopwatch.start();
       } else {
-        _stats[measurement.deviceId]?.update(measurement.elapsedTimeMs);
+        // _stats[measurement.deviceId]?.update(measurement.elapsedTimeMs);
+        int elapsed = _stopwatch.elapsedMilliseconds;
+        _stats[measurement.deviceId]?.update(elapsed);
       }
     });
   }
 }
 
 class GloveStats {
-  double accumulatedTimeMs = 0;
+  int accumulatedTimeMs = 0;
   int eventNumber = 0;
 
-  void update(double elapsedTimeMs) {
+  void update(int elapsedTimeMs) {
     eventNumber++;
-    accumulatedTimeMs = accumulatedTimeMs + elapsedTimeMs;
+    accumulatedTimeMs = elapsedTimeMs;
   }
 
   double getFrequency() {
