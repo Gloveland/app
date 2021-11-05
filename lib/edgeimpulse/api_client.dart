@@ -21,8 +21,12 @@ class EdgeImpulseApiClient {
         //the algorithm used to sign this file. Either HS256 (HMAC-SHA256) or none (required)
         iat:  datetime.toUtc().millisecondsSinceEpoch ~/1000.0// date when the file was created in seconds since epoch
         );
-
-    double averageIntervalInMilliseconds = sensorMeasurements.intervalSumInMillis / double.parse("${sensorMeasurements.values.length}");
+    double elapsedTimeSum = 0.0;
+    for(var i = sensorMeasurements.millis.length -1 ; i > 0 ; i--){
+      var elapsedTime = sensorMeasurements.millis[i] - sensorMeasurements.millis[i-1];
+      elapsedTimeSum += elapsedTime ;
+    }
+    double averageIntervalInMilliseconds = elapsedTimeSum  / (sensorMeasurements.values.length * 1.0);
     developer.log("averageIntervalInMilliseconds: $averageIntervalInMilliseconds", name: TAG);
     var payload = Payload(
         deviceName: sensorMeasurements.deviceId,
@@ -52,7 +56,7 @@ class EdgeImpulseApiClient {
       request.headers.set('x-api-key', secret.rightGloveApiKey);
     }
     request.headers.set('x-file-name', fileName);
-    request.headers.set('x-label', sensorMeasurements.word);
+      request.headers.set('x-label', sensorMeasurements.word);
     request.add(utf8.encode(json.encode(edgeImpulseBody)));
     HttpClientResponse response = await request.close();
     String reply = await response.transform(utf8.decoder).join();

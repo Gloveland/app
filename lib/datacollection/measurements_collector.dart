@@ -91,7 +91,7 @@ class MeasurementsCollector {
         GloveMeasurement gloveMeasurement =
             GloveMeasurement.fromFingerMeasurementsList(
                 parsedMeasurements.eventNumber,
-                parsedMeasurements.elapsedTime,
+                parsedMeasurements.millis,
                 deviceId,
                 parsedMeasurements.values);
         // developer.log('map to -> ${gloveMeasurement.toJson().toString()}');
@@ -138,8 +138,8 @@ class MeasurementsCollector {
       return null;
     }
     int eventNum = int.parse(fingerMeasurements.removeAt(0));
-    double elapsedTime = double.parse(fingerMeasurements.removeAt(0));
-    return _ParsedMeasurements(eventNum, elapsedTime,  fingerMeasurements);
+    double millis = double.parse(fingerMeasurements.removeAt(0));
+    return _ParsedMeasurements(eventNum, millis,  fingerMeasurements);
   }
 
   void _notifyListeners(GloveMeasurement measurement) {
@@ -151,10 +151,10 @@ class MeasurementsCollector {
 
 class _ParsedMeasurements {
   final int eventNumber;
-  final double elapsedTime;
+  final double millis;
   final List<String> values;
 
-  _ParsedMeasurements(this.eventNumber, this.elapsedTime, this.values);
+  _ParsedMeasurements(this.eventNumber, this.millis, this.values);
 
   @override
   String toString() {
