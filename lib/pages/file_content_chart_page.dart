@@ -134,9 +134,9 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
     double initialTimestamp = 0.0;
     for (var i = 0; i < this._measurements.values.length; i++) {
       if (i == 0) {
-        initialTimestamp = this._measurements.timestamps[i] as double;
+        initialTimestamp = this._measurements.timestamps[i] * 1.0;
       }
-      var timestamp = (this._measurements.timestamps[i] - initialTimestamp);
+      var timestamp = (this._measurements.timestamps[i] - initialTimestamp)  * 1.0;
       var fingerValues = getFingerValues(this._measurements.values[i]);
       var sensorValues = this.getSensorValues(fingerValues);
       _measurementsX.add(SeriesEntry(timestamp, sensorValues.getX()));
