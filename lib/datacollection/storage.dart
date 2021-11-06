@@ -71,7 +71,7 @@ class DeviceMeasurementsFile {
       String deviceName, String deviceId, String word) async {
     var creationDate = DateTime.now();
     SensorMeasurements json = new SensorMeasurements(
-        deviceName, deviceId, word,  <List<double>>[], <double>[]);
+        deviceName, deviceId, word,  <List<double>>[], <int>[]);
     String datetimeStr = format(creationDate);
     var filename = "${deviceName.substring(0, 1)}_${word}_$datetimeStr";
     var file = await new GloveEventsStorage().createFile(filename);
@@ -153,11 +153,11 @@ class SensorMeasurements {
   final String deviceName;
   final String deviceId;
   final String word;
-  final List<double> millis;
+  final List<int> timestamps;
   final List<List<double>> values;
 
   SensorMeasurements(this.deviceName, this.deviceId, this.word,this.values,
-     this.millis);
+     this.timestamps);
 
   bool add(GloveMeasurement gloveMeasurement) {
     if (gloveMeasurement.deviceId != this.deviceId) {
@@ -171,7 +171,7 @@ class SensorMeasurements {
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.middle));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.index));
     this.values.add(measurementList);
-    this.millis.add(gloveMeasurement.millis);
+    this.timestamps.add(gloveMeasurement.timestampMillis);
     return true;
   }
 
@@ -191,7 +191,7 @@ class SensorMeasurements {
 
   factory SensorMeasurements.fromJson(dynamic json) {
     List<List<double>> _values = <List<double>>[];
-    List<double> _millis = <double>[];
+    List<int> _timestamps = <int>[];
 
     if (json['values'] != null) {
       var jsonLists = json['values'] as List;
@@ -200,16 +200,16 @@ class SensorMeasurements {
         return valuesList.map((v) => v as double).toList();
       }).toList();
     }
-    if (json['millis'] != null) {
-      var jsonLists = json['millis'] as List;
-      _millis = jsonLists.map((v) => v as double).toList();
+    if (json['timestamps'] != null) {
+      var jsonLists = json['timestamps'] as List;
+      _timestamps = jsonLists.map((v) => v as int).toList();
     }
     return SensorMeasurements(
       json['device_name'] as String,
       json['device_id'] as String,
       json['word'] as String,
       _values,
-      _millis,
+      _timestamps,
     );
   }
 
@@ -219,7 +219,7 @@ class SensorMeasurements {
       'device_id': deviceId,
       'word': word,
       'values': values,
-      'millis': millis
+      'timestamps': timestamps
     };
   }
 }

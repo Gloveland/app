@@ -22,8 +22,8 @@ class EdgeImpulseApiClient {
         iat:  datetime.toUtc().millisecondsSinceEpoch ~/1000.0// date when the file was created in seconds since epoch
         );
     double elapsedTimeSum = 0.0;
-    for(var i = sensorMeasurements.millis.length -1 ; i > 0 ; i--){
-      var elapsedTime = sensorMeasurements.millis[i] - sensorMeasurements.millis[i-1];
+    for(var i = sensorMeasurements.timestamps.length -1 ; i > 0 ; i--){
+      var elapsedTime = sensorMeasurements.timestamps[i] - sensorMeasurements.timestamps[i-1];
       elapsedTimeSum += elapsedTime ;
     }
     double averageIntervalInMilliseconds = elapsedTimeSum  / (sensorMeasurements.values.length * 1.0);

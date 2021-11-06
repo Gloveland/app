@@ -131,12 +131,12 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
 
   @override
   Widget build(BuildContext context) {
-    var initialTimestamp = 0.0;
+    double initialTimestamp = 0.0;
     for (var i = 0; i < this._measurements.values.length; i++) {
       if (i == 0) {
-        initialTimestamp = this._measurements.millis[i];
+        initialTimestamp = this._measurements.timestamps[i] as double;
       }
-      var timestamp = (this._measurements.millis[i] - initialTimestamp);
+      var timestamp = (this._measurements.timestamps[i] - initialTimestamp);
       var fingerValues = getFingerValues(this._measurements.values[i]);
       var sensorValues = this.getSensorValues(fingerValues);
       _measurementsX.add(SeriesEntry(timestamp, sensorValues.getX()));

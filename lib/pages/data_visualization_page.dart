@@ -196,7 +196,7 @@ class _MeasurementsChartState extends State<MeasurementsChart>
   @override
   void onMeasurement(GloveMeasurement measurement) {
     measurementsBuffer.add(measurement);
-    lastTimestampMs += measurement.millis;
+    lastTimestampMs += measurement.timestampMillis;
     Vector3 sensorValues = measurement.getFinger(finger).getSensorValues(sensor);
     _measurementsX.add(SeriesEntry(lastTimestampMs, sensorValues.getX()));
     _measurementsY.add(SeriesEntry(lastTimestampMs, sensorValues.getY()));

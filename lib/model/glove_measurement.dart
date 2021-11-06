@@ -34,18 +34,18 @@ class GloveMeasurement {
 
   final String deviceId;
   final int eventNum;
-  final double millis;
+  final int timestampMillis;
   final Finger thumb;
   final Finger index;
   final Finger middle;
   final Finger ring;
   final Finger pinky;
 
-  GloveMeasurement(this.deviceId, this.eventNum,this.millis,this.pinky, this.ring, this.middle, this.index, this.thumb);
+  GloveMeasurement(this.deviceId, this.eventNum,this.timestampMillis,this.pinky, this.ring, this.middle, this.index, this.thumb);
 
   GloveMeasurement.fromJson(Map<String, dynamic> json)
   :  deviceId = json['device_id'], eventNum = json['event_num'],
-        millis = json['millis'],
+        timestampMillis = json['timestamp_millis'],
         pinky = Finger.fromJson(json['pinky'] as Map<String, dynamic>),
         ring = Finger.fromJson(json['ring'] as Map<String, dynamic>),
         middle = Finger.fromJson(json['middle'] as Map<String, dynamic>),
@@ -54,7 +54,7 @@ class GloveMeasurement {
 
   Map<String, dynamic> toJson() => {
     'device_id': deviceId,
-    'millis': millis,
+    'timestampMillis': timestampMillis,
     'event_num': eventNum,
     'pinky' : pinky.toJson(),
     'ring': ring.toJson(),
@@ -64,7 +64,7 @@ class GloveMeasurement {
   };
 
 
-  static fromFingerMeasurementsList(int eventNum, double millis, String deviceId, List<String> fingerMeasurements) {
+  static fromFingerMeasurementsList(int eventNum, int timestampMillis, String deviceId, List<String> fingerMeasurements) {
     Map<String, Finger> measurementsMap = new Map();
 
     for (final item in fingerMeasurements) {
@@ -80,7 +80,7 @@ class GloveMeasurement {
     Finger? middle = measurementsMap[middleLetter];
     Finger? index = measurementsMap[indexLetter];
     Finger? thumb = measurementsMap[thumbLetter];
-    return new GloveMeasurement(deviceId, eventNum, millis, pinky!, ring!, middle!, index!, thumb!);
+    return new GloveMeasurement(deviceId, eventNum, timestampMillis, pinky!, ring!, middle!, index!, thumb!);
   }
 
   Finger getFinger(FingerValue fingerName) {
