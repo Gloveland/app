@@ -72,6 +72,8 @@ class _InterpretationsPanelState extends State<InterpretationsPanel> {
           key: Key(entry.key.id.id),
           device: entry.key,
           interpretationCharacteristic: entry.value,
+          measurementsCharacteristic:
+              backend.dataCollectionCharacteristics[entry.key]!,
         ));
       }
       return Column(
@@ -87,24 +89,28 @@ class _InterpretationsPanelState extends State<InterpretationsPanel> {
 class InterpretationWidget extends StatefulWidget {
   final BluetoothDevice device;
   final BluetoothCharacteristic interpretationCharacteristic;
+  final BluetoothCharacteristic measurementsCharacteristic;
 
   const InterpretationWidget(
       {Key? key,
       required this.device,
-      required this.interpretationCharacteristic})
+      required this.interpretationCharacteristic,
+      required this.measurementsCharacteristic})
       : super(key: key);
 
   @override
-  _InterpretationWidgetState createState() =>
-      _InterpretationWidgetState(device, interpretationCharacteristic);
+  _InterpretationWidgetState createState() => _InterpretationWidgetState(
+      device, interpretationCharacteristic, measurementsCharacteristic);
 }
 
 class _InterpretationWidgetState extends State<InterpretationWidget> {
   static final String TAG = "InterpretationWidget";
   final BluetoothDevice device;
   final BluetoothCharacteristic interpretationCharacteristic;
+  final BluetoothCharacteristic dcCharacteristic;
 
-  _InterpretationWidgetState(this.device, this.interpretationCharacteristic);
+  _InterpretationWidgetState(
+      this.device, this.interpretationCharacteristic, this.dcCharacteristic);
 
   @override
   void dispose() {
@@ -130,7 +136,22 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
                 alignment: Alignment.topCenter,
                 color: Theme.of(context).backgroundColor,
                 child: Text("Mac addr: ${device.id.id}")),
-            displayStats()
+            displayStats(),
+            StreamBuilder<List<int>>(
+                stream: dcCharacteristic.value,
+                initialData: [],
+                builder: (c, measurements) {
+                  String msg = "";
+                  if (measurements.hasData) {
+                    msg = new String.fromCharCodes(measurements.data!);
+                  }
+                  return Container(
+                      width: double.infinity,
+                      height: 80,
+                      alignment: Alignment.center,
+                      color: Theme.of(c).backgroundColor,
+                      child: Text(msg));
+                })
           ],
         ));
   }
