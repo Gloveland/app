@@ -7,6 +7,8 @@ import 'package:path/path.dart';
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
 
+import 'file_content_chart_page.dart';
+
 class FileManagerPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -40,10 +42,11 @@ class _FileManagerPage extends State<FileManagerPage> {
                                 leading: IconButton(
                                   icon: Icon(Icons.folder_open_sharp),
                                   onPressed: () async {
+                                    SensorMeasurements measurements = await f.readJsonContent();
                                     Navigator.pushNamed(
                                       context,
-                                      FileContentPage.routeName,
-                                      arguments: f,
+                                      FileContentChartPage.routeName,
+                                      arguments: measurements,
                                     );
                                   },
                                 ),
