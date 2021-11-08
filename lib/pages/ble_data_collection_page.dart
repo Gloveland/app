@@ -202,7 +202,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 
   static List<String> getGestureList(String category) {
     if (category == "Test") {
-      return <String>["up-down", "right-left", "idle"];
+      return <String>["pointing-up", "pointing-front", "pointing-down", "up-down", "right-left", "idle"];
     }
     if (category == "Números") {
       return <String>["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
