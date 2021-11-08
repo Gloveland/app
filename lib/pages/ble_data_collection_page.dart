@@ -77,7 +77,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                 });
               }),
               DataVisualizer(
-                  key: Key("$_collections"), collector: _measurementsCollector),
+                  key: Key("$_collections-$_isRecording"), collector: _measurementsCollector),
               Expanded(
                   child: Align(
                       alignment: FractionalOffset.bottomCenter,
@@ -316,24 +316,22 @@ class DataVisualizer extends StatefulWidget {
 class _DataVisualizerState extends State<DataVisualizer>
     with MeasurementsListener {
   final MeasurementsCollector collector;
+  Map<String, GloveStats> _stats;
 
-  _DataVisualizerState(this.collector);
+  _DataVisualizerState(this.collector):_stats = Map();
 
-  Map<String, GloveStats> _stats = Map();
-  late Stopwatch _stopwatch;
+
 
   @override
   void initState() {
     super.initState();
     this.collector.subscribeListener(this);
-    _stopwatch = Stopwatch();
   }
 
   @override
   void dispose() {
     super.dispose();
     this.collector.unsubscribeListener(this);
-    _stopwatch.stop();
   }
 
   @override
@@ -356,27 +354,39 @@ class _DataVisualizerState extends State<DataVisualizer>
     setState(() {
       if (!_stats.containsKey(measurement.deviceId)) {
         _stats[measurement.deviceId] = GloveStats();
-        _stopwatch.reset();
-        _stopwatch.start();
-      } else {
-        // _stats[measurement.deviceId]?.update(measurement.elapsedTimeMs);
-        int elapsed = _stopwatch.elapsedMilliseconds;
-        _stats[measurement.deviceId]?.update(elapsed);
       }
+      _stats[measurement.deviceId]?.update(measurement.eventNum, measurement.timestampMillis);
     });
   }
 }
 
 class GloveStats {
-  int accumulatedTimeMs = 0;
-  int eventNumber = 0;
+  static const String TAG = 'GloveStats';
+  int initialMs = -1;
+  int accumulatedTimeMs = 1;
+  int eventNumber = 1;
 
-  void update(int elapsedTimeMs) {
+  void update(int gloveEventNum, int timestampMillis) {
+    if(this.initialMs < 0 ){
+      this.initialMs = timestampMillis;
+      developer.log("set initialMs -> $initialMs", name: TAG);
+    }
+    if(gloveEventNum != this.eventNumber ){
+      developer.log("se perdieron eventos ?", name: TAG);
+      developer.log("eventNumber: $eventNumber gloveEventNum: $gloveEventNum", name: TAG);
+    }
     eventNumber++;
-    accumulatedTimeMs = elapsedTimeMs;
+    accumulatedTimeMs = timestampMillis;
   }
 
   double getFrequency() {
-    return 1000 * eventNumber / accumulatedTimeMs;
+    double elapsedTime = ((accumulatedTimeMs - initialMs) * 1.0);
+    developer.log("elapsedTime = $accumulatedTimeMs - $initialMs= $elapsedTime", name: TAG);
+    if(elapsedTime < 1){
+      return 0.0;
+    }
+    double frequency = 1000.0 * eventNumber / elapsedTime;
+    developer.log("frequency= 1000 * $eventNumber /$elapsedTime  = $frequency", name: TAG);
+    return frequency;
   }
 }
