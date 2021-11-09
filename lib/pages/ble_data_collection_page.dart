@@ -161,7 +161,6 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   void _stopRecording(BluetoothBackend bluetoothBackend) async {
     developer.log('stopRecording');
     bluetoothBackend.sendStopCommand();
-
     _isRecording = false;
     showDialog(
         context: context,
@@ -198,10 +197,13 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   }
 
   static List<String> getCategoryList() {
-    return <String>["Números", "Letras", "Saludo"];
+    return <String>["Test", "Números", "Letras", "Saludo"];
   }
 
   static List<String> getGestureList(String category) {
+    if (category == "Test") {
+      return <String>["pointing-up", "pointing-front", "pointing-down", "up-down", "right-left", "idle"];
+    }
     if (category == "Números") {
       return <String>["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
     }
