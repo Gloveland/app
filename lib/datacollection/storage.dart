@@ -183,9 +183,6 @@ class SensorMeasurements {
     measurementList.add(finger.gyro.x);
     measurementList.add(finger.gyro.y);
     measurementList.add(finger.gyro.z);
-    measurementList.add(finger.inclination.roll);
-    measurementList.add(finger.inclination.pitch);
-    measurementList.add(finger.inclination.yaw);
     return measurementList;
   }
 

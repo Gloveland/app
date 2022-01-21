@@ -72,14 +72,6 @@ class _FileContentChartPageState extends State<FileContentChartPage> {
                               sensor: SensorValue.Gyroscope,
                               title: "Velocidad angular",
                               legend: false)),
-                      Expanded(
-                          child: MeasurementsChart(
-                              measurements: sensorMeasurements,
-                              finger: FingerValue.values[_fingerChosen],
-                              key: ValueKey(_fingerChosen),
-                              sensor: SensorValue.Inclination,
-                              title: "Inclinacion",
-                              legend: true))
                     ],
                   )),
             )));
@@ -191,8 +183,6 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
         return Acceleration(m[0], m[1], m[2]);
       case SensorValue.Gyroscope:
         return Gyro(m[3], m[4], m[5]);
-      case SensorValue.Inclination:
-        return Inclination(m[6], m[7], m[8]);
     }
   }
 }
