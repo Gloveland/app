@@ -25,7 +25,7 @@ extension FingerValueTranslation on FingerValue {
 }
 
 class GloveMeasurement {
-  static const int measurementsNumber = 9;
+  static const int measurementsNumber = 6;
   static const String pinkyLetter = "P";
   static const String ringLetter = "R";
   static const String middleLetter = "M";

@@ -165,15 +165,15 @@ class _MeasurementsChartState extends State<MeasurementsChart> {
   List<double> getFingerValues(List<double> m) {
     switch (finger) {
       case FingerValue.Thumb:
-        return m.sublist(0, 9);
+        return m.sublist(0, 6);
       case FingerValue.Index:
-        return m.sublist(9, 18);
+        return m.sublist(6, 12);
       case FingerValue.Middle:
-        return m.sublist(18, 27);
+        return m.sublist(12, 18);
       case FingerValue.Ring:
-        return m.sublist(27, 36);
+        return m.sublist(18, 24);
       case FingerValue.Pinky:
-        return m.sublist(36);
+        return m.sublist(24);
     }
   }
 
