@@ -167,8 +167,8 @@ class SensorMeasurements {
     List<double> measurementList = [];
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.thumb));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.index));
-    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.ring));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.middle));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.ring));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.pinky));
 
     this.values.add(measurementList);
