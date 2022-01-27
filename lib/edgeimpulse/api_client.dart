@@ -73,9 +73,6 @@ class EdgeImpulseApiClient {
     SensorParameter("thumbGyroX", "deg"),
     SensorParameter("thumbGyroY", "deg"),
     SensorParameter("thumbGyroZ", "deg"),
-    SensorParameter("thumbRoll", "deg"),
-    SensorParameter("thumbPitch", "deg"),
-    SensorParameter("thumbYaw", "deg"),
     //index
     SensorParameter("indexAccX", "m/s2"),
     SensorParameter("indexAccY", "m/s2"),
@@ -83,9 +80,6 @@ class EdgeImpulseApiClient {
     SensorParameter("indexGyroX", "deg"),
     SensorParameter("indexGyroY", "deg"),
     SensorParameter("indexGyroZ", "deg"),
-    SensorParameter("indexRoll", "deg"),
-    SensorParameter("indexPitch", "deg"),
-    SensorParameter("indexYaw", "deg"),
     //middle
     SensorParameter("middleAccX", "m/s2"),
     SensorParameter("middleAccY", "m/s2"),
@@ -93,9 +87,6 @@ class EdgeImpulseApiClient {
     SensorParameter("middleGyroX", "deg"),
     SensorParameter("middleGyroY", "deg"),
     SensorParameter("middleGyroZ", "deg"),
-    SensorParameter("middleRoll", "deg"),
-    SensorParameter("middlePitch", "deg"),
-    SensorParameter("middleYaw", "deg"),
     //ring
     SensorParameter("ringAccX", "m/s2"),
     SensorParameter("ringAccY", "m/s2"),
@@ -103,9 +94,6 @@ class EdgeImpulseApiClient {
     SensorParameter("ringGyroX", "deg"),
     SensorParameter("ringGyroY", "deg"),
     SensorParameter("ringGyroZ", "deg"),
-    SensorParameter("ringRoll", "deg"),
-    SensorParameter("ringPitch", "deg"),
-    SensorParameter("ringYaw", "deg"),
     //pinky
     SensorParameter("pinkyAccX", "m/s2"),
     SensorParameter("pinkyAccY", "m/s2"),
@@ -113,9 +101,6 @@ class EdgeImpulseApiClient {
     SensorParameter("pinkyGyroX", "deg"),
     SensorParameter("pinkyGyroY", "deg"),
     SensorParameter("pinkyGyroZ", "deg"),
-    SensorParameter("pinkyRoll", "deg"),
-    SensorParameter("pinkyPitch", "deg"),
-    SensorParameter("pinkyYaw", "deg"),
   ];
 }
 
@@ -146,32 +131,6 @@ class SecretLoader {
   }
 }
 
-/*
-* {
-    "protected": {
-        "ver": "v1",
-        "alg": "HS256",
-        "iat": 1625527314
-    },
-    "signature": "emptySignature",
-    "payload": {
-        "device_name": "ac:87:a3:0a:2d:1b",
-        "device_type": "DISCO-L475VG-IOT01A",
-        "interval_ms": 10,
-        "sensors": [
-            { "name": "accX", "units": "m/s2" },
-            { "name": "accY", "units": "m/s2" },
-            { "name": "accZ", "units": "m/s2" }
-        ],
-        "values": [
-            [ -9.81, 0.03, 1.21 ],
-            [ -9.83, 0.04, 1.27 ],
-            [ -9.12, 0.03, 1.23 ],
-            [ -9.14, 0.01, 1.25 ]
-        ]
-    }
-}
-*/
 
 class EdgeImpulseBody {
   final Protected protected;

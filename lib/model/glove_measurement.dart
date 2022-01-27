@@ -25,7 +25,7 @@ extension FingerValueTranslation on FingerValue {
 }
 
 class GloveMeasurement {
-  static const int measurementsNumber = 9;
+  static const int measurementsNumber = 6;
   static const String pinkyLetter = "P";
   static const String ringLetter = "R";
   static const String middleLetter = "M";
@@ -101,8 +101,7 @@ class GloveMeasurement {
 
 enum SensorValue {
   Acceleration,
-  Gyroscope,
-  Inclination
+  Gyroscope
 }
 
 extension SensorValueExtension on SensorValue {
@@ -112,8 +111,6 @@ extension SensorValueExtension on SensorValue {
         return "Acelerómetro";
       case SensorValue.Gyroscope:
         return "Giroscopio";
-      case SensorValue.Inclination:
-        return "Inclinación";
     }
   }
 
@@ -123,8 +120,6 @@ extension SensorValueExtension on SensorValue {
         return "x (m/s²)";
       case SensorValue.Gyroscope:
         return "x (º/s)";
-      case SensorValue.Inclination:
-        return "roll";
     }
   }
   String getYLabel() {
@@ -133,8 +128,6 @@ extension SensorValueExtension on SensorValue {
         return "y (m/s²)";
       case SensorValue.Gyroscope:
         return "y (º/s)";
-      case SensorValue.Inclination:
-        return "pitch";
     }
   }
   String getZLabel() {
@@ -143,8 +136,6 @@ extension SensorValueExtension on SensorValue {
         return "z (m/s²)";
       case SensorValue.Gyroscope:
         return "z (º/s)";
-      case SensorValue.Inclination:
-        return "yaw";
     }
   }
 }
@@ -152,24 +143,20 @@ extension SensorValueExtension on SensorValue {
 class Finger {
   final Acceleration acc;
   final Gyro gyro;
-  final Inclination inclination;
 
-  Finger(this.acc, this.gyro, this.inclination);
+  Finger(this.acc, this.gyro);
 
   Finger.fromJson(Map<String, dynamic> json)
       : acc = Acceleration.fromJson(json['acc'] as Map<String, dynamic>),
-        gyro = Gyro.fromJson(json['gyro'] as Map<String, dynamic>),
-        inclination = Inclination.fromJson(json['inclination']as Map<String, dynamic>);
+        gyro = Gyro.fromJson(json['gyro'] as Map<String, dynamic>);
       Map<String, dynamic> toJson() => {
     'acc': acc.toJson(),
     'gyro': gyro.toJson(),
-    'inclination': inclination.toJson(),
   };
 
   Finger.fromList(List<double> m):
         acc = Acceleration(m[0],m[1], m[2]),
-        gyro = Gyro(m[3],m[4], m[5]),
-        inclination = Inclination(m[6],m[7], m[8]);
+        gyro = Gyro(m[3],m[4], m[5]);
 
   Vector3 getSensorValues(SensorValue sensorName) {
     switch (sensorName) {
@@ -177,8 +164,6 @@ class Finger {
         return acc;
       case SensorValue.Gyroscope:
         return gyro;
-      case SensorValue.Inclination:
-        return inclination;
     }
   }
 }
@@ -232,31 +217,6 @@ class Gyro with Vector3 {
 
   @override
   double getZ() => z;
-}
-
-class Inclination with Vector3 {
-  final double roll;
-  final double pitch;
-  final double yaw;
-  Inclination(this.roll, this.pitch, this.yaw);
-
-  Inclination.fromJson(Map<String, dynamic> json)
-      : roll = json['roll'], pitch = json['pitch'], yaw = json['yaw'];
-
-  Map<String, dynamic> toJson() => {
-    'roll': roll,
-    'pitch': pitch,
-    'yaw': yaw,
-  };
-
-  @override
-  double getX() => roll;
-
-  @override
-  double getY() => pitch;
-
-  @override
-  double getZ() => yaw;
 }
 
 abstract class Vector3 {

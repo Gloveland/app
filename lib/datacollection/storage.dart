@@ -166,10 +166,11 @@ class SensorMeasurements {
     }
     List<double> measurementList = [];
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.thumb));
-    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.pinky));
-    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.ring));
-    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.middle));
     measurementList.addAll(extractFingerMeasurement(gloveMeasurement.index));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.middle));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.ring));
+    measurementList.addAll(extractFingerMeasurement(gloveMeasurement.pinky));
+
     this.values.add(measurementList);
     this.timestamps.add(gloveMeasurement.timestampMillis);
     return true;
@@ -183,9 +184,6 @@ class SensorMeasurements {
     measurementList.add(finger.gyro.x);
     measurementList.add(finger.gyro.y);
     measurementList.add(finger.gyro.z);
-    measurementList.add(finger.inclination.roll);
-    measurementList.add(finger.inclination.pitch);
-    measurementList.add(finger.inclination.yaw);
     return measurementList;
   }
 
