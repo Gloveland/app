@@ -32,6 +32,15 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       new MeasurementsCollector(/* writeToFile=*/ true);
   int _collections = 0;
 
+  static const Map<String, List<String>> gesturesMap = {
+    "Salud": ["hospital", "duele", "cabeza", "acidez"],
+    "Comida": ["helado", "galletitas", "cafe", "pan"],
+    "Dias": ["lunes", "marted", "miercoles", "jueves", "viernes", "sabado"],
+    "Preguntas": ["que?", "donde?", "porque?"],
+    "Numeros": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "Saludos": ["Hola", "Buenos dias", "como estas", "bien", "mal" "Gracias"]
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -196,24 +205,14 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
         }).toList());
   }
 
+
+
   static List<String> getCategoryList() {
-    return <String>["Test", "Números", "Letras", "Saludo"];
+    return gesturesMap.keys.toList();
   }
 
   static List<String> getGestureList(String category) {
-    if (category == "Test") {
-      return <String>["pointing-up", "pointing-front", "pointing-down", "up-down", "right-left", "idle"];
-    }
-    if (category == "Números") {
-      return <String>["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-    }
-    if (category == "Letras") {
-      return <String>["a", "b", "c"];
-    }
-    if (category == "Saludo") {
-      return <String>["Hola", "¿Cómo estás?", "Adiós"];
-    }
-    return [];
+    return gesturesMap[category]!;
   }
 }
 
