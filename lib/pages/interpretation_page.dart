@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
-import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 
 import 'dart:developer' as developer;
@@ -137,21 +136,6 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
                 color: Theme.of(context).backgroundColor,
                 child: Text("Mac addr: ${device.id.id}")),
             displayStats(),
-            StreamBuilder<List<int>>(
-                stream: dcCharacteristic.value,
-                initialData: [],
-                builder: (c, measurements) {
-                  String msg = "";
-                  if (measurements.hasData) {
-                    msg = new String.fromCharCodes(measurements.data!);
-                  }
-                  return Container(
-                      width: double.infinity,
-                      height: 80,
-                      alignment: Alignment.center,
-                      color: Theme.of(c).backgroundColor,
-                      child: Text(msg));
-                })
           ],
         ));
   }
@@ -165,16 +149,57 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
         initialData: [],
         builder: (c, rawDeviceInterpretations) {
           String msg = "";
+          String prediction = "";
+          Map<String, String> stats = Map();
           if (rawDeviceInterpretations.hasData) {
             msg = new String.fromCharCodes(rawDeviceInterpretations.data!);
           }
+          prediction = _parsePrediction(msg);
+          stats = _parseStatistics(msg);
+
           return Container(
               width: double.infinity,
-              height: 80,
-              alignment: Alignment.center,
+              height: 200,
+              padding: EdgeInsets.all(8),
+              alignment: Alignment.topCenter,
               color: Theme.of(c).backgroundColor,
-              child: Text(msg));
+              child: Column(
+                children: [
+                  Text(prediction,
+                      textScaleFactor: 1.5,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 16),
+                  Text(stats.toString())
+                ],
+              ));
         });
+  }
+
+  String _parsePrediction(String msg) {
+    int bracketIndex = msg.indexOf("[");
+    if (bracketIndex != -1) {
+      return msg.substring(bracketIndex + 1, msg.indexOf("]"));
+    }
+    return "";
+  }
+
+  /// Parses the statistics and returns a map with each gesture as a key and its
+  /// corresponding probability as its value.
+  ///
+  /// The message must have a format like the following:
+  /// "[prediction]{gesture1:1}{gesture2:2}{gesture3:1}...{gestureN:2}
+  Map<String, String> _parseStatistics(String msg) {
+    Map<String, String> stats = new Map();
+    int bracketIndex = msg.indexOf("{");
+    while (!bracketIndex.isNegative) {
+      int semicolonIndex = msg.indexOf(":", bracketIndex);
+      String category = msg.substring(bracketIndex + 1, semicolonIndex);
+      String probability =
+          msg.substring(semicolonIndex + 1, msg.indexOf("}", semicolonIndex));
+      bracketIndex = msg.indexOf("{", bracketIndex + 1);
+      stats[category] = probability;
+    }
+    return stats;
   }
 }
 
