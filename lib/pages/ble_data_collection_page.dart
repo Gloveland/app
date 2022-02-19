@@ -35,7 +35,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   static const Map<String, List<String>> gesturesMap = {
     "Salud": ["hospital", "duele", "cabeza", "acidez"],
     "Comida": ["helado", "galletitas", "cafe", "pan"],
-    "Dias": ["lunes", "marted", "miercoles", "jueves", "viernes", "sabado"],
+    "Dias": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado","Domingo"],
     "Preguntas": ["que?", "donde?", "porque?"],
     "Numeros": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
     "Saludos": ["Hola", "Buenos dias", "como estas", "bien", "mal" "Gracias"]
