@@ -37,6 +37,8 @@ dependencies:
   synchronized: ^3.0.0
   syncfusion_flutter_charts: ^19.3.45
   intl: "^0.17.0"
+  material_design_icons_flutter: 5.0.6595
+
 
 dev_dependencies:
   flutter_test:
@@ -58,7 +60,7 @@ flutter:
     - assets/audios/
     - assets/secrets.json
     - assets/images/
-    - assets/images/waving_hand.png
+    - assets/images/ic_launcher.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
