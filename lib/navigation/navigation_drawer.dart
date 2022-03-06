@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:lsa_gloves/pages/ble_data_collection_page.dart';
 import 'package:lsa_gloves/pages/ble_devices_connection_page.dart';
 import 'package:lsa_gloves/connection/wifi/socket.dart';
 import 'package:lsa_gloves/pages/data_visualization_page.dart';
 import 'package:lsa_gloves/pages/file_manager_page.dart';
 import 'package:lsa_gloves/pages/interpretation_page.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);
@@ -44,10 +44,7 @@ class NavDrawer extends StatelessWidget {
                 builder: (context) => FileManagerPage(), maintainState: false));
           }),
       ListTile(
-          leading: Container(
-              width: 25,
-              height: 25,
-              child: ImageIcon(AssetImage("assets/images/waving_hand.png"))),
+          leading: Icon(MdiIcons.handWaveOutline),
           title: const Text("Recolectar data"),
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(
@@ -67,7 +64,8 @@ class NavDrawer extends StatelessWidget {
           title: const Text("Interpretación"),
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => InterpretationPage(), maintainState: false));
+                builder: (context) => InterpretationPage(),
+                maintainState: false));
           })
     ]));
   }
