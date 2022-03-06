@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../navigation/navigation_drawer.dart';
+import 'about_page.dart';
 import 'ble_data_collection_page.dart';
 import 'ble_devices_connection_page.dart';
 import 'data_visualization_page.dart';
@@ -133,7 +134,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                 )),
             ElevatedButton(
-                onPressed: () => {},
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => AboutPage(), maintainState: false));
+                },
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   child: Column(
