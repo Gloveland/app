@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:developer' as developer;
 
 class GloveEventsStorage {
+  static const String TAG = "GloveEventsStorage";
   static final GloveEventsStorage _singleton = GloveEventsStorage._internal();
 
   factory GloveEventsStorage() {
@@ -16,15 +17,15 @@ class GloveEventsStorage {
   GloveEventsStorage._internal();
 
   Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
+    final directory = await getExternalStorageDirectory();
+    return directory!.path;
   }
 
   Future<List<DeviceMeasurementsFile>> getListOfFiles() async {
     var fileList = <DeviceMeasurementsFile>[];
     var completer = Completer<List<DeviceMeasurementsFile>>();
-    final dir = await getApplicationDocumentsDirectory();
-    var lister = dir.list(recursive: false);
+    final dir = await getExternalStorageDirectory();
+    var lister = dir!.list(recursive: false);
     lister
         .where((entity) => entity is File)
         .asyncMap((f) async => DeviceMeasurementsFile.fromFileSystem(

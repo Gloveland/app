@@ -33,6 +33,11 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   int _collections = 0;
 
   static const Map<String, List<String>> gesturesMap = {
+    "Tiempo":["Antes", "Manana"],
+    "Sujeto": ["Campo", "Mamá", "Papá", "Casa"],
+    "Verbos":["Vivir", "Haber", "Ir"],
+    "Pronombres": ["Todos"],
+    "Calificativo": ["Azul", "Blanco"],
     "Salud": ["hospital", "duele", "cabeza", "acidez"],
     "Comida": ["helado", "galletitas", "cafe", "pan"],
     "Dias": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado","Domingo"],
@@ -107,15 +112,15 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       _stopRecording(backend);
       _collections++;
     } else {
-      await Future.wait([
-        showDialog(
-                context: context,
-                builder: (context) {
-                  return this._countDownDialogBuilder();
-                })
-            .then((value) =>
-                developer.log("CountDown dialog complete", name: TAG))
-      ]);
+      // await Future.wait([
+      //   showDialog(
+      //           context: context,
+      //           builder: (context) {
+      //             return this._countDownDialogBuilder();
+      //           })
+      //       .then((value) =>
+      //           developer.log("CountDown dialog complete", name: TAG))
+      // ]);
       setState(() {
         _startRecording(backend);
       });
