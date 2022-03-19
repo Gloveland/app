@@ -221,12 +221,15 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
                 height: 20,
                 child: Text("Información:",
                     style: TextStyle(color: Theme.of(context).primaryColor))),
-            Container(
-                width: double.infinity,
-                height: 250,
-                alignment: Alignment.center,
-                decoration: containerDecorator,
-                child: Text(percentages))
+            SingleChildScrollView(
+                scrollDirection: Axis.vertical,//.horizontal
+                child: Container(
+                    width: double.infinity,
+                    height: 280,
+                    alignment: Alignment.center,
+                    decoration: containerDecorator,
+                    child: Text(percentages))
+            ),
           ]);
         });
   }
