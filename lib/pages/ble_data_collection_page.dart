@@ -98,15 +98,15 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       _stopRecording(backend);
       _collections++;
     } else {
-      await Future.wait([
-        showDialog(
-                context: context,
-                builder: (context) {
-                  return this._countDownDialogBuilder();
-                })
-            .then((value) =>
-                developer.log("CountDown dialog complete", name: TAG))
-      ]);
+      // await Future.wait([
+      //   showDialog(
+      //           context: context,
+      //           builder: (context) {
+      //             return this._countDownDialogBuilder();
+      //           })
+      //       .then((value) =>
+      //           developer.log("CountDown dialog complete", name: TAG))
+      // ]);
       setState(() {
         _startRecording(backend);
       });
@@ -197,21 +197,24 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
   }
 
   static List<String> getCategoryList() {
-    return <String>["Test", "Números", "Letras", "Saludo"];
+    return <String>["Tiempo", "Sujeto / objeto", "Verbos", "Determinadores", "Calificativo"];
   }
 
   static List<String> getGestureList(String category) {
-    if (category == "Test") {
-      return <String>["pointing-up", "pointing-front", "pointing-down", "up-down", "right-left", "idle"];
+    if (category == "Tiempo") {
+      return <String>["Antes", "Manana"];
     }
-    if (category == "Números") {
-      return <String>["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    if (category == "Sujeto / objeto") {
+      return <String>["Campo", "Mamá", "Papá", "Casa"];
     }
-    if (category == "Letras") {
-      return <String>["a", "b", "c"];
+    if (category == "Verbos") {
+      return <String>["Vivir", "Haber", "Ir"];
     }
-    if (category == "Saludo") {
-      return <String>["Hola", "¿Cómo estás?", "Adiós"];
+    if (category == "Determinadores") {
+      return <String>["Todos"];
+    }
+    if (category == "Calificativo") {
+      return <String>["Azul", "Blanco"];
     }
     return [];
   }
