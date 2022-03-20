@@ -264,7 +264,7 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
 
   void _playSound(String word) async {
     try {
-      await assetsAudioPlayer.open(Audio("assets/audios/${word}.mp3"),
+      await assetsAudioPlayer.open(Audio("assets/audios/${word.toLowerCase()}.mp3"),
           autoStart: true);
     } catch (t) {
       developer.log('error in audio play: $t', name: TAG);
