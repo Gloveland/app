@@ -34,16 +34,16 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 
   static const Map<String, List<String>> gesturesMap = {
     "Tiempo":["Antes", "Manana"],
-    "Sujeto": ["Campo", "Mama", "Papa", "Casa"],
+    "Sujeto": ["Campo", "Mama", "Papa", "Lapicera"],
     "Verbos":["Vivir", "Haber", "Ir"],
     "Pronombres": ["Todos"],
     "Calificativo": ["Azul", "Blanco"],
-    "Salud": ["hospital", "dolor", "cabeza", "acidez"],
-    "Comida": ["helado", "galletitas", "cafe", "pan"],
+    "Salud": ["Hospital", "Dolor", "Cabeza", "Acidez"],
+    "Comida": ["Helado", "Galletitas", "Cafe", "Pan"],
     "Dias": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado","Domingo"],
-    "Preguntas": ["que?", "donde?", "porque?"],
+    "Preguntas": ["Que?", "Donde?", "Porque?"],
     "Numeros": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-    "Saludos": ["Hola", "Buenos dias", "como estas", "bien", "mal" "Gracias"]
+    "Saludos": ["Hola", "Buenos dias", "Como estas?", "Bien", "Mal" "Gracias"]
   };
 
   @override
