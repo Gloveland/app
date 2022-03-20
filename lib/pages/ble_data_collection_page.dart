@@ -37,7 +37,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     "Sujeto": ["Campo", "Mama", "Papa", "Lapicera"],
     "Verbos":["Vivir", "Haber", "Ir"],
     "Pronombres": ["Todos"],
-    "Calificativo": ["Azul", "Blanco"],
+    "Calificativo": ["Azul", "Blanco","Rojo"],
     "Salud": ["Hospital", "Dolor", "Cabeza", "Acidez"],
     "Comida": ["Helado", "Galletitas", "Cafe", "Pan"],
     "Dias": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado","Domingo"],
