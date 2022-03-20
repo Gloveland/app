@@ -205,7 +205,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       return <String>["Antes", "Manana"];
     }
     if (category == "Sujeto / objeto") {
-      return <String>["Campo", "Mamá", "Papá", "Casa"];
+      return <String>["Campo", "Mama", "Papa", "Casa"];
     }
     if (category == "Verbos") {
       return <String>["Vivir", "Haber", "Ir"];
