@@ -32,6 +32,20 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
       new MeasurementsCollector(/* writeToFile=*/ true);
   int _collections = 0;
 
+  static const Map<String, List<String>> gesturesMap = {
+    "Tiempo":["Antes", "Manana"],
+    "Sujeto": ["Campo", "Mama", "Papa", "Casa"],
+    "Verbos":["Vivir", "Haber", "Ir"],
+    "Pronombres": ["Todos"],
+    "Calificativo": ["Azul", "Blanco"],
+    "Salud": ["hospital", "dolor", "cabeza", "acidez"],
+    "Comida": ["helado", "galletitas", "cafe", "pan"],
+    "Dias": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado","Domingo"],
+    "Preguntas": ["que?", "donde?", "porque?"],
+    "Numeros": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "Saludos": ["Hola", "Buenos dias", "como estas", "bien", "mal" "Gracias"]
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -196,27 +210,14 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
         }).toList());
   }
 
+
+
   static List<String> getCategoryList() {
-    return <String>["Tiempo", "Sujeto / objeto", "Verbos", "Determinadores", "Calificativo"];
+    return gesturesMap.keys.toList();
   }
 
   static List<String> getGestureList(String category) {
-    if (category == "Tiempo") {
-      return <String>["Antes", "Manana"];
-    }
-    if (category == "Sujeto / objeto") {
-      return <String>["Campo", "Mama", "Papa", "Casa"];
-    }
-    if (category == "Verbos") {
-      return <String>["Vivir", "Haber", "Ir"];
-    }
-    if (category == "Determinadores") {
-      return <String>["Todos"];
-    }
-    if (category == "Calificativo") {
-      return <String>["Azul", "Blanco"];
-    }
-    return [];
+    return gesturesMap[category]!;
   }
 }
 

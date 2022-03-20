@@ -1,3 +1,6 @@
+import 'dart:collection';
+
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -31,21 +34,7 @@ class _InterpretationPageState extends State<InterpretationPage> {
           child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                Container(
-                  width: double.infinity,
-                  height: 48,
-                  alignment: Alignment.center,
-                  color: Theme.of(context).backgroundColor,
-                  child: Text(
-                    "Traducción",
-                    //TODO(https://git.io/Jzuoa): display a definitive interpretation
-                    style: TextStyle(fontSize: 32),
-                  ),
-                ),
-                SizedBox(height: 16),
                 InterpretationsPanel(),
-                Spacer(),
-                InterpretationButton()
               ]),
         ),
       ),
@@ -107,6 +96,16 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   final BluetoothDevice device;
   final BluetoothCharacteristic interpretationCharacteristic;
   final BluetoothCharacteristic dcCharacteristic;
+  final assetsAudioPlayer = AssetsAudioPlayer();
+  String previousWord = "";
+  String word = "";
+
+  void resetWord() {
+    setState(() {
+      String previousWord = "";
+      String word = "";
+    });
+  }
 
   _InterpretationWidgetState(
       this.device, this.interpretationCharacteristic, this.dcCharacteristic);
@@ -119,28 +118,69 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
 
   @override
   Widget build(BuildContext context) {
+    var containerDecorator =
+        BoxDecoration(color: Theme.of(context).cardColor, boxShadow: [
+      BoxShadow(
+        color: Colors.grey,
+        blurRadius: 5.0,
+      ),
+    ]);
+
     return Container(
         width: double.infinity,
         child: Column(
           children: <Widget>[
+            displayStats(containerDecorator),
+            SizedBox(
+                width: double.infinity,
+                height: 20,
+                child: Text("Dispositivo:",
+                    style: TextStyle(color: Theme.of(context).primaryColor))),
             Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(8.0),
                 alignment: Alignment.topCenter,
-                color: Theme.of(context).backgroundColor,
+                decoration: containerDecorator,
                 child: Text(device.name)),
+            SizedBox(
+                width: double.infinity,
+                height: 20,
+                child: Text("Identificador:",
+                    style: TextStyle(color: Theme.of(context).primaryColor))),
             Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(8.0),
                 alignment: Alignment.topCenter,
-                color: Theme.of(context).backgroundColor,
+                decoration: containerDecorator,
                 child: Text("Mac addr: ${device.id.id}")),
-            displayStats(),
+            SizedBox(
+                width: double.infinity,
+                height: 20,
+                child: Text("Lectura de los sensores:",
+                    style: TextStyle(color: Theme.of(context).primaryColor))),
+            StreamBuilder<List<int>>(
+                stream: dcCharacteristic.value,
+                initialData: [],
+                builder: (c, measurements) {
+                  String msg = "";
+                  if (measurements.hasData) {
+                    msg = new String.fromCharCodes(measurements.data!);
+                  }
+                  return Container(
+                      width: double.infinity,
+                      height: 80,
+                      alignment: Alignment.center,
+                      decoration: containerDecorator,
+                      child: Text(msg));
+                }),
+            SizedBox(width: double.infinity, height: 20),
+            InterpretationButton(resetWordCallback: () =>
+                resetWord())
           ],
         ));
   }
 
-  StreamBuilder<List<int>> displayStats() {
+  StreamBuilder<List<int>> displayStats(containerDecorator) {
     if (!interpretationCharacteristic.isNotifying) {
       interpretationCharacteristic.setNotifyValue(true);
     }
@@ -148,71 +188,108 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
         stream: interpretationCharacteristic.value,
         initialData: [],
         builder: (c, rawDeviceInterpretations) {
-          String msg = "";
-          String prediction = "";
-          Map<String, String> stats = Map();
+          String percentages = "";
           if (rawDeviceInterpretations.hasData) {
-            msg = new String.fromCharCodes(rawDeviceInterpretations.data!);
+            var msg = new String.fromCharCodes(rawDeviceInterpretations.data!);
+            developer.log(msg, name: TAG);
+            word = getWord(msg);
+            percentages = getPercentages(msg);
           }
-          prediction = _parsePrediction(msg);
-          stats = _parseStatistics(msg);
-
-          return Container(
-              width: double.infinity,
-              height: 200,
-              padding: EdgeInsets.all(8),
-              alignment: Alignment.topCenter,
-              color: Theme.of(c).backgroundColor,
-              child: Column(
-                children: [
-                  Text(prediction,
-                      textScaleFactor: 1.5,
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 16),
-                  Text(stats.toString())
-                ],
-              ));
+          if (word != "" && word != previousWord) {
+            _playSound(word);
+            previousWord = word;
+          }
+          return Column(children: <Widget>[
+            SizedBox(
+                width: double.infinity,
+                height: 20,
+                child: Text("Traducción:",
+                    style: TextStyle(color: Theme.of(context).primaryColor))),
+            Card(
+                elevation: 5,
+                child: InkWell(
+                    splashColor: Colors.blue.withAlpha(30),
+                    child: Container(
+                      width: double.infinity,
+                      height: 80,
+                      alignment: Alignment.center,
+                      color: Colors.white,
+                      child: Text(word, style: TextStyle(fontSize: 32)),
+                    ))),
+            SizedBox(
+                width: double.infinity,
+                height: 20,
+                child: Text("Información:",
+                    style: TextStyle(color: Theme.of(context).primaryColor))),
+            SingleChildScrollView(
+                scrollDirection: Axis.vertical,//.horizontal
+                child: Container(
+                    width: double.infinity,
+                    height: 280,
+                    alignment: Alignment.center,
+                    decoration: containerDecorator,
+                    child: Text(percentages))
+            ),
+          ]);
         });
   }
 
-  String _parsePrediction(String msg) {
-    int bracketIndex = msg.indexOf("[");
-    if (bracketIndex != -1) {
-      return msg.substring(bracketIndex + 1, msg.indexOf("]"));
+  String getWord(String interpretationData) {
+    final RegExp regexBetweenBrackets = new RegExp(
+      r"(?<=\[)(.*?)(?=\])",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    final match = regexBetweenBrackets.firstMatch(interpretationData);
+    if (match != null && match.groupCount > 0) {
+      return match.group(0)!;
     }
     return "";
   }
 
-  /// Parses the statistics and returns a map with each gesture as a key and its
-  /// corresponding probability as its value.
-  ///
-  /// The message must have a format like the following:
-  /// "[prediction]{gesture1:1}{gesture2:2}{gesture3:1}...{gestureN:2}
-  Map<String, String> _parseStatistics(String msg) {
-    Map<String, String> stats = new Map();
-    int bracketIndex = msg.indexOf("{");
-    while (!bracketIndex.isNegative) {
-      int semicolonIndex = msg.indexOf(":", bracketIndex);
-      String category = msg.substring(bracketIndex + 1, semicolonIndex);
-      String probability =
-          msg.substring(semicolonIndex + 1, msg.indexOf("}", semicolonIndex));
-      bracketIndex = msg.indexOf("{", bracketIndex + 1);
-      stats[category] = probability;
+  String getPercentages(String interpretationData) {
+    var percentages = "";
+    final RegExp regexBetweenBraces = new RegExp(
+        r"(?<=\{)([A-Za-z]*[0-9]*)(?=\:)(.[0-9]?)(?=\})",
+        caseSensitive: false);
+    Iterable<Match> matches = regexBetweenBraces.allMatches(interpretationData);
+    for (Match match in matches) {
+      if (match.groupCount > 1) {
+        percentages +=
+            "  •   ${match.group(1)} → ${match.group(2)!.replaceAll(":", "")}%\n";
+      }
     }
-    return stats;
+    return percentages;
+  }
+
+  void _playSound(String word) async {
+    try {
+      await assetsAudioPlayer.open(Audio("assets/audios/${word}.mp3"),
+          autoStart: true);
+    } catch (t) {
+      developer.log('error in audio play: $t', name: TAG);
+    }
   }
 }
 
 class InterpretationButton extends StatefulWidget {
-  const InterpretationButton({Key? key}) : super(key: key);
+  final Function resetWordCallback;
+  const InterpretationButton({Key? key,
+    required this.resetWordCallback})
+      : super(key: key);
 
   @override
-  _InterpretationButtonState createState() => _InterpretationButtonState();
+  _InterpretationButtonState createState() =>
+      _InterpretationButtonState(this.resetWordCallback);
 }
 
 class _InterpretationButtonState extends State<InterpretationButton> {
+  final Function resetWordCallback;
   bool _isEnabled = false;
   bool _isRunning = false;
+
+  _InterpretationButtonState(this.resetWordCallback);
+
 
   @override
   Widget build(BuildContext context) {
@@ -222,9 +299,17 @@ class _InterpretationButtonState extends State<InterpretationButton> {
         if (_isEnabled) {
           return ElevatedButton(
               onPressed: () => _onInterpretationButtonPressed(backend),
-              child: Text(_getButtonText()));
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.all(10), // Set padding
+              ),
+              child: Text(_getButtonText(), style: TextStyle(fontSize: 20)));
         } else {
-          return ElevatedButton(onPressed: null, child: Text("Traducir"));
+          return ElevatedButton(
+              onPressed: null,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.all(10), // Set padding
+              ),
+              child: Text("Traducir", style: TextStyle(fontSize: 20)));
         }
       },
     );
@@ -235,6 +320,7 @@ class _InterpretationButtonState extends State<InterpretationButton> {
   }
 
   void _onInterpretationButtonPressed(BluetoothBackend bluetoothBackend) async {
+    this.resetWordCallback.call();
     if (_isRunning) {
       bluetoothBackend.sendStopCommand();
     } else {

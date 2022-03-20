@@ -55,14 +55,18 @@ class EdgeImpulseApiClient {
     }else{
       request.headers.set('x-api-key', secret.rightGloveApiKey);
     }
-    request.headers.set('x-file-name', fileName);
-      request.headers.set('x-label', sensorMeasurements.word);
+    request.headers.set('x-file-name', removeSpecialCharacters(fileName));
+    request.headers.set('x-label', removeSpecialCharacters(sensorMeasurements.word));
     request.add(utf8.encode(json.encode(edgeImpulseBody)));
     HttpClientResponse response = await request.close();
     String reply = await response.transform(utf8.decoder).join();
     developer.log(reply, name: TAG);
     httpClient.close();
     return response.statusCode == OK_STATUS_CODE;
+  }
+
+  static String removeSpecialCharacters(String word) {
+    return word.replaceAll(new RegExp(r'[^a-zA-Z?]'), '');
   }
 
   static const sensorMeasurementNames = [
