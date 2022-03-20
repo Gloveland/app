@@ -43,7 +43,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     "Dias": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado","Domingo"],
     "Preguntas": ["Que?", "Donde?", "Porque?"],
     "Numeros": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-    "Saludos": ["Hola", "Buenos dias", "Como estas?", "Bien", "Mal" "Gracias"]
+    "Saludos": ["Hola", "Buenos dias", "Como estas?", "Bien", "Mal", "Gracias"]
   };
 
   @override
