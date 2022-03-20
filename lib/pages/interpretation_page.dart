@@ -31,11 +31,7 @@ class _InterpretationPageState extends State<InterpretationPage> {
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: <Widget>[
-                InterpretationsPanel(),
-              ]),
+          child: InterpretationsPanel(),
         ),
       ),
     );
@@ -126,9 +122,7 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
       ),
     ]);
 
-    return Container(
-        width: double.infinity,
-        child: Column(
+    return Column(
           children: <Widget>[
             displayStats(containerDecorator),
             SizedBox(
@@ -173,11 +167,10 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
                       decoration: containerDecorator,
                       child: Text(msg));
                 }),
-            SizedBox(width: double.infinity, height: 20),
             InterpretationButton(resetWordCallback: () =>
                 resetWord())
           ],
-        ));
+        );
   }
 
   StreamBuilder<List<int>> displayStats(containerDecorator) {
