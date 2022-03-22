@@ -48,6 +48,33 @@ class InterpretationsPanel extends StatefulWidget {
 class _InterpretationsPanelState extends State<InterpretationsPanel> {
   @override
   Widget build(BuildContext context) {
+    Widget child = InterpretationWidget(
+      key: Key("empty"),
+      device: null,
+      measurementsCharacteristic: null,
+      interpretationCharacteristic: null);
+    Consumer<BluetoothBackend>(builder: (context, backend, _) {
+      List<Widget> children = <Widget>[];
+      for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry in backend
+          .interpretationCharacteristics.entries) {
+        children.add(InterpretationWidget(
+          key: Key(entry.key.id.id),
+          device: entry.key,
+          interpretationCharacteristic: entry.value,
+          measurementsCharacteristic: backend.dataCollectionCharacteristics[entry.key]!,
+        ));
+      }
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children:[child],
+      );
+    });
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children:[child],
+    );
     return Consumer<BluetoothBackend>(builder: (context, backend, _) {
       List<Widget> children = <Widget>[];
       for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry
@@ -71,9 +98,9 @@ class _InterpretationsPanelState extends State<InterpretationsPanel> {
 
 /// Widget to display the interpretations of each glove.
 class InterpretationWidget extends StatefulWidget {
-  final BluetoothDevice device;
-  final BluetoothCharacteristic interpretationCharacteristic;
-  final BluetoothCharacteristic measurementsCharacteristic;
+  final BluetoothDevice? device;
+  final BluetoothCharacteristic? interpretationCharacteristic;
+  final BluetoothCharacteristic? measurementsCharacteristic;
 
   const InterpretationWidget(
       {Key? key,
@@ -89,9 +116,9 @@ class InterpretationWidget extends StatefulWidget {
 
 class _InterpretationWidgetState extends State<InterpretationWidget> {
   static final String TAG = "InterpretationWidget";
-  final BluetoothDevice device;
-  final BluetoothCharacteristic interpretationCharacteristic;
-  final BluetoothCharacteristic dcCharacteristic;
+  final BluetoothDevice? device;
+  final BluetoothCharacteristic? interpretationCharacteristic;
+  final BluetoothCharacteristic? dcCharacteristic;
   final assetsAudioPlayer = AssetsAudioPlayer();
   String previousWord = "";
   String word = "";
@@ -109,7 +136,10 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   @override
   void dispose() {
     super.dispose();
-    developer.log("Disposed widget of device: " + device.id.id, name: TAG);
+    if(device != null){
+      developer.log("Disposed widget of device: " + device!.id.id, name: TAG);
+    }
+
   }
 
   @override
@@ -122,6 +152,14 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
       ),
     ]);
 
+    var deviceName = "no device connected";
+    var deviceId = "no device connected";
+    var dcCharacteristicStream = Stream<List<int>>.empty();
+    if (device != null){
+      deviceName = device!.name;
+      deviceId = "${device!.id.id}";
+      dcCharacteristicStream = dcCharacteristic!.value;
+    }
     return Column(
           children: <Widget>[
             displayStats(containerDecorator),
@@ -135,7 +173,7 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
                 padding: const EdgeInsets.all(8.0),
                 alignment: Alignment.topCenter,
                 decoration: containerDecorator,
-                child: Text(device.name)),
+                child: Text(deviceName)),
             SizedBox(
                 width: double.infinity,
                 height: 20,
@@ -146,14 +184,14 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
                 padding: const EdgeInsets.all(8.0),
                 alignment: Alignment.topCenter,
                 decoration: containerDecorator,
-                child: Text("Mac addr: ${device.id.id}")),
+                child: Text("Mac addr: ${deviceId}")),
             SizedBox(
                 width: double.infinity,
                 height: 20,
                 child: Text("Lectura de los sensores:",
                     style: TextStyle(color: Theme.of(context).primaryColor))),
             StreamBuilder<List<int>>(
-                stream: dcCharacteristic.value,
+                stream: dcCharacteristicStream,
                 initialData: [],
                 builder: (c, measurements) {
                   String msg = "";
@@ -174,11 +212,16 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   }
 
   StreamBuilder<List<int>> displayStats(containerDecorator) {
-    if (!interpretationCharacteristic.isNotifying) {
-      interpretationCharacteristic.setNotifyValue(true);
+    var interpretationStream = Stream<List<int>>.empty();
+    if (interpretationCharacteristic != null){
+      if (!interpretationCharacteristic!.isNotifying) {
+        interpretationCharacteristic!.setNotifyValue(true);
+      }
+      interpretationStream =interpretationCharacteristic!.value;
     }
+
     return StreamBuilder<List<int>>(
-        stream: interpretationCharacteristic.value,
+        stream: interpretationStream,
         initialData: [],
         builder: (c, rawDeviceInterpretations) {
           String percentages = "";
