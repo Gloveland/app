@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
-import 'package:lsa_gloves/datacollection/file_content.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:path/path.dart';
 import 'package:flutter/material.dart';
