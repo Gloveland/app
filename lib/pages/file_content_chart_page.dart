@@ -21,8 +21,8 @@ class _FileContentChartPageState extends State<FileContentChartPage> {
 
   @override
   Widget build(BuildContext context) {
-    SensorMeasurements sensorMeasurements =
-        ModalRoute.of(context)!.settings.arguments as SensorMeasurements;
+    BufferedSensorMeasurements sensorMeasurements =
+        ModalRoute.of(context)!.settings.arguments as BufferedSensorMeasurements;
 
     return Consumer<BluetoothBackend>(
         builder: (context, backend, _) => SafeArea(
@@ -78,7 +78,7 @@ class _FileContentChartPageState extends State<FileContentChartPage> {
 }
 
 class MeasurementsChart extends StatefulWidget {
-  final SensorMeasurements measurements;
+  final BufferedSensorMeasurements measurements;
   final FingerValue finger;
   final SensorValue sensor;
   final String title;
@@ -99,7 +99,7 @@ class MeasurementsChart extends StatefulWidget {
 }
 
 class _MeasurementsChartState extends State<MeasurementsChart> {
-  SensorMeasurements _measurements;
+  BufferedSensorMeasurements _measurements;
   FingerValue finger;
   String title;
   bool legend;

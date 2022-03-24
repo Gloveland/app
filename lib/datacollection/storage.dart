@@ -6,15 +6,16 @@ import 'package:lsa_gloves/edgeimpulse/api_client.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:developer' as developer;
 
-class GloveEventsStorage {
-  static const String TAG = "GloveEventsStorage";
-  static final GloveEventsStorage _singleton = GloveEventsStorage._internal();
+/// Class to manage the stored files with sensors measurements from the gloves.
+class FileManager {
+  static const String TAG = "FileManager";
+  static final FileManager _singleton = FileManager._internal();
 
-  factory GloveEventsStorage() {
+  factory FileManager() {
     return _singleton;
   }
 
-  GloveEventsStorage._internal();
+  FileManager._internal();
 
   Future<String> get _localPath async {
     final directory = await getExternalStorageDirectory();
@@ -55,11 +56,12 @@ class GloveEventsStorage {
   }
 }
 
+/// Class to handle the storage of the received measurements in a json file.
 class DeviceMeasurementsFile {
   static const TAG = "DeviceMeasurementsFile";
   final File file;
   final DateTime lastModificationDate;
-  SensorMeasurements? fileContent;
+  BufferedSensorMeasurements? fileContent;
 
   String get path => file.path;
 
@@ -71,11 +73,11 @@ class DeviceMeasurementsFile {
   static Future<DeviceMeasurementsFile> create(
       String deviceName, String deviceId, String word) async {
     var creationDate = DateTime.now();
-    SensorMeasurements json = new SensorMeasurements(
+    BufferedSensorMeasurements json = new BufferedSensorMeasurements(
         deviceName, deviceId, word,  <List<double>>[], <int>[]);
     String datetimeStr = format(creationDate);
     var filename = "${deviceName.substring(0, 1)}_${word}_$datetimeStr";
-    var file = await new GloveEventsStorage().createFile(filename);
+    var file = await new FileManager().createFile(filename);
     return DeviceMeasurementsFile._(file, creationDate, json);
   }
 
@@ -92,7 +94,6 @@ class DeviceMeasurementsFile {
 
   Future<bool> save() async {
     try {
-      //TODO proteger concunrrencia, mutex??
       String json = jsonEncode(this.fileContent);
       developer.log("saving $json");
       await this.file.writeAsString(json);
@@ -114,7 +115,6 @@ class DeviceMeasurementsFile {
 
   Future<String> _readAllAsString() async {
     try {
-      //TODO proteger concunrrencia, mutex??
       final contents = await file.readAsString();
       return contents;
     } catch (e) {
@@ -123,14 +123,14 @@ class DeviceMeasurementsFile {
     }
   }
 
-  Future<SensorMeasurements> readJsonContent() async {
+  Future<BufferedSensorMeasurements> readJsonContent() async {
     String fileContent = await _readAllAsString();
-    return SensorMeasurements.fromJson(json.decode(fileContent));
+    return BufferedSensorMeasurements.fromJson(json.decode(fileContent));
   }
 
   Future<bool> upload() async {
     try {
-      SensorMeasurements measurementsJson = await readJsonContent();
+      BufferedSensorMeasurements measurementsJson = await readJsonContent();
       return EdgeImpulseApiClient.uploadFile(
           measurementsJson, lastModificationDate);
     }catch(e, stacktrace) {
@@ -150,14 +150,15 @@ class DeviceMeasurementsFile {
   }
 }
 
-class SensorMeasurements {
+/// Class to buffer the incoming sensor measurements in an internal list.
+class BufferedSensorMeasurements {
   final String deviceName;
   final String deviceId;
   final String word;
   final List<int> timestamps;
   final List<List<double>> values;
 
-  SensorMeasurements(this.deviceName, this.deviceId, this.word,this.values,
+  BufferedSensorMeasurements(this.deviceName, this.deviceId, this.word,this.values,
      this.timestamps);
 
   bool add(GloveMeasurement gloveMeasurement) {
@@ -188,7 +189,7 @@ class SensorMeasurements {
     return measurementList;
   }
 
-  factory SensorMeasurements.fromJson(dynamic json) {
+  factory BufferedSensorMeasurements.fromJson(dynamic json) {
     List<List<double>> _values = <List<double>>[];
     List<int> _timestamps = <int>[];
 
@@ -203,7 +204,7 @@ class SensorMeasurements {
       var jsonLists = json['timestamps'] as List;
       _timestamps = jsonLists.map((v) => v as int).toList();
     }
-    return SensorMeasurements(
+    return BufferedSensorMeasurements(
       json['device_name'] as String,
       json['device_id'] as String,
       json['word'] as String,

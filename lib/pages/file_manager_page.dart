@@ -27,7 +27,7 @@ class _FileManagerPage extends State<FileManagerPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               StreamBuilder<List<DeviceMeasurementsFile>>(
-                stream: GloveEventsStorage().getListOfFiles().asStream(),
+                stream: FileManager().getListOfFiles().asStream(),
                 initialData: [],
                 builder: (c, snapshot) => Column(
                   children: snapshot.data!
@@ -40,7 +40,8 @@ class _FileManagerPage extends State<FileManagerPage> {
                                 leading: IconButton(
                                   icon: Icon(Icons.folder_open_sharp),
                                   onPressed: () async {
-                                    SensorMeasurements measurements = await f.readJsonContent();
+                                    BufferedSensorMeasurements measurements =
+                                        await f.readJsonContent();
                                     Navigator.pushNamed(
                                       context,
                                       FileContentChartPage.routeName,
@@ -65,8 +66,9 @@ class _FileManagerPage extends State<FileManagerPage> {
                                         setState(() {});
                                       },
                                     ),
-                                    UploadButton(onButtonPressed: () =>
-                                        uploadFileCallBack(f))
+                                    UploadButton(
+                                        onButtonPressed: () =>
+                                            uploadFileCallBack(f))
                                   ],
                                 ),
                               ),
@@ -96,9 +98,7 @@ class _FileManagerPage extends State<FileManagerPage> {
 class UploadButton extends StatefulWidget {
   final Function onButtonPressed;
 
-  const UploadButton(
-      {Key? key,
-      required this.onButtonPressed})
+  const UploadButton({Key? key, required this.onButtonPressed})
       : super(key: key);
 
   @override
@@ -113,20 +113,19 @@ class _UploadButton extends State<UploadButton> {
   UploadResult _status;
   final Function onButtonPressed;
 
-  _UploadButton(this.onButtonPressed): _status = UploadResult.ready;
+  _UploadButton(this.onButtonPressed) : _status = UploadResult.ready;
 
   @override
   void initState() {
     super.initState();
     Timer.periodic(Duration(seconds: 5), (Timer t) {
-      if(_status == UploadResult.failed){
-      setState(() {
-        _status = UploadResult.ready;
-      });
-    }});
+      if (_status == UploadResult.failed) {
+        setState(() {
+          _status = UploadResult.ready;
+        });
+      }
+    });
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -135,10 +134,8 @@ class _UploadButton extends State<UploadButton> {
         return new CircularProgressIndicator();
       case UploadResult.failed:
         return IconButton(
-          icon: Icon(Icons.close,
-            color: Theme.of(context).errorColor),
-            onPressed: null
-        );
+            icon: Icon(Icons.close, color: Theme.of(context).errorColor),
+            onPressed: null);
       default:
         return IconButton(
             icon: Icon(
@@ -150,14 +147,12 @@ class _UploadButton extends State<UploadButton> {
                 _status = UploadResult.uploading;
               });
               var result = await onButtonPressed.call();
-              if(!result){
+              if (!result) {
                 setState(() {
                   _status = UploadResult.failed;
                 });
               }
             });
     }
-
-
   }
 }
