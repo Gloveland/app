@@ -29,10 +29,10 @@ class _InterpretationPageState extends State<InterpretationPage> {
       ),
       drawer: NavDrawer(),
       body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: InterpretationsPanel(),
-        ),
+        child:  InterpretationsPanel()
+          //Padding(padding: EdgeInsets.all(16.0),
+          //child: InterpretationsPanel(),
+        //),
       ),
     );
   }
@@ -48,32 +48,33 @@ class InterpretationsPanel extends StatefulWidget {
 class _InterpretationsPanelState extends State<InterpretationsPanel> {
   @override
   Widget build(BuildContext context) {
-    Widget child = InterpretationWidget(
-      key: Key("empty"),
-      device: null,
-      measurementsCharacteristic: null,
-      interpretationCharacteristic: null);
     Consumer<BluetoothBackend>(builder: (context, backend, _) {
       List<Widget> children = <Widget>[];
-      for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry in backend
-          .interpretationCharacteristics.entries) {
+      for (MapEntry<BluetoothDevice, BluetoothCharacteristic> entry
+          in backend.interpretationCharacteristics.entries) {
         children.add(InterpretationWidget(
           key: Key(entry.key.id.id),
           device: entry.key,
           interpretationCharacteristic: entry.value,
-          measurementsCharacteristic: backend.dataCollectionCharacteristics[entry.key]!,
+          measurementsCharacteristic:
+              backend.dataCollectionCharacteristics[entry.key]!,
         ));
       }
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
-        children:[child],
+        children: children,
       );
     });
+    Widget emptyInterpreter = InterpretationWidget(
+        key: Key("empty"),
+        device: null,
+        measurementsCharacteristic: null,
+        interpretationCharacteristic: null);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children:[child],
+      children: [emptyInterpreter],
     );
     return Consumer<BluetoothBackend>(builder: (context, backend, _) {
       List<Widget> children = <Widget>[];
@@ -136,10 +137,9 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
   @override
   void dispose() {
     super.dispose();
-    if(device != null){
+    if (device != null) {
       developer.log("Disposed widget of device: " + device!.id.id, name: TAG);
     }
-
   }
 
   @override
@@ -152,122 +152,135 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
       ),
     ]);
 
-    var deviceName = "no device connected";
-    var deviceId = "no device connected";
-    var dcCharacteristicStream = Stream<List<int>>.empty();
-    if (device != null){
-      deviceName = device!.name;
-      deviceId = "${device!.id.id}";
-      dcCharacteristicStream = dcCharacteristic!.value;
-    }
-    return Column(
-          children: <Widget>[
-            displayStats(containerDecorator),
-            SizedBox(
-                width: double.infinity,
-                height: 20,
-                child: Text("Dispositivo:",
-                    style: TextStyle(color: Theme.of(context).primaryColor))),
-            Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8.0),
-                alignment: Alignment.topCenter,
-                decoration: containerDecorator,
-                child: Text(deviceName)),
-            SizedBox(
-                width: double.infinity,
-                height: 20,
-                child: Text("Identificador:",
-                    style: TextStyle(color: Theme.of(context).primaryColor))),
-            Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8.0),
-                alignment: Alignment.topCenter,
-                decoration: containerDecorator,
-                child: Text("Mac addr: ${deviceId}")),
-            SizedBox(
-                width: double.infinity,
-                height: 20,
-                child: Text("Lectura de los sensores:",
-                    style: TextStyle(color: Theme.of(context).primaryColor))),
-            StreamBuilder<List<int>>(
-                stream: dcCharacteristicStream,
-                initialData: [],
-                builder: (c, measurements) {
-                  String msg = "";
-                  if (measurements.hasData) {
-                    msg = new String.fromCharCodes(measurements.data!);
-                  }
-                  return Container(
-                      width: double.infinity,
-                      height: 80,
-                      alignment: Alignment.center,
-                      decoration: containerDecorator,
-                      child: Text(msg));
-                }),
-            InterpretationButton(resetWordCallback: () =>
-                resetWord())
-          ],
-        );
-  }
-
-  StreamBuilder<List<int>> displayStats(containerDecorator) {
     var interpretationStream = Stream<List<int>>.empty();
-    if (interpretationCharacteristic != null){
+    if (interpretationCharacteristic != null) {
       if (!interpretationCharacteristic!.isNotifying) {
         interpretationCharacteristic!.setNotifyValue(true);
       }
-      interpretationStream =interpretationCharacteristic!.value;
+      interpretationStream = interpretationCharacteristic!.value;
     }
 
-    return StreamBuilder<List<int>>(
-        stream: interpretationStream,
-        initialData: [],
-        builder: (c, rawDeviceInterpretations) {
-          String percentages = "";
-          if (rawDeviceInterpretations.hasData) {
-            var msg = new String.fromCharCodes(rawDeviceInterpretations.data!);
-            developer.log(msg, name: TAG);
-            word = getWord(msg);
-            percentages = getPercentages(msg);
-          }
-          if (word != "" && word != previousWord) {
-            _playSound(word);
-            previousWord = word;
-          }
-          return Column(children: <Widget>[
-            SizedBox(
-                width: double.infinity,
-                height: 20,
-                child: Text("Traducción:",
-                    style: TextStyle(color: Theme.of(context).primaryColor))),
-            Card(
-                elevation: 5,
-                child: InkWell(
-                    splashColor: Colors.blue.withAlpha(30),
-                    child: Container(
-                      width: double.infinity,
-                      height: 80,
-                      alignment: Alignment.center,
-                      color: Colors.white,
-                      child: Text(word, style: TextStyle(fontSize: 32)),
-                    ))),
-            SizedBox(
-                width: double.infinity,
-                height: 20,
-                child: Text("Información:",
-                    style: TextStyle(color: Theme.of(context).primaryColor))),
-            SingleChildScrollView(
-                scrollDirection: Axis.vertical,//.horizontal
-                child: Container(
+    var deviceName = "";
+    var macAddress = "";
+    var dcCharacteristicStream = Stream<List<int>>.empty();
+    if (device != null) {
+      deviceName = device!.name;
+      macAddress = "Mac addr: ${device!.id.id}";
+      dcCharacteristicStream = dcCharacteristic!.value;
+    }
+    /*
+    return Column(
+      children: <Widget>[
+        Container(
+          color: Colors.blue,
+          height: MediaQuery.of(context).size.height * 0.50,
+          width: double.infinity,
+        ),
+        Container(
+          color: Colors.amber,
+          height:  MediaQuery.of(context).size.height * 0.30,
+          width: double.infinity,
+        ),
+      ],
+    );
+    */
+    return Column(
+      children: <Widget>[
+        StreamBuilder<List<int>>(
+            stream: interpretationStream,
+            initialData: [],
+            builder: (c, rawDeviceInterpretations) {
+              String percentages = "";
+              if (rawDeviceInterpretations.hasData) {
+                var msg =
+                    new String.fromCharCodes(rawDeviceInterpretations.data!);
+                developer.log(msg, name: TAG);
+                word = getWord(msg);
+                percentages = getPercentages(msg);
+              }
+              if (word != "" && word != previousWord) {
+                _playSound(word);
+                previousWord = word;
+              }
+              return Column(children: <Widget>[
+                SizedBox(
                     width: double.infinity,
-                    height: 280,
-                    alignment: Alignment.center,
-                    decoration: containerDecorator,
-                    child: Text(percentages))
-            ),
-          ]);
-        });
+                    height: 20,
+                    child: Text("Traducción:",
+                        style:
+                            TextStyle(color: Theme.of(context).primaryColor))),
+                Card(
+                    elevation: 5,
+                    child: InkWell(
+                        splashColor: Colors.blue.withAlpha(30),
+                        child: Container(
+                          width: double.infinity,
+                          height: 80,
+                          alignment: Alignment.center,
+                          color: Colors.white,
+                          child: Text(word, style: TextStyle(fontSize: 32)),
+                        ))),
+                SizedBox(
+                    width: double.infinity,
+                    height: 20,
+                    child: Text("Información:",
+                        style:
+                            TextStyle(color: Theme.of(context).primaryColor))),
+                SingleChildScrollView(
+                    scrollDirection: Axis.vertical, //.horizontal
+                    child: Container(
+                        width: double.infinity,
+                        height: 280,
+                        alignment: Alignment.center,
+                        decoration: containerDecorator,
+                        child: Text(percentages))),
+              ]);
+            }),
+        SizedBox(
+            width: double.infinity,
+            height: 20,
+            child: Text("Dispositivo:",
+                style: TextStyle(color: Theme.of(context).primaryColor))),
+        Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8.0),
+            alignment: Alignment.topCenter,
+            decoration: containerDecorator,
+            child: Text(deviceName)),
+        SizedBox(
+            width: double.infinity,
+            height: 20,
+            child: Text("Identificador:",
+                style: TextStyle(color: Theme.of(context).primaryColor))),
+        Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8.0),
+            alignment: Alignment.topCenter,
+            decoration: containerDecorator,
+            child: Text(macAddress)),
+        SizedBox(
+            width: double.infinity,
+            height: 20,
+            child: Text("Lectura de los sensores:",
+                style: TextStyle(color: Theme.of(context).primaryColor))),
+        StreamBuilder<List<int>>(
+            stream: dcCharacteristicStream,
+            initialData: [],
+            builder: (c, measurements) {
+              String msg = "";
+              if (measurements.hasData) {
+                msg = new String.fromCharCodes(measurements.data!);
+              }
+              return Container(
+                  width: double.infinity,
+                  height: 80,
+                  alignment: Alignment.center,
+                  decoration: containerDecorator,
+                  child: Text(msg));
+            }),
+        InterpretationButton(resetWordCallback: () => resetWord())
+      ],
+    );
   }
 
   String getWord(String interpretationData) {
@@ -300,7 +313,8 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
 
   void _playSound(String word) async {
     try {
-      await assetsAudioPlayer.open(Audio("assets/audios/${word.toLowerCase()}.mp3"),
+      await assetsAudioPlayer.open(
+          Audio("assets/audios/${word.toLowerCase()}.mp3"),
           autoStart: true);
     } catch (t) {
       developer.log('error in audio play: $t', name: TAG);
@@ -310,8 +324,8 @@ class _InterpretationWidgetState extends State<InterpretationWidget> {
 
 class InterpretationButton extends StatefulWidget {
   final Function resetWordCallback;
-  const InterpretationButton({Key? key,
-    required this.resetWordCallback})
+
+  const InterpretationButton({Key? key, required this.resetWordCallback})
       : super(key: key);
 
   @override
@@ -325,7 +339,6 @@ class _InterpretationButtonState extends State<InterpretationButton> {
   bool _isRunning = false;
 
   _InterpretationButtonState(this.resetWordCallback);
-
 
   @override
   Widget build(BuildContext context) {
