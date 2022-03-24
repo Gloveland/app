@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 
+/// Page containing a brief description of the application and the project per
+/// se, as well as contact information.
 class AboutPage extends StatefulWidget {
   const AboutPage({Key? key}) : super(key: key);
 

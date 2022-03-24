@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
@@ -13,8 +10,14 @@ import 'package:lsa_gloves/model/vector3.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'dart:developer' as developer;
 
+/// Page to plot real time sensors data.
+///
+/// The user can select the sensor from which finger to be plotted.
+///
+/// The received data is not recorded, the purpose of this page is to simply
+/// provide the user with a debugging tool to assess if the received data
+/// from the sensors makes sense.
 class DataVisualizationPage extends StatefulWidget {
   const DataVisualizationPage({Key? key}) : super(key: key);
 
@@ -71,13 +74,11 @@ class _DataVisualizationPageState extends State<DataVisualizationPage> {
                                   ))
                               .toList()),
                       Expanded(
-                        child:MeasurementsChart(
-                            key: Key("$_finger-$_sensor"),
-                            measurementsCollector: _measurementsCollector,
-                            finger: _finger,
-                            sensor: _sensor)
-                      )
-
+                          child: MeasurementsChart(
+                              key: Key("$_finger-$_sensor"),
+                              measurementsCollector: _measurementsCollector,
+                              finger: _finger,
+                              sensor: _sensor))
                     ],
                   )),
               floatingActionButton: FloatingActionButton(
@@ -163,44 +164,42 @@ class _MeasurementsChartState extends State<MeasurementsChart>
   @override
   Widget build(BuildContext context) {
     return SfCartesianChart(
-      series: <ChartSeries>[
-        LineSeries<SeriesEntry, double>(
-          name: sensor.getXLabel(),
-            dataSource: _measurementsX,
-            xValueMapper: (SeriesEntry measurement, _) => measurement.x,
-            yValueMapper: (SeriesEntry measurement, _) => measurement.y,
-            onRendererCreated: (ChartSeriesController controller) {
-              _chartSeriesControllerX = controller;
-            }),
-        LineSeries<SeriesEntry, double>(
-          name: sensor.getYLabel(),
-            dataSource: _measurementsY,
-            xValueMapper: (SeriesEntry measurement, _) => measurement.x,
-            yValueMapper: (SeriesEntry measurement, _) => measurement.y,
-            onRendererCreated: (ChartSeriesController controller) {
-              _chartSeriesControllerY = controller;
-            }),
-        LineSeries<SeriesEntry, double>(
-          name: sensor.getZLabel(),
-            dataSource: _measurementsZ,
-            xValueMapper: (SeriesEntry measurement, _) => measurement.x,
-            yValueMapper: (SeriesEntry measurement, _) => measurement.y,
-            onRendererCreated: (ChartSeriesController controller) {
-              _chartSeriesControllerZ = controller;
-            }),
-      ],
-      legend: Legend(isVisible: true, position: LegendPosition.bottom),
-      primaryXAxis: NumericAxis(
-        numberFormat: NumberFormat("##,###s")
-      )
-    );
+        series: <ChartSeries>[
+          LineSeries<SeriesEntry, double>(
+              name: sensor.getXLabel(),
+              dataSource: _measurementsX,
+              xValueMapper: (SeriesEntry measurement, _) => measurement.x,
+              yValueMapper: (SeriesEntry measurement, _) => measurement.y,
+              onRendererCreated: (ChartSeriesController controller) {
+                _chartSeriesControllerX = controller;
+              }),
+          LineSeries<SeriesEntry, double>(
+              name: sensor.getYLabel(),
+              dataSource: _measurementsY,
+              xValueMapper: (SeriesEntry measurement, _) => measurement.x,
+              yValueMapper: (SeriesEntry measurement, _) => measurement.y,
+              onRendererCreated: (ChartSeriesController controller) {
+                _chartSeriesControllerY = controller;
+              }),
+          LineSeries<SeriesEntry, double>(
+              name: sensor.getZLabel(),
+              dataSource: _measurementsZ,
+              xValueMapper: (SeriesEntry measurement, _) => measurement.x,
+              yValueMapper: (SeriesEntry measurement, _) => measurement.y,
+              onRendererCreated: (ChartSeriesController controller) {
+                _chartSeriesControllerZ = controller;
+              }),
+        ],
+        legend: Legend(isVisible: true, position: LegendPosition.bottom),
+        primaryXAxis: NumericAxis(numberFormat: NumberFormat("##,###s")));
   }
 
   @override
   void onMeasurement(GloveMeasurement measurement) {
     measurementsBuffer.add(measurement);
     lastTimestampMs += measurement.timestampMillis;
-    Vector3 sensorValues = measurement.getFinger(finger).getSensorValues(sensor);
+    Vector3 sensorValues =
+        measurement.getFinger(finger).getSensorValues(sensor);
     _measurementsX.add(SeriesEntry(lastTimestampMs, sensorValues.getX()));
     _measurementsY.add(SeriesEntry(lastTimestampMs, sensorValues.getY()));
     _measurementsZ.add(SeriesEntry(lastTimestampMs, sensorValues.getZ()));

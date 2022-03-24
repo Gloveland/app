@@ -5,8 +5,18 @@ import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 
 import 'package:provider/provider.dart';
 
+/// Page to set the configuration of a glove.
+///
+/// The user can either:
+/// - connect the app to the device
+/// - update the mtu to 512 bytes
+/// - calibrate the glove.
+///
+/// This page is accessible when clicking the configuration icon of a device
+/// in the BluetoothDevicesConnectionPage.
 class BluetoothDevicePage extends StatefulWidget {
-  const BluetoothDevicePage({Key? key, required this.device, required this.isEnabled})
+  const BluetoothDevicePage(
+      {Key? key, required this.device, required this.isEnabled})
       : super(key: key);
   final BluetoothDevice device;
   final bool isEnabled;

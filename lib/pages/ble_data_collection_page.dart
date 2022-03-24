@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:simple_timer/simple_timer.dart';
 import 'dart:developer' as developer;
 
+/// Page to run data collections.
 class BleDataCollectionPage extends StatefulWidget {
   const BleDataCollectionPage({Key? key}) : super(key: key);
 

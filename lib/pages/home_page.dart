@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../navigation/navigation_drawer.dart';
@@ -9,6 +8,8 @@ import 'data_visualization_page.dart';
 import 'file_manager_page.dart';
 import 'interpretation_page.dart';
 
+/// Home page with navigation buttons to let the user access the multiple
+/// pages of the application.
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 

@@ -7,6 +7,11 @@ import 'package:lsa_gloves/datacollection/storage.dart';
 
 import 'file_content_chart_page.dart';
 
+/// Page to manage the stored files from data collections that haven't been yet
+/// uploaded.
+///
+/// This page displays the list of files, with its name, letting the user the
+/// possibility to visualize the data and to upload or to delete the file.
 class FileManagerPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
