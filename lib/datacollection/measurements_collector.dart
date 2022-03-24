@@ -3,7 +3,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/datacollection/measurements_listener.dart';
 import 'package:lsa_gloves/datacollection/measurements_writer.dart';
 import 'dart:developer' as developer;
-import 'package:lsa_gloves/model/glove_measurement.dart';
+import 'package:lsa_gloves/glove/glove_measurement.dart';
 
 /// Class to take in charge the responsibility of receiving and processing
 /// the measurements taken from the device.

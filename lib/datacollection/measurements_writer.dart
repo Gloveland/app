@@ -1,7 +1,7 @@
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/datacollection/measurements_listener.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
-import 'package:lsa_gloves/model/glove_measurement.dart';
+import 'package:lsa_gloves/glove/glove_measurement.dart';
 
 /// Writer class to receive GloveMeasurements and store them into files.
 class MeasurementsWriter with MeasurementsListener {

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
-import 'package:lsa_gloves/model/finger.dart';
-import 'package:lsa_gloves/model/glove_measurement.dart';
+import 'package:lsa_gloves/glove/finger.dart';
+import 'package:lsa_gloves/glove/glove_measurement.dart';
 import 'package:lsa_gloves/edgeimpulse/api_client.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:developer' as developer;

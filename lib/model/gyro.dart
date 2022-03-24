@@ -1,5 +1,5 @@
 
-import 'package:lsa_gloves/model/vector3.dart';
+import 'package:lsa_gloves/glove/vector3.dart';
 
 /// Class to encapsulate the gyroscope values received from the glove.
 class Gyro with Vector3 {
