@@ -6,7 +6,6 @@ import 'package:lsa_gloves/model/glove_measurement.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'dart:developer' as developer;
 
 class FileContentChartPage extends StatefulWidget {
   static const routeName = '/fileContentChart';

@@ -7,7 +7,7 @@ import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:provider/provider.dart';
-import '../connection/ble/bluetooth_device.dart';
+import 'bluetooth_device_page.dart';
 import 'dart:developer' as developer;
 
 class BleGloveConnectionPage extends StatelessWidget {
@@ -220,7 +220,7 @@ class _ConnectionGloveCard extends State {
   void navigateToDeviceSettings(bool isConnected) {
     Navigator.of(context).push(MaterialPageRoute(
         builder: (context) =>
-            DeviceScreen(device: device, isEnabled: isConnected)));
+            BluetoothDevicePage(device: device, isEnabled: isConnected)));
   }
 
   void toggleConnection(BuildContext context) {
