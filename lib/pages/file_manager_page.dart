@@ -37,47 +37,43 @@ class _FileManagerPage extends State<FileManagerPage> {
                 builder: (c, snapshot) => Column(
                   children: snapshot.data!
                       .map(
-                        (f) => Card(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              ListTile(
-                                leading: IconButton(
-                                  icon: Icon(Icons.folder_open_sharp),
+                        (deviceMeasurementsFile) => Card(
+                          key: Key(deviceMeasurementsFile.path),
+                          child: ListTile(
+                            leading: IconButton(
+                              icon: Icon(Icons.folder_open_sharp),
+                              onPressed: () async {
+                                BufferedSensorMeasurements measurements =
+                                await deviceMeasurementsFile.readJsonContent();
+                                Navigator.pushNamed(
+                                  context,
+                                  FileContentChartPage.routeName,
+                                  arguments: measurements,
+                                );
+                              },
+                            ),
+                            title: Text(basename(deviceMeasurementsFile.path)),
+                            subtitle: Text(deviceMeasurementsFile.lastModified),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                IconButton(
+                                  icon: Icon(Icons.delete_outline_outlined,
+                                      color: Theme.of(context)
+                                          .iconTheme
+                                          .color
+                                          ?.withOpacity(0.5)),
                                   onPressed: () async {
-                                    BufferedSensorMeasurements measurements =
-                                        await f.readJsonContent();
-                                    Navigator.pushNamed(
-                                      context,
-                                      FileContentChartPage.routeName,
-                                      arguments: measurements,
-                                    );
+                                    await deviceMeasurementsFile.deleteFile();
+                                    //refresh
+                                    setState(() {});
                                   },
                                 ),
-                                title: Text(basename(f.path)),
-                                subtitle: Text(f.lastModified),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    IconButton(
-                                      icon: Icon(Icons.delete_outline_outlined,
-                                          color: Theme.of(context)
-                                              .iconTheme
-                                              .color
-                                              ?.withOpacity(0.5)),
-                                      onPressed: () async {
-                                        await f.deleteFile();
-                                        //refresh
-                                        setState(() {});
-                                      },
-                                    ),
-                                    UploadButton(
-                                        onButtonPressed: () =>
-                                            uploadFileCallBack(f))
-                                  ],
-                                ),
-                              ),
-                            ],
+                                UploadButton(
+                                    onButtonPressed: () =>
+                                        uploadFileCallBack(deviceMeasurementsFile))
+                              ],
+                            ),
                           ),
                         ),
                       )
