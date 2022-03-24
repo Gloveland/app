@@ -1,15 +1,13 @@
-import 'dart:async';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:provider/provider.dart';
-import '../connection/ble/bluetooth_device.dart';
+import 'bluetooth_device_page.dart';
 import 'dart:developer' as developer;
 
+/// Page to let the user connect the app to one or more devices.
 class BleGloveConnectionPage extends StatelessWidget {
   static const routeName = '/bleGloveConnectionPage';
 
@@ -23,13 +21,13 @@ class BleGloveConnectionPage extends StatelessWidget {
           if (state == BluetoothState.on) {
             return FindDevicesScreen();
           }
-          return BluetoothOffScreen(state: state);
+          return BluetoothDisabledWarningPage(state: state);
         });
   }
 }
 
-class BluetoothOffScreen extends StatelessWidget {
-  const BluetoothOffScreen({Key? key, this.state}) : super(key: key);
+class BluetoothDisabledWarningPage extends StatelessWidget {
+  const BluetoothDisabledWarningPage({Key? key, this.state}) : super(key: key);
 
   final BluetoothState? state;
 
@@ -220,7 +218,7 @@ class _ConnectionGloveCard extends State {
   void navigateToDeviceSettings(bool isConnected) {
     Navigator.of(context).push(MaterialPageRoute(
         builder: (context) =>
-            DeviceScreen(device: device, isEnabled: isConnected)));
+            BluetoothDevicePage(device: device, isEnabled: isConnected)));
   }
 
   void toggleConnection(BuildContext context) {

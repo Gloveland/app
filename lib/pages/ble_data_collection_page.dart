@@ -1,18 +1,16 @@
 import 'dart:async';
 
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/datacollection/measurements_listener.dart';
 import 'package:lsa_gloves/model/glove_measurement.dart';
-import 'package:lsa_gloves/pages/ble_connection_error_page.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_timer/simple_timer.dart';
 import 'dart:developer' as developer;
 
+/// Page to run data collections.
 class BleDataCollectionPage extends StatefulWidget {
   const BleDataCollectionPage({Key? key}) : super(key: key);
 
@@ -159,17 +157,10 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
 
   void _startRecording(BluetoothBackend bluetoothBackend) {
     developer.log('startRecording');
-    if (bluetoothBackend.connectedDevices.isEmpty) {
-      developer.log('Cant start recording! No devices connected.');
-      Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => BleConnectionErrorPage(),
-          maintainState: false));
-    } else {
       bluetoothBackend.sendStartDataCollectionCommand();
       _measurementsCollector.startCollecting(
           this.selectedGesture, bluetoothBackend.dataCollectionCharacteristics);
       _isRecording = true;
-    }
   }
 
   void _stopRecording(BluetoothBackend bluetoothBackend) async {

@@ -1,8 +1,5 @@
-import 'dart:collection';
-
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
@@ -11,6 +8,7 @@ import 'dart:developer' as developer;
 
 import 'package:provider/provider.dart';
 
+/// Page to display the interpretations from the glove.
 class InterpretationPage extends StatefulWidget {
   const InterpretationPage({Key? key}) : super(key: key);
 

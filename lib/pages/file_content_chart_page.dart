@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/storage.dart';
-import 'package:lsa_gloves/model/glove_measurement.dart';
+import 'package:lsa_gloves/model/acceleration.dart';
+import 'package:lsa_gloves/model/finger.dart';
+import 'package:lsa_gloves/model/gyro.dart';
+import 'package:lsa_gloves/model/sensor_value.dart';
+import 'package:lsa_gloves/model/vector3.dart';
 import 'package:lsa_gloves/navigation/navigation_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'dart:developer' as developer;
 
+/// Page to plot the stored sensor values from a data collection.
+///
+/// Two charts are displayed, one for the accelerometer and the other for the
+/// gyroscope sensor. The user can select the finger associated with the sensor
+/// they want to plot.
 class FileContentChartPage extends StatefulWidget {
   static const routeName = '/fileContentChart';
 
@@ -22,8 +30,8 @@ class _FileContentChartPageState extends State<FileContentChartPage> {
 
   @override
   Widget build(BuildContext context) {
-    SensorMeasurements sensorMeasurements =
-        ModalRoute.of(context)!.settings.arguments as SensorMeasurements;
+    BufferedSensorMeasurements sensorMeasurements =
+        ModalRoute.of(context)!.settings.arguments as BufferedSensorMeasurements;
 
     return Consumer<BluetoothBackend>(
         builder: (context, backend, _) => SafeArea(
@@ -79,7 +87,7 @@ class _FileContentChartPageState extends State<FileContentChartPage> {
 }
 
 class MeasurementsChart extends StatefulWidget {
-  final SensorMeasurements measurements;
+  final BufferedSensorMeasurements measurements;
   final FingerValue finger;
   final SensorValue sensor;
   final String title;
@@ -100,7 +108,7 @@ class MeasurementsChart extends StatefulWidget {
 }
 
 class _MeasurementsChartState extends State<MeasurementsChart> {
-  SensorMeasurements _measurements;
+  BufferedSensorMeasurements _measurements;
   FingerValue finger;
   String title;
   bool legend;

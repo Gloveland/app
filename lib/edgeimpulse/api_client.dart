@@ -11,7 +11,7 @@ class EdgeImpulseApiClient {
   static const int OK_STATUS_CODE = 200;
 
   static Future<bool> uploadFile(
-      SensorMeasurements sensorMeasurements, DateTime datetime) async {
+      BufferedSensorMeasurements sensorMeasurements, DateTime datetime) async {
     var fileName = sensorMeasurements.word + '-' + datetime.toString();
 
     var protected = Protected(

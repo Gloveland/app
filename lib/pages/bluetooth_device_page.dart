@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
@@ -6,19 +5,29 @@ import 'package:lsa_gloves/connection/ble/bluetooth_specification.dart';
 
 import 'package:provider/provider.dart';
 
-class DeviceScreen extends StatefulWidget {
-  const DeviceScreen({Key? key, required this.device, required this.isEnabled})
+/// Page to set the configuration of a glove.
+///
+/// The user can either:
+/// - connect the app to the device
+/// - update the mtu to 512 bytes
+/// - calibrate the glove.
+///
+/// This page is accessible when clicking the configuration icon of a device
+/// in the BluetoothDevicesConnectionPage.
+class BluetoothDevicePage extends StatefulWidget {
+  const BluetoothDevicePage(
+      {Key? key, required this.device, required this.isEnabled})
       : super(key: key);
   final BluetoothDevice device;
   final bool isEnabled;
 
   @override
-  _DeviceScreenState createState() =>
-      _DeviceScreenState(this.device, this.isEnabled);
+  _BluetoothDevicePageState createState() =>
+      _BluetoothDevicePageState(this.device, this.isEnabled);
 }
 
-class _DeviceScreenState extends State<DeviceScreen> {
-  _DeviceScreenState(this.device, this._isEnabled);
+class _BluetoothDevicePageState extends State<BluetoothDevicePage> {
+  _BluetoothDevicePageState(this.device, this._isEnabled);
 
   BluetoothDevice device;
   bool _isEnabled;
@@ -83,13 +92,14 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         onPressed: (_isEnabled &&
                                 snapshot.data == BluetoothDeviceState.connected)
                             ? () {
-                                Provider.of<BluetoothBackend>(context, listen: false)
+                                Provider.of<BluetoothBackend>(context,
+                                        listen: false)
                                     .sendCalibrationCommand(device);
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(SnackBar(
                                         content: Row(
                                   children: [
-                                     Icon(Icons.lightbulb, color: Colors.blue),
+                                    Icon(Icons.lightbulb, color: Colors.blue),
                                     SizedBox(width: 20),
                                     Expanded(
                                         child: Text(
