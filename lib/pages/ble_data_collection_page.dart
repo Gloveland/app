@@ -34,14 +34,14 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
     "Tiempo":["Antes", "Manana"],
     "Sujeto": ["Campo", "Mama", "Papa", "Lapicera"],
     "Verbos":["Vivir", "Haber", "Ir"],
-    "Pronombres": ["Todos"],
-    "Calificativo": ["Azul", "Blanco"],
+    "Pronombres": ["Idle","Todos"],
+    "Calificativo": ["Azul", "Blanco","Rojo"],
     "Salud": ["Hospital", "Dolor", "Cabeza", "Acidez"],
     "Comida": ["Helado", "Galletitas", "Cafe", "Pan"],
     "Dias": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado","Domingo"],
     "Preguntas": ["Que?", "Donde?", "Porque?"],
     "Numeros": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-    "Saludos": ["Hola", "Buenos dias", "Como estas?", "Bien", "Mal" "Gracias"]
+    "Saludos": ["Hola", "Buenos dias", "Como estas?", "Bien", "Mal", "Gracias"]
   };
 
   @override
