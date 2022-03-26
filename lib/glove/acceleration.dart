@@ -1,14 +1,15 @@
 
-import 'package:lsa_gloves/model/vector3.dart';
+import 'package:lsa_gloves/glove/vector3.dart';
 
-/// Class to encapsulate the gyroscope values received from the glove.
-class Gyro with Vector3 {
+/// Class to encapsulate the acceleration values received from the glove.
+class Acceleration with Vector3 {
   final double x;
   final double y;
   final double z;
-  Gyro (this.x, this.y, this.z);
 
-  Gyro .fromJson(Map<String, dynamic> json)
+  Acceleration(this.x, this.y, this.z);
+
+  Acceleration.fromJson(Map<String, dynamic> json)
       : x = json['x'], y = json['y'], z = json['z'];
 
   Map<String, dynamic> toJson() => {

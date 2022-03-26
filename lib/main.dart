@@ -11,13 +11,12 @@ void main() {
   runApp(
       ChangeNotifierProvider(
         create: (_) => BluetoothBackend(),
-        child: MyApp(),
+        child: LsaGlovesApp(),
       )
   );
 }
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+class LsaGlovesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:lsa_gloves/connection/ble/bluetooth_backend.dart';
 import 'package:lsa_gloves/datacollection/measurements_collector.dart';
 import 'package:lsa_gloves/datacollection/measurements_listener.dart';
-import 'package:lsa_gloves/model/glove_measurement.dart';
+import 'package:lsa_gloves/glove/glove_measurement.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_timer/simple_timer.dart';
 import 'dart:developer' as developer;
