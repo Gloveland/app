@@ -88,7 +88,7 @@ class _BleDataCollectionState extends State<BleDataCollectionPage>
                   this.selectedGesture = newValue!;
                 });
               }),
-              DataVisualizer(
+              CollectionStatusWidget(
                   key: Key("$_collections-$_isRecording"), collector: _measurementsCollector),
               Expanded(
                   child: Align(
@@ -299,23 +299,22 @@ class _RecordButtonState extends State<RecordButton>
   }
 }
 
-class DataVisualizer extends StatefulWidget {
+
+class CollectionStatusWidget extends StatefulWidget {
   final MeasurementsCollector collector;
 
-  const DataVisualizer({Key? key, required this.collector}) : super(key: key);
+  const CollectionStatusWidget({Key? key, required this.collector}) : super(key: key);
 
   @override
-  _DataVisualizerState createState() => _DataVisualizerState(collector);
+  _CollectionStatusWidgetState createState() => _CollectionStatusWidgetState(collector);
 }
 
-class _DataVisualizerState extends State<DataVisualizer>
+class _CollectionStatusWidgetState extends State<CollectionStatusWidget>
     with MeasurementsListener {
   final MeasurementsCollector collector;
   Map<String, GloveStats> _stats;
 
-  _DataVisualizerState(this.collector):_stats = Map();
-
-
+  _CollectionStatusWidgetState(this.collector):_stats = Map();
 
   @override
   void initState() {
